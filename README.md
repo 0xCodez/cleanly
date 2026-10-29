@@ -26,6 +26,8 @@
 
 Исходники макетов — в [`design/`](design/).
 
+**Веб-концепт Fusion** (новые шрифты Unbounded + Onest + JetBrains Mono, свой набор duotone-иконок): [`web/index.html`](web/index.html) — открывается в любом браузере.
+
 ## Планируемый стек
 
 - [Tauri 2](https://tauri.app) — Rust-ядро (сканирование, удаление в корзину), один кодбейс для Windows и macOS

@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Glint — Fusion concept</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@300..700&family=Unbounded:wght@300..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #0f1218;
+  --ink-2: #3c4250;
+  --ink-3: #5b6270;
+  --line: #e2e5ea;
+  --paper: #f2f3f6;
+  --grid: #e5e7ec;
+  --blue: #2b4cff;
+  --violet: #8a5cff;
+  --pink: #ff5d8f;
+  --amber: #ffb547;
+  --mint: #1fbf8f;
+  --display: 'Unbounded', system-ui, sans-serif;
+  --ui: 'Onest', system-ui, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, monospace;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  position: relative;
+  background: radial-gradient(1200px 700px at 20% 0%, #e9ecff 0%, rgba(233, 236, 255, 0) 60%), radial-gradient(900px 600px at 100% 100%, #ffe9f1 0%, rgba(255, 233, 241, 0) 60%), #e7e9ee;
+  font-family: var(--ui);
+  color: var(--ink);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+button { font-family: inherit; }
+a { color: var(--blue); }
+a:hover { color: #1a2fb0; }
+
+.stage { position: absolute; left: 50%; top: 50%; width: 1280px; height: 800px; transform-origin: center; transform: translate(-50%, -50%); }
+.app {
+  width: 1280px; height: 800px; position: relative; overflow: hidden;
+  border-radius: 22px;
+  background-color: var(--paper);
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 22px 22px;
+  box-shadow: 0 0 0 1px rgba(15, 18, 24, 0.06), 0 40px 120px rgba(30, 40, 90, 0.22);
+  display: flex; flex-direction: column;
+}
+
+/* icons: duotone = soft fill + crisp outline; styled through custom properties so they reach <use> clones */
+.ic { width: 20px; height: 20px; flex: none; --fo: 0.16; --sw: 1.7; --ac: var(--pink); }
+symbol .f { fill: currentColor; opacity: var(--fo); stroke: none; }
+symbol .s { fill: none; stroke: currentColor; stroke-width: var(--sw); stroke-linecap: round; stroke-linejoin: round; }
+symbol .d { fill: currentColor; stroke: none; }
+symbol .a { fill: var(--ac); stroke: none; }
+
+/* titlebar */
+.titlebar { height: 44px; flex: none; display: flex; align-items: center; gap: 8px; padding: 0 20px; }
+.light { width: 12px; height: 12px; border-radius: 50%; box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.18); }
+.kbd-hint { margin-left: auto; font-family: var(--mono); font-size: 12px; color: var(--ink-3); display: flex; align-items: center; gap: 8px; }
+.kbd { font-family: var(--mono); font-size: 11px; padding: 2px 6px; border-radius: 6px; background: #fff; border: 1px solid var(--line); color: var(--ink-2); }
+
+.body { flex: 1; display: flex; min-height: 0; }
+
+/* sidebar */
+.nav { width: 236px; flex: none; padding: 4px 14px 22px; display: flex; flex-direction: column; gap: 2px; }
+.brand { display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 12px; margin-bottom: 12px; }
+.brand-name { font-family: var(--display); font-size: 20px; font-weight: 500; letter-spacing: -0.02em; }
+.nav-label { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.14em; color: var(--ink-3); padding: 14px 14px 6px; }
+.nav a {
+  display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 12px; border-radius: 12px;
+  text-decoration: none; font-size: 14px; font-weight: 450; color: var(--ink-2);
+  transition: background 0.2s var(--ease), color 0.2s var(--ease);
+}
+.nav a:hover { background: rgba(255, 255, 255, 0.6); color: var(--ink); }
+.nav a.on { background: #fff; color: var(--ink); font-weight: 600; box-shadow: 0 1px 2px rgba(15, 18, 24, 0.08), 0 6px 18px rgba(15, 18, 24, 0.06); }
+.nav a.on .ic { color: var(--blue); }
+.nav .count { margin-left: auto; font-family: var(--mono); font-size: 11px; color: #b4235a; background: rgba(255, 93, 143, 0.12); padding: 2px 7px; border-radius: 999px; }
+.disk { margin-top: auto; padding: 16px; border-radius: 18px; background: rgba(255, 255, 255, 0.85); border: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; }
+.disk-row { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; font-weight: 600; }
+.disk-row span:last-child { font-family: var(--mono); font-weight: 400; font-size: 12px; color: var(--ink-3); }
+.bar { height: 6px; border-radius: 3px; background: #e8eaee; overflow: hidden; display: flex; }
+.bar .used { width: 68%; background: linear-gradient(90deg, var(--blue), var(--violet)); }
+.bar .junk { width: 6%; background: var(--pink); transition: width 1.2s var(--ease); }
+.disk-note { font-size: 12px; color: var(--ink-3); }
+
+/* main */
+.main { flex: 1; min-width: 0; padding: 4px 28px 24px 8px; display: flex; flex-direction: column; gap: 18px; }
+.top { display: flex; gap: 18px; height: 462px; }
+.card-w { border-radius: 28px; background: rgba(255, 255, 255, 0.84); border: 1px solid var(--line); box-shadow: 0 24px 60px rgba(15, 18, 24, 0.06); }
+
+.hero { flex: 1; min-width: 0; position: relative; overflow: hidden; padding: 32px 36px; display: flex; flex-direction: column; }
+.torus {
+  position: absolute; right: -40px; top: 34px; margin: 0;
+  font-family: var(--mono); font-size: 9px; line-height: 9px; white-space: pre;
+  background: linear-gradient(100deg, var(--blue) 0%, var(--violet) 35%, var(--pink) 70%, var(--amber) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent; opacity: 0.55;
+  pointer-events: none; user-select: none;
+}
+.hero-in { position: relative; display: flex; flex-direction: column; flex: 1; }
+.eyebrow { font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.14em; color: var(--blue); display: flex; align-items: center; gap: 8px; }
+.eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--mint); box-shadow: 0 0 0 4px rgba(31, 191, 143, 0.15); }
+.hero h1 { margin: 20px 0 0; font-family: var(--ui); font-size: 26px; font-weight: 400; letter-spacing: -0.02em; color: var(--ink-2); }
+.big {
+  margin-top: 10px; font-family: var(--display); font-weight: 600; font-size: 76px; line-height: 1; letter-spacing: -0.045em;
+  font-variant-numeric: tabular-nums;
+  background: linear-gradient(100deg, var(--ink) 0%, var(--blue) 48%, var(--violet) 72%, var(--pink) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.big small { font-size: 0.42em; letter-spacing: -0.02em; font-weight: 500; }
+.hero p { margin: 18px 0 0; max-width: 360px; font-size: 15px; line-height: 1.6; color: var(--ink-2); }
+.actions { margin-top: auto; display: flex; align-items: center; gap: 24px; }
+.orb {
+  position: relative; width: 112px; height: 112px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.75);
+  background: radial-gradient(circle at 25% 20%, #ffc6ec 0%, rgba(255, 198, 236, 0) 40%), radial-gradient(circle at 80% 85%, #ffd36e 0%, rgba(255, 211, 110, 0) 40%), radial-gradient(circle at 60% 50%, var(--blue) 0%, #5a3cff 50%, var(--violet) 100%);
+  color: #fff; font-family: var(--display); font-size: 15px; font-weight: 500; letter-spacing: -0.01em; cursor: pointer;
+  box-shadow: 0 0 0 10px rgba(43, 76, 255, 0.08), 0 20px 44px rgba(90, 60, 255, 0.4);
+  transition: transform 0.25s var(--ease), box-shadow 0.25s var(--ease);
+}
+.orb:hover { transform: scale(1.04); box-shadow: 0 0 0 14px rgba(43, 76, 255, 0.1), 0 24px 52px rgba(90, 60, 255, 0.48); }
+.orb:active { transform: scale(0.97); }
+.orb::after { content: ''; position: absolute; inset: -1px; border-radius: 50%; border: 1.5px solid rgba(138, 92, 255, 0.5); animation: ring 2.4s ease-out infinite; }
+.orb.done::after { animation: none; opacity: 0; }
+@keyframes ring { 0% { transform: scale(1); opacity: 0.7; } 100% { transform: scale(1.4); opacity: 0; } }
+.act-text { display: flex; flex-direction: column; gap: 8px; }
+.act-text a { font-size: 15px; font-weight: 550; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+.act-text span { font-family: var(--mono); font-size: 12px; color: var(--ink-3); }
+
+/* space map */
+.map { width: 440px; flex: none; position: relative; overflow: hidden; background: rgba(255, 255, 255, 0.62); }
+.map-head { position: absolute; left: 24px; right: 22px; top: 20px; display: flex; justify-content: space-between; align-items: center; z-index: 2; }
+.map-head b { font-family: var(--display); font-size: 14px; font-weight: 500; letter-spacing: -0.01em; }
+.map-head a { font-size: 13px; font-weight: 550; text-decoration: none; }
+.bubble {
+  position: absolute; border-radius: 50%; background: #fff; border: 1px solid var(--line);
+  transition: width 1s var(--ease), height 1s var(--ease), left 1s var(--ease), top 1s var(--ease), box-shadow 0.6s;
+}
+.bubble.hot { border: 2px dashed var(--pink); box-shadow: 0 0 0 6px rgba(255, 93, 143, 0.12); }
+.bubble .fill { position: absolute; inset: 0; border-radius: 50%; overflow: hidden; }
+.bubble pre { position: absolute; left: 0; top: 0; margin: 0; font-family: var(--mono); font-size: 9px; line-height: 9px; white-space: pre; -webkit-background-clip: text; background-clip: text; color: transparent; }
+.chip {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  padding: 6px 10px 6px 7px; border-radius: 12px; background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 2px 10px rgba(15, 18, 24, 0.1); display: flex; align-items: center; gap: 7px; white-space: nowrap;
+}
+.chip .ico { width: 24px; height: 24px; border-radius: 8px; display: grid; place-items: center; color: #fff; }
+.chip .ico .ic { width: 15px; height: 15px; }
+.chip .ico .ic { --fo: 0.3; --sw: 2; --ac: #fff; }
+.chip .t { display: flex; flex-direction: column; line-height: 1.15; }
+.chip .t b { font-size: 12.5px; font-weight: 600; }
+.chip .t span { font-family: var(--mono); font-size: 10.5px; color: var(--ink-3); }
+.map-foot { position: absolute; left: 24px; right: 24px; bottom: 18px; display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-3); }
+.map-foot i { width: 12px; height: 12px; border-radius: 50%; border: 2px dashed var(--pink); }
+
+/* holo cards */
+.cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; flex: 1; }
+.holo {
+  position: relative; overflow: hidden; border-radius: 24px; padding: 16px 18px 18px; color: #fff;
+  display: flex; flex-direction: column; box-shadow: 0 20px 44px rgba(40, 50, 120, 0.18);
+  transition: transform 0.35s var(--ease), box-shadow 0.35s var(--ease);
+}
+.holo:hover { transform: translateY(-4px); box-shadow: 0 28px 56px rgba(40, 50, 120, 0.26); }
+.holo::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0) 45%); pointer-events: none; }
+.holo-top { position: relative; display: flex; align-items: center; gap: 10px; }
+.glass-ico { width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center; background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.45); box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.5); }
+.glass-ico .ic { width: 18px; height: 18px; color: #fff; --fo: 0.3; --ac: #ffd36e; }
+.holo-top div { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.holo-top b { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+.holo-top span { font-family: var(--mono); font-size: 10.5px; color: rgba(255, 255, 255, 0.85); white-space: nowrap; }
+.holo-num { position: relative; flex: 1; display: flex; align-items: baseline; align-content: center; flex-wrap: wrap; gap: 8px; padding-top: 18px; }
+.holo-num strong { font-family: var(--display); font-size: 42px; font-weight: 500; letter-spacing: -0.04em; line-height: 1; font-variant-numeric: tabular-nums; }
+.holo-num em { font-style: normal; font-family: var(--mono); font-size: 12px; opacity: 0.9; }
+.pill {
+  position: relative; align-self: flex-start; height: 34px; padding: 0 14px; border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.45); background: rgba(255, 255, 255, 0.18); color: #fff;
+  font-size: 13px; font-weight: 550; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+  backdrop-filter: blur(6px); transition: background 0.2s;
+}
+.pill:hover { background: rgba(255, 255, 255, 0.3); }
+.pill.done { background: #fff; color: var(--ink); border-color: #fff; cursor: default; }
+.pill .ic { width: 14px; height: 14px; }
+
+.c1 { background: radial-gradient(circle at 18% 12%, #c9b8ff 0%, rgba(201, 184, 255, 0) 38%), radial-gradient(circle at 85% 90%, #ffd36e 0%, rgba(255, 211, 110, 0) 40%), radial-gradient(circle at 70% 45%, #2b4cff 0%, #3a2fd6 45%, #6a4bff 100%); }
+.c2 { background: radial-gradient(circle at 80% 15%, #7fe3c4 0%, rgba(127, 227, 196, 0) 40%), linear-gradient(160deg, #0f4a44 0%, #1f8f84 55%, #2b4cff 100%); }
+.c3 { background: radial-gradient(circle at 20% 10%, #1f6f62 0%, rgba(31, 111, 98, 0) 45%), radial-gradient(circle at 80% 100%, #ff8a3d 0%, rgba(255, 138, 61, 0) 50%), linear-gradient(170deg, #0f3d3a 0%, #5a1236 60%, #c2452d 100%); }
+.c4 { background: radial-gradient(circle at 85% 15%, #ffc6ec 0%, rgba(255, 198, 236, 0) 40%), radial-gradient(circle at 15% 85%, #7fe3ff 0%, rgba(127, 227, 255, 0) 45%), linear-gradient(160deg, #8a5cff 0%, #c2449b 55%, #3a6bff 100%); }
+
+/* entrance */
+.rise { animation: rise 0.8s var(--ease) both; }
+@keyframes rise { from { opacity: 0; transform: translateY(14px); filter: blur(6px); } to { opacity: 1; transform: none; filter: blur(0); } }
+@media (prefers-reduced-motion: reduce) { .rise, .orb::after { animation: none; } }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position: absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="g-brand" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2b4cff"/><stop offset="0.55" stop-color="#8a5cff"/><stop offset="1" stop-color="#ff5d8f"/>
+    </linearGradient>
+  </defs>
+  <!-- Smart Scan: radar sweep with a glint -->
+  <symbol id="i-scan" viewBox="0 0 24 24">
+    <circle class="f" cx="12" cy="12" r="9"/>
+    <circle class="s" cx="12" cy="12" r="9"/>
+    <path class="s" d="M12 12L18.4 5.6"/>
+    <path class="s" d="M12 7a5 5 0 1 0 5 5"/>
+    <circle class="a" cx="16.2" cy="14.8" r="1.6"/>
+  </symbol>
+  <!-- Cleanup: broom -->
+  <symbol id="i-broom" viewBox="0 0 24 24">
+    <path class="f" d="M6.5 13.5l4 4-2.6 3.2c-.4.5-1.1.6-1.6.2L3.1 18.1c-.5-.4-.5-1.1-.1-1.6z"/>
+    <path class="s" d="M14 10l6.5-6.5"/>
+    <path class="s" d="M6.5 13.5l4 4"/>
+    <path class="s" d="M8.5 11.5l4 4 1.5-1.5c.8-.8.8-2 0-2.8l-1.2-1.2c-.8-.8-2-.8-2.8 0z"/>
+    <path class="s" d="M6.5 13.5L3 17.2c-.4.5-.4 1.2.1 1.6l3.2 2.1c.5.3 1.2.2 1.6-.2l2.6-3.2"/>
+    <path class="s" d="M5.5 18.5l1.8-1.8"/>
+  </symbol>
+  <!-- Protection: shield -->
+  <symbol id="i-shield" viewBox="0 0 24 24">
+    <path class="f" d="M12 3l7.5 2.8v5.9c0 4.6-3.2 8-7.5 9.3-4.3-1.3-7.5-4.7-7.5-9.3V5.8z"/>
+    <path class="s" d="M12 3l7.5 2.8v5.9c0 4.6-3.2 8-7.5 9.3-4.3-1.3-7.5-4.7-7.5-9.3V5.8z"/>
+    <path class="s" d="M8.8 12.2l2.2 2.2 4.4-4.6"/>
+  </symbol>
+  <!-- Speed: gauge -->
+  <symbol id="i-gauge" viewBox="0 0 24 24">
+    <path class="f" d="M3.5 16a8.5 8.5 0 0 1 17 0z"/>
+    <path class="s" d="M3.5 16a8.5 8.5 0 0 1 17 0"/>
+    <path class="s" d="M12 16l4.2-5"/>
+    <path class="s" d="M6.2 11.2l1 .8 M12 7.5V9 M17.8 11.2l-1 .8"/>
+    <circle class="d" cx="12" cy="16" r="1.8"/>
+    <path class="s" d="M3.5 19.5h17"/>
+  </symbol>
+  <!-- Applications: tiles, one floating -->
+  <symbol id="i-apps" viewBox="0 0 24 24">
+    <rect class="f" x="3.5" y="13" width="7.5" height="7.5" rx="2.2"/>
+    <rect class="s" x="3.5" y="3.5" width="7.5" height="7.5" rx="2.2"/>
+    <rect class="s" x="3.5" y="13" width="7.5" height="7.5" rx="2.2"/>
+    <rect class="s" x="13" y="13" width="7.5" height="7.5" rx="2.2"/>
+    <circle class="a" cx="16.75" cy="7.25" r="3.4"/>
+  </symbol>
+  <!-- Space map: bubbles -->
+  <symbol id="i-bubbles" viewBox="0 0 24 24">
+    <circle class="f" cx="9" cy="10" r="6"/>
+    <circle class="s" cx="9" cy="10" r="6"/>
+    <circle class="s" cx="17.5" cy="15.5" r="3.5"/>
+    <circle class="s" cx="10.5" cy="19.5" r="1.8"/>
+    <path class="s" d="M6.5 8a3 3 0 0 1 2.5-1.5"/>
+  </symbol>
+  <!-- Large files: heavy file -->
+  <symbol id="i-file" viewBox="0 0 24 24">
+    <path class="f" d="M6 3h8l5 5v12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/>
+    <path class="s" d="M6 3h8l5 5v12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/>
+    <path class="s" d="M14 3v5h5"/>
+    <path class="s" d="M8.5 13h7 M8.5 16.5h4.5"/>
+  </symbol>
+  <!-- Duplicates -->
+  <symbol id="i-dupes" viewBox="0 0 24 24">
+    <rect class="f" x="9" y="9" width="11.5" height="11.5" rx="2.5"/>
+    <rect class="s" x="9" y="9" width="11.5" height="11.5" rx="2.5"/>
+    <path class="s" d="M15 9V6a2.5 2.5 0 0 0-2.5-2.5h-6A2.5 2.5 0 0 0 4 6v6.5A2.5 2.5 0 0 0 6.5 15H9"/>
+    <path class="s" d="M12.5 14.8h4.5 M14.75 12.5v4.5"/>
+  </symbol>
+  <!-- History -->
+  <symbol id="i-history" viewBox="0 0 24 24">
+    <circle class="f" cx="12.5" cy="12" r="8"/>
+    <path class="s" d="M4.6 10.5A8 8 0 1 1 6.8 17.6"/>
+    <path class="s" d="M3.5 6.5v4h4"/>
+    <path class="s" d="M12.5 8v4.2l2.8 1.8"/>
+  </symbol>
+  <!-- Assistant: spark in bubble -->
+  <symbol id="i-assist" viewBox="0 0 24 24">
+    <path class="f" d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v8a2.5 2.5 0 0 1-2.5 2.5H10l-4.5 3.5V17A2.5 2.5 0 0 1 4 14.5z"/>
+    <path class="s" d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v8a2.5 2.5 0 0 1-2.5 2.5H10l-4.5 3.5V17A2.5 2.5 0 0 1 4 14.5z"/>
+    <path class="d" d="M12 6.8l1 2.6 2.6 1-2.6 1-1 2.6-1-2.6-2.6-1 2.6-1z"/>
+  </symbol>
+  <!-- space glyphs -->
+  <symbol id="i-user" viewBox="0 0 24 24">
+    <circle class="f" cx="12" cy="8" r="4"/>
+    <circle class="s" cx="12" cy="8" r="4"/>
+    <path class="s" d="M4.5 20.5c.8-3.8 3.8-5.8 7.5-5.8s6.7 2 7.5 5.8"/>
+  </symbol>
+  <symbol id="i-game" viewBox="0 0 24 24">
+    <path class="f" d="M7 8h10a4.5 4.5 0 0 1 4.4 5.4l-.7 3.3a2.4 2.4 0 0 1-4.2 1L15 16H9l-1.5 1.7a2.4 2.4 0 0 1-4.2-1l-.7-3.3A4.5 4.5 0 0 1 7 8z"/>
+    <path class="s" d="M7 8h10a4.5 4.5 0 0 1 4.4 5.4l-.7 3.3a2.4 2.4 0 0 1-4.2 1L15 16H9l-1.5 1.7a2.4 2.4 0 0 1-4.2-1l-.7-3.3A4.5 4.5 0 0 1 7 8z"/>
+    <path class="s" d="M8 10.8v3 M6.5 12.3h3"/>
+    <circle class="d" cx="15.8" cy="11.4" r="1"/><circle class="d" cx="17.6" cy="13.4" r="1"/>
+  </symbol>
+  <symbol id="i-down" viewBox="0 0 24 24">
+    <path class="f" d="M3.5 14h5l1.5 2.5h4l1.5-2.5h5v4.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/>
+    <path class="s" d="M3.5 14h5l1.5 2.5h4l1.5-2.5h5v4.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/>
+    <path class="s" d="M12 3.5v9 M8.5 9l3.5 3.5L15.5 9"/>
+  </symbol>
+  <symbol id="i-chip" viewBox="0 0 24 24">
+    <rect class="f" x="6.5" y="6.5" width="11" height="11" rx="2.5"/>
+    <rect class="s" x="6.5" y="6.5" width="11" height="11" rx="2.5"/>
+    <path class="s" d="M10 3.5v3 M14 3.5v3 M10 17.5v3 M14 17.5v3 M3.5 10h3 M3.5 14h3 M17.5 10h3 M17.5 14h3"/>
+    <rect class="d" x="10" y="10" width="4" height="4" rx="1"/>
+  </symbol>
+  <symbol id="i-more" viewBox="0 0 24 24">
+    <circle class="d" cx="6" cy="12" r="1.8"/><circle class="d" cx="12" cy="12" r="1.8"/><circle class="d" cx="18" cy="12" r="1.8"/>
+  </symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path class="s" d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path class="s" d="M5 12h13 M13 6.5l5.5 5.5-5.5 5.5"/></symbol>
+</svg>
+
+<div class="stage" id="stage">
+<div class="app">
+
+  <div class="titlebar">
+    <span class="light" style="background: #ff5f57"></span>
+    <span class="light" style="background: #febc2e"></span>
+    <span class="light" style="background: #28c840"></span>
+    <span class="kbd-hint"><span class="kbd">⌘K</span>search everything</span>
+  </div>
+
+  <div class="body">
+
+    <nav class="nav rise" aria-label="Sections">
+      <div class="brand">
+        <svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true">
+          <path d="M16 2c1.2 7.4 6.6 12.8 14 14-7.4 1.2-12.8 6.6-14 14-1.2-7.4-6.6-12.8-14-14C9.4 14.8 14.8 9.4 16 2z" fill="url(#g-brand)"/>
+          <circle cx="25" cy="7" r="2.4" fill="#ffb547"/>
+        </svg>
+        <span class="brand-name">glint</span>
+      </div>
+      <a href="#" class="on"><svg class="ic"><use href="#i-scan"/></svg>Smart Scan</a>
+      <a href="#"><svg class="ic"><use href="#i-broom"/></svg>Cleanup<span class="count" id="navCount">9.7 GB</span></a>
+      <a href="#"><svg class="ic"><use href="#i-shield"/></svg>Protection</a>
+      <a href="#"><svg class="ic"><use href="#i-gauge"/></svg>Speed</a>
+      <a href="#"><svg class="ic"><use href="#i-apps"/></svg>Applications</a>
+      <div class="nav-label">FILES</div>
+      <a href="#"><svg class="ic"><use href="#i-bubbles"/></svg>Space Map</a>
+      <a href="#"><svg class="ic"><use href="#i-file"/></svg>Large Files</a>
+      <a href="#"><svg class="ic"><use href="#i-dupes"/></svg>Duplicates</a>
+      <a href="#"><svg class="ic"><use href="#i-assist"/></svg>Assistant</a>
+      <div class="disk">
+        <div class="disk-row"><span>Disk C:</span><span>381 / 512 GB</span></div>
+        <div class="bar"><span class="used"></span><span class="junk" id="diskJunk"></span></div>
+        <div class="disk-note" id="diskNote">31.7 GB can be reclaimed</div>
+      </div>
+    </nav>
+
+    <main class="main">
+      <div class="top">
+
+        <section class="hero card-w rise" style="animation-delay: 0.08s" aria-label="Scan result">
+          <pre class="torus" id="torus" aria-hidden="true"></pre>
+          <div class="hero-in">
+            <span class="eyebrow"><span class="dot"></span><span id="eyebrow">SCAN COMPLETE · 14:32</span></span>
+            <h1 id="heroTitle">Ready to reclaim</h1>
+            <div class="big"><span id="bigNum">0.0</span> <small>GB</small></div>
+            <p>System junk, browser caches and forgotten downloads. Everything goes to Trash first — undo in one click.</p>
+            <div class="actions">
+              <button type="button" class="orb" id="orb">Clean</button>
+              <div class="act-text">
+                <a href="#">Review what gets removed <svg class="ic" style="width: 16px; height: 16px"><use href="#i-arrow"/></svg></a>
+                <span>1,284 files · ~20 s · ↵ to clean</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="map card-w rise" style="animation-delay: 0.16s" aria-label="Space map">
+          <div class="map-head"><b>Space map</b><a href="#">Open ›</a></div>
+          <div id="bubbles"></div>
+          <div class="map-foot"><i></i><span id="mapNote">Dashed ring — folders with stuff to clean</span></div>
+        </section>
+
+      </div>
+
+      <div class="cards">
+        <article class="holo c1 rise" style="animation-delay: 0.24s">
+          <div class="holo-top"><span class="glass-ico"><svg class="ic"><use href="#i-broom"/></svg></span><div><b>Cleanup</b><span>junk · cache · trash</span></div></div>
+          <div class="holo-num"><strong id="cleanNum">9.7</strong><em>GB</em></div>
+          <button type="button" class="pill" data-card="cleanup" data-done="Removed">Remove <svg class="ic"><use href="#i-arrow"/></svg></button>
+        </article>
+        <article class="holo c2 rise" style="animation-delay: 0.3s">
+          <div class="holo-top"><span class="glass-ico"><svg class="ic"><use href="#i-shield"/></svg></span><div><b>Protection</b><span>41,382 files</span></div></div>
+          <div class="holo-num"><strong>OK</strong><em>no threats</em></div>
+          <button type="button" class="pill" data-card="protect" data-done="All safe">Deep scan <svg class="ic"><use href="#i-arrow"/></svg></button>
+        </article>
+        <article class="holo c3 rise" style="animation-delay: 0.36s">
+          <div class="holo-top"><span class="glass-ico"><svg class="ic"><use href="#i-gauge"/></svg></span><div><b>Speed</b><span>login items</span></div></div>
+          <div class="holo-num"><strong>03</strong><em>heavy</em></div>
+          <button type="button" class="pill" data-card="speed" data-done="~12 s faster">Disable <svg class="ic"><use href="#i-arrow"/></svg></button>
+        </article>
+        <article class="holo c4 rise" style="animation-delay: 0.42s">
+          <div class="holo-top"><span class="glass-ico"><svg class="ic"><use href="#i-apps"/></svg></span><div><b>Apps</b><span>updates ready</span></div></div>
+          <div class="holo-num"><strong>04</strong><em>apps</em></div>
+          <button type="button" class="pill" data-card="apps" data-done="Up to date">Update <svg class="ic"><use href="#i-arrow"/></svg></button>
+        </article>
+      </div>
+    </main>
+
+  </div>
+</div>
+</div>
+
+<script>
+(function () {
+  // fit the 1280×800 window into the viewport
+  var stage = document.getElementById('stage');
+  function fit() {
+    var s = Math.min((window.innerWidth - 48) / 1280, (window.innerHeight - 48) / 800, 1);
+    stage.style.transform = 'translate(-50%, -50%) scale(' + Math.max(s, 0.3) + ')';
+  }
+  window.addEventListener('resize', fit);
+  fit();
+
+  var state = { cleaned: false, shown: 0, target: 31.7, boost: 0, a: 0.6, b: 0.2, tick: 0, seed: 1 };
+
+  // ASCII torus behind the hero number
+  function torus(A, B) {
+    var W = 70, H = 30, chars = '.,-~:;=!*#$@';
+    var out = new Array(W * H).fill(' '), zb = new Array(W * H).fill(0);
+    var cA = Math.cos(A), sA = Math.sin(A), cB = Math.cos(B), sB = Math.sin(B);
+    for (var j = 0; j < 6.283; j += 0.08) {
+      var ct = Math.cos(j), st = Math.sin(j);
+      for (var i = 0; i < 6.283; i += 0.025) {
+        var sp = Math.sin(i), cp = Math.cos(i), h = ct + 2;
+        var D = 1 / (sp * h * sA + st * cA + 5);
+        var t = sp * h * cA - st * sA;
+        var x = Math.floor(W / 2 + W * 0.36 * D * (cp * h * cB - t * sB));
+        var y = Math.floor(H / 2 + H * 0.62 * D * (cp * h * sB + t * cB));
+        var N = Math.floor(8 * ((st * sA - sp * ct * cA) * cB - sp * ct * sA - st * cA - cp * ct * sB));
+        var o = x + W * y;
+        if (y >= 0 && y < H && x >= 0 && x < W && D > zb[o]) { zb[o] = D; out[o] = chars.charAt(N > 0 ? N : 0); }
+      }
+    }
+    var lines = [];
+    for (var r = 0; r < H; r++) lines.push(out.slice(r * W, r * W + W).join(''));
+    return lines.join('\n');
+  }
+
+  // ASCII-shaded sphere for space-map bubbles
+  function sphere(size, seed) {
+    var chars = ' .:-=+tS%X#@', cw = 5.4, lh = 9;
+    var cols = Math.ceil(size / cw), rows = Math.ceil(size / lh);
+    var s = seed * 9301 + size * 49297;
+    function rnd() { s = (s * 9301 + 49297) % 233280; return s / 233280; }
+    var lines = [];
+    for (var r = 0; r < rows; r++) {
+      var line = '';
+      for (var c = 0; c < cols; c++) {
+        var nx = ((c + 0.5) * cw) / size * 2 - 1, ny = ((r + 0.5) * lh) / size * 2 - 1, d2 = nx * nx + ny * ny;
+        if (d2 > 1) { line += ' '; continue; }
+        var l = -0.45 * nx - 0.55 * ny + 0.7 * Math.sqrt(1 - d2);
+        l = Math.max(0, Math.min(1, l * 0.9 + (rnd() - 0.5) * 0.35));
+        line += chars.charAt(Math.floor(l * (chars.length - 1)));
+      }
+      lines.push(line);
+    }
+    return lines.join('\n');
+  }
+
+  var G = {
+    blue: 'linear-gradient(120deg, #2b4cff, #8a5cff)',
+    warm: 'linear-gradient(120deg, #ff5d8f, #ffb547)',
+    teal: 'linear-gradient(120deg, #1f8f84, #2b4cff)',
+    violet: 'linear-gradient(120deg, #8a5cff, #ff5d8f)',
+    grey: 'linear-gradient(120deg, #5b6270, #9aa0ab)'
+  };
+  var bubbles = [
+    { name: 'Users', size: '142 GB', x: 104, y: 84, d: 196, g: G.blue, icon: 'i-user' },
+    { name: 'Games', size: '96 GB', x: 296, y: 168, d: 132, g: G.teal, icon: 'i-game' },
+    { name: 'Apps', size: '58 GB', x: 36, y: 268, d: 112, g: G.violet, icon: 'i-apps' },
+    { name: 'Downloads', size: '18.7 GB', x: 168, y: 306, d: 100, g: G.warm, icon: 'i-down', hot: true },
+    { name: 'Windows', size: '31 GB', x: 290, y: 320, d: 88, g: G.grey, icon: 'i-chip' },
+    { name: '+12', size: '9 GB', x: 30, y: 120, d: 60, g: G.grey, icon: 'i-more', compact: true }
+  ];
+  var wrap = document.getElementById('bubbles');
+  bubbles.forEach(function (b) {
+    var el = document.createElement('div');
+    el.className = 'bubble' + (b.hot ? ' hot' : '');
+    var pre = document.createElement('pre');
+    pre.setAttribute('aria-hidden', 'true');
+    pre.style.backgroundImage = b.g;
+    var fill = document.createElement('div');
+    fill.className = 'fill';
+    fill.appendChild(pre);
+    el.appendChild(fill);
+    var chip = document.createElement('div');
+    chip.className = 'chip';
+    chip.innerHTML = b.compact
+      ? '<span class="t"><b>' + b.name + '</b><span>' + b.size + '</span></span>'
+      : '<span class="ico" style="background:' + b.g + '"><svg class="ic"><use href="#' + b.icon + '"/></svg></span><span class="t"><b>' + b.name + '</b><span class="sz">' + b.size + '</span></span>';
+    el.appendChild(chip);
+    wrap.appendChild(el);
+    b.el = el; b.pre = pre; b.sz = chip.querySelector('.sz');
+  });
+  function layoutBubbles() {
+    bubbles.forEach(function (b) {
+      var d = b.hot && state.cleaned ? 72 : b.d;
+      var off = (b.d - d) / 2;
+      b.el.style.left = (b.x + off) + 'px';
+      b.el.style.top = (b.y + off) + 'px';
+      b.el.style.width = d + 'px';
+      b.el.style.height = d + 'px';
+      b.el.classList.toggle('hot', !!b.hot && !state.cleaned);
+      if (b.hot && b.sz) b.sz.textContent = state.cleaned ? '0.4 GB' : b.size;
+    });
+  }
+  function paintBubbles() {
+    bubbles.forEach(function (b, i) { b.pre.textContent = sphere(b.hot && state.cleaned ? 72 : b.d, state.seed + i * 7); });
+  }
+  layoutBubbles();
+  paintBubbles();
+
+  var torusEl = document.getElementById('torus');
+  var bigNum = document.getElementById('bigNum');
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  setInterval(function () {
+    var s = reduce ? 0.2 : 1 + state.boost * 4;
+    if (state.boost > 0) state.boost = Math.max(0, state.boost - 0.03);
+    state.a += 0.05 * s; state.b += 0.025 * s; state.tick++;
+    torusEl.textContent = torus(state.a, state.b);
+    if (state.tick % 8 === 0) { state.seed++; paintBubbles(); }
+    var diff = state.target - state.shown;
+    if (Math.abs(diff) > 0.04) state.shown += diff * 0.12; else state.shown = state.target;
+    bigNum.textContent = state.shown.toFixed(1);
+  }, 70);
+
+  function setCleaned(on) {
+    state.cleaned = on;
+    state.target = on ? 0 : 31.7;
+    state.boost = 1;
+    document.getElementById('orb').textContent = on ? 'Rescan' : 'Clean';
+    document.getElementById('orb').classList.toggle('done', on);
+    document.getElementById('eyebrow').textContent = on ? 'ALL CLEAR · JUST NOW' : 'SCAN COMPLETE · 14:32';
+    document.getElementById('heroTitle').textContent = on ? 'Left to clean' : 'Ready to reclaim';
+    document.getElementById('diskJunk').style.width = on ? '0%' : '6%';
+    document.getElementById('diskNote').textContent = on ? 'You freed 31.7 GB' : '31.7 GB can be reclaimed';
+    document.getElementById('mapNote').textContent = on ? 'No folders left to clean' : 'Dashed ring — folders with stuff to clean';
+    document.getElementById('navCount').style.display = on ? 'none' : '';
+    document.getElementById('cleanNum').textContent = on ? '0' : '9.7';
+    var p = document.querySelector('[data-card="cleanup"]');
+    markPill(p, on);
+    layoutBubbles();
+    paintBubbles();
+  }
+  function markPill(p, done) {
+    if (!p.dataset.label) p.dataset.label = p.firstChild.textContent.trim();
+    p.classList.toggle('done', done);
+    p.innerHTML = done
+      ? '<svg class="ic"><use href="#i-check"/></svg>' + p.dataset.done
+      : p.dataset.label + ' <svg class="ic"><use href="#i-arrow"/></svg>';
+  }
+
+  document.getElementById('orb').addEventListener('click', function () { setCleaned(!state.cleaned); });
+  document.querySelectorAll('.pill').forEach(function (p) {
+    p.addEventListener('click', function () {
+      if (p.dataset.card === 'cleanup') { setCleaned(true); return; }
+      if (!p.classList.contains('done')) { state.boost = 1; markPill(p, true); }
+    });
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && document.activeElement === document.body && !state.cleaned) setCleaned(true);
+  });
+})();
+</script>
+</body>
+</html>
