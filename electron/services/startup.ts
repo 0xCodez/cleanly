@@ -7,6 +7,7 @@ import type { StartupItem } from '../../shared/types';
 
 interface RunResult {
   ok: boolean;
+  code: number | null;
   stdout: string;
   stderr: string;
 }
@@ -14,7 +15,8 @@ interface RunResult {
 function run(file: string, args: string[], timeout = 15000): Promise<RunResult> {
   return new Promise((resolve) => {
     execFile(file, args, { timeout, windowsHide: true, maxBuffer: 32 * 1024 * 1024 }, (err, stdout, stderr) => {
-      resolve({ ok: !err, stdout: String(stdout ?? ''), stderr: String(stderr ?? '') });
+      const code = err ? (typeof (err as { code?: unknown }).code === 'number' ? (err as { code: number }).code : null) : 0;
+      resolve({ ok: !err, code, stdout: String(stdout ?? ''), stderr: String(stderr ?? '') });
     });
   });
 }
@@ -253,17 +255,26 @@ function winArg(a: string): string {
 /** PowerShell single-quoted literal; PowerShell also treats typographic single quotes as quotes. */
 const psLiteral = (s: string) => `'${s.replace(/['\u2018\u2019\u201A\u201B]/g, '$&$&')}'`;
 
-/** Runs one program elevated (UAC prompt) and waits for it. False when the user declined or it failed. */
-async function runElevated(file: string, args: string[]): Promise<boolean> {
+const UAC_CANCELLED = 1223;
+
+/**
+ * Runs one program elevated (UAC prompt) and waits for it.
+ * Exit codes of elevated children are unreliable in Windows PowerShell 5.1, so callers verify the effect themselves;
+ * this only tells them whether the prompt was declined.
+ */
+async function runElevated(file: string, args: string[]): Promise<'done' | 'cancelled'> {
   const argLine = args.map(winArg).join(' ');
   const script = [
     "$ErrorActionPreference = 'Stop'",
-    `try { $p = Start-Process -FilePath ${psLiteral(file)} -ArgumentList ${psLiteral(argLine)} -Verb RunAs -Wait -WindowStyle Hidden -PassThru; exit $p.ExitCode }`,
-    'catch { exit 1223 }',
+    `try { $p = Start-Process -FilePath ${psLiteral(file)} -ArgumentList ${psLiteral(argLine)} -Verb RunAs -WindowStyle Hidden -PassThru } catch { exit ${UAC_CANCELLED} }`,
+    // keep the process handle before it exits, otherwise ExitCode and WaitForExit can lose track of it
+    '$null = $p.Handle',
+    '$p.WaitForExit()',
+    'exit 0',
   ].join('; ');
   const powershell = path.join(systemRoot(), 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
   const res = await run(powershell, ['-NoProfile', '-NonInteractive', '-Command', script], 180000);
-  return res.ok;
+  return res.code === UAC_CANCELLED ? 'cancelled' : 'done';
 }
 
 async function setWindows(id: string, enabled: boolean): Promise<void> {
@@ -273,16 +284,19 @@ async function setWindows(id: string, enabled: boolean): Promise<void> {
   // Same 12-byte value Task Manager writes; deleting it would also mean "enabled".
   const data = (enabled ? '02' : '03') + '0'.repeat(22);
   const args = ['add', target.approvedKey, '/v', target.valueName, '/t', 'REG_BINARY', '/d', data, '/f', ...REG_VIEW];
+  let outcome: 'done' | 'cancelled' = 'done';
   if (target.elevated) {
-    if (!(await runElevated(path.join(systemRoot(), 'System32', 'reg.exe'), args))) {
-      throw new Error('Windows did not allow the change');
-    }
+    outcome = await runElevated(path.join(systemRoot(), 'System32', 'reg.exe'), args);
   } else {
-    const res = await run(path.join(systemRoot(), 'System32', 'reg.exe'), args);
-    if (!res.ok) throw new Error('Windows did not allow the change');
+    await run(path.join(systemRoot(), 'System32', 'reg.exe'), args);
   }
+  // the registry is the source of truth: whatever the exit codes said, check what is actually stored now
   const now = (await approvedStates(target.approvedKey)).get(target.valueName.toLowerCase()) ?? true;
-  if (now !== enabled) throw new Error('Windows did not allow the change');
+  if (now === enabled) return;
+  if (outcome === 'cancelled') throw new Error('Permission was not given in the Windows prompt, so nothing changed');
+  throw new Error(target.elevated
+    ? 'Windows did not allow the change. Try again and choose Yes in the permission prompt.'
+    : 'Windows did not allow the change');
 }
 
 /* ---------- macOS ---------- */
