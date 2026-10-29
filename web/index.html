@@ -115,8 +115,6 @@ symbol .a { fill: var(--ac); stroke: none; }
 .big small { font-size: 0.42em; letter-spacing: -0.02em; font-weight: 500; }
 .hero p { margin: 18px 0 0; max-width: 360px; font-size: 15px; line-height: 1.6; color: var(--ink-2); }
 .actions { margin-top: auto; display: flex; align-items: center; gap: 24px; }
-.orb-wrap { position: relative; width: 132px; height: 132px; flex: none; }
-.orb-halos { position: absolute; inset: -26px; transition: transform 0.6s var(--ease); pointer-events: none; }
 .halo {
   position: absolute; inset: 0; border-radius: 50%;
   background: conic-gradient(from 0deg, var(--c1), var(--c2), var(--c3), var(--c1));
@@ -125,35 +123,38 @@ symbol .a { fill: var(--ac); stroke: none; }
   transition: opacity 0.8s var(--ease);
 }
 .halo.b { inset: 6px 0 0 8px; opacity: 0.7; filter: blur(14px); animation-direction: reverse; animation-duration: calc(var(--spin, 9s) * 1.6); }
-.orb-wrap .halo { --c1: #6d7bff; --c2: #b48cff; --c3: #ff9ccf; }
-.orb-wrap .halo.b { --c1: #7fd3ff; --c2: #6d7bff; --c3: #c4a8ff; }
-.orb-wrap.done .halo { --c1: #5fe0b0; --c2: #8fd8ff; --c3: #b7f5d8; }
-.orb-wrap.done .halo.b { --c1: #8fd8ff; --c2: #5fe0b0; --c3: #d6f7ff; }
-.orb-wrap:hover .orb-halos { transform: scale(1.08); }
-.orb {
-  position: absolute; inset: 8px; border-radius: 50%; overflow: hidden; cursor: pointer; padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.95);
-  background:
-    radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.35) 34%, rgba(255, 255, 255, 0) 58%),
-    radial-gradient(circle at 74% 80%, rgba(255, 140, 205, 0.45), rgba(255, 140, 205, 0) 55%),
-    linear-gradient(160deg, #f1f2ff 0%, #d2d0ff 58%, #b9bcff 100%);
-  backdrop-filter: blur(10px) saturate(160%);
-  box-shadow: inset 0 1px 2px #fff, inset -8px -12px 24px rgba(110, 100, 255, 0.25), 0 18px 40px rgba(110, 100, 255, 0.3);
-  color: #241f5c; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-  transition: transform 0.25s var(--ease), box-shadow 0.4s var(--ease);
+.cta {
+  position: relative; isolation: isolate; overflow: hidden; height: 56px; padding: 0 22px 0 8px; border: 0; border-radius: 999px;
+  display: inline-flex; align-items: center; gap: 12px; cursor: pointer; color: var(--ink);
+  background: rgba(190, 196, 225, 0.55);
+  box-shadow: 0 1px 2px rgba(15, 18, 24, 0.06), 0 10px 30px rgba(91, 95, 224, 0.16);
+  transition: transform 0.25s var(--ease), box-shadow 0.35s var(--ease);
 }
-.orb::before {
-  content: ''; position: absolute; inset: 14%; border-radius: 50%;
-  background: conic-gradient(from 90deg, rgba(120, 110, 255, 0.4), rgba(255, 140, 205, 0.35), rgba(120, 200, 255, 0.35), rgba(120, 110, 255, 0.4));
-  filter: blur(12px); animation: spin 7s linear infinite reverse; pointer-events: none;
+.cta::before {
+  content: ''; position: absolute; left: 50%; top: 50%; width: 320px; height: 320px; margin: -160px 0 0 -160px; z-index: -2;
+  background: conic-gradient(from 0deg, rgba(109, 123, 255, 0) 0deg, rgba(109, 123, 255, 0.95) 50deg, rgba(255, 140, 205, 0.95) 95deg, rgba(255, 140, 205, 0) 140deg, rgba(109, 123, 255, 0) 360deg);
+  animation: spin 4.5s linear infinite;
 }
-.orb::after { content: ''; position: absolute; left: 18%; top: 8%; width: 46%; height: 22%; border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0)); transform: rotate(-22deg); pointer-events: none; }
-.orb-wrap.done .orb { background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.35) 34%, rgba(255, 255, 255, 0) 58%), linear-gradient(160deg, #effff8 0%, #c9f3e2 60%, #b6e6ff 100%); color: #0f4a3a; box-shadow: inset 0 1px 2px #fff, inset -8px -12px 24px rgba(40, 180, 140, 0.22), 0 18px 40px rgba(40, 180, 140, 0.25); }
-.orb-wrap.done .orb::before { background: conic-gradient(from 90deg, rgba(95, 224, 176, 0.4), rgba(143, 216, 255, 0.35), rgba(95, 224, 176, 0.4)); }
-.orb:hover { box-shadow: inset 0 1px 2px #fff, inset -8px -12px 24px rgba(110, 100, 255, 0.3), 0 22px 50px rgba(110, 100, 255, 0.4); }
-.orb:active { transform: scale(0.96); }
-.orb b { position: relative; font-family: var(--display); font-size: 16px; font-weight: 500; letter-spacing: -0.02em; }
-.orb small { position: relative; font-family: var(--mono); font-size: 10.5px; opacity: 0.75; }
+.cta::after {
+  content: ''; position: absolute; inset: 1.5px; border-radius: 999px; z-index: -1;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(247, 247, 255, 0.88));
+  box-shadow: inset 0 1px 1px #fff, inset 0 -1px 2px rgba(91, 95, 224, 0.06);
+}
+.cta:hover { transform: translateY(-1px); box-shadow: 0 1px 2px rgba(15, 18, 24, 0.06), 0 16px 40px rgba(91, 95, 224, 0.24); }
+.cta:active { transform: scale(0.98); }
+.cta:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
+.cta-ico {
+  width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; flex: none;
+  background: radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 45%), linear-gradient(135deg, #6d7bff 0%, #a77bff 55%, #ff8fc8 100%);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.6), 0 4px 12px rgba(109, 123, 255, 0.35);
+  transition: background 0.6s var(--ease);
+}
+.cta-ico .ic { width: 19px; height: 19px; color: #fff; --fo: 0.3; --sw: 1.9; }
+.cta-t { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.2; }
+.cta-t b { font-family: var(--ui); font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+.cta-t small { font-family: var(--mono); font-size: 11px; color: var(--ink-3); }
+.cta.done::before { animation-play-state: paused; opacity: 0; }
+.cta.done .cta-ico { background: radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 45%), linear-gradient(135deg, #3fd6a0 0%, #5fc6ff 100%); box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.6), 0 4px 12px rgba(63, 214, 160, 0.35); }
 @keyframes spin { to { transform: rotate(360deg); } }
 .act-text { display: flex; flex-direction: column; gap: 8px; }
 .act-text a { font-size: 15px; font-weight: 550; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
@@ -258,7 +259,7 @@ symbol .a { fill: var(--ac); stroke: none; }
 /* entrance */
 .rise { animation: rise 0.8s var(--ease) both; }
 @keyframes rise { from { opacity: 0; transform: translateY(14px); filter: blur(6px); } to { opacity: 1; transform: none; filter: blur(0); } }
-@media (prefers-reduced-motion: reduce) { .rise, .bubble, .halo, .orb::before, .lc .glow, .ember, .slider .fill::after, .parts i, .lc .shine { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .rise, .bubble, .halo, .cta::before, .lc .glow, .ember, .slider .fill::after, .parts i, .lc .shine { animation: none; } }
 </style>
 </head>
 <body>
@@ -422,10 +423,7 @@ symbol .a { fill: var(--ac); stroke: none; }
             <div class="big"><span id="bigNum">0.0</span> <small>GB</small></div>
             <p>System junk, browser caches and forgotten downloads. Everything goes to Trash first — undo in one click.</p>
             <div class="actions">
-              <div class="orb-wrap" id="orbWrap">
-                <div class="orb-halos" aria-hidden="true"><span class="halo"></span><span class="halo b"></span></div>
-                <button type="button" class="orb" id="orb"><b id="orbLabel">Clean</b><small id="orbSub">31.7 GB</small></button>
-              </div>
+              <button type="button" class="cta" id="orb"><span class="cta-ico"><svg class="ic" aria-hidden="true"><use id="ctaIcon" href="#i-broom"/></svg></span><span class="cta-t"><b id="orbLabel">Clean</b><small id="orbSub">31.7 GB</small></span></button>
               <div class="act-text">
                 <a href="#">Review what gets removed <svg class="ic" style="width: 16px; height: 16px"><use href="#i-arrow"/></svg></a>
                 <span>1,284 files · ~20 s · ↵ to clean</span>
@@ -590,7 +588,8 @@ symbol .a { fill: var(--ac); stroke: none; }
     state.boost = 1;
     document.getElementById('orbLabel').textContent = on ? 'Rescan' : 'Clean';
     document.getElementById('orbSub').textContent = on ? 'all clear' : '31.7 GB';
-    document.getElementById('orbWrap').classList.toggle('done', on);
+    document.getElementById('orb').classList.toggle('done', on);
+    document.getElementById('ctaIcon').setAttribute('href', on ? '#i-check' : '#i-broom');
     document.getElementById('eyebrow').textContent = on ? 'ALL CLEAR · JUST NOW' : 'SCAN COMPLETE · 14:32';
     document.getElementById('heroTitle').textContent = on ? 'Left to clean' : 'Ready to reclaim';
     document.getElementById('diskJunk').style.width = on ? '0%' : '6%';
