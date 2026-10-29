@@ -115,14 +115,6 @@ symbol .a { fill: var(--ac); stroke: none; }
 .big small { font-size: 0.42em; letter-spacing: -0.02em; font-weight: 500; }
 .hero p { margin: 18px 0 0; max-width: 360px; font-size: 15px; line-height: 1.6; color: var(--ink-2); }
 .actions { margin-top: auto; display: flex; align-items: center; gap: 24px; }
-.halo {
-  position: absolute; inset: 0; border-radius: 50%;
-  background: conic-gradient(from 0deg, var(--c1), var(--c2), var(--c3), var(--c1));
-  -webkit-mask: radial-gradient(closest-side, transparent 52%, #000 66%, #000 84%, transparent 100%); mask: radial-gradient(closest-side, transparent 52%, #000 66%, #000 84%, transparent 100%);
-  filter: blur(9px); animation: spin var(--spin, 9s) linear infinite;
-  transition: opacity 0.8s var(--ease);
-}
-.halo.b { inset: 6px 0 0 8px; opacity: 0.7; filter: blur(14px); animation-direction: reverse; animation-duration: calc(var(--spin, 9s) * 1.6); }
 .cta {
   position: relative; isolation: isolate; overflow: hidden; height: 56px; padding: 0 22px 0 8px; border: 0; border-radius: 999px;
   display: inline-flex; align-items: center; gap: 12px; cursor: pointer; color: var(--ink);
@@ -170,29 +162,41 @@ symbol .a { fill: var(--ac); stroke: none; }
   animation: bob var(--dur, 6s) ease-in-out var(--delay, 0s) infinite;
   transition: width 1s var(--ease), height 1s var(--ease), left 1s var(--ease), top 1s var(--ease);
 }
-.bubble .halo { inset: -17%; --spin: 14s; filter: blur(10px); opacity: 0.55; -webkit-mask: radial-gradient(closest-side, transparent 58%, #000 72%, #000 86%, transparent 100%); mask: radial-gradient(closest-side, transparent 58%, #000 72%, #000 86%, transparent 100%); }
-.bubble .halo.b { inset: -12% -8% -20% -24%; filter: blur(16px); opacity: 0.4; }
-.bubble.hot .halo { --spin: 6s; }
-.bubble.hot .halo.b { animation: spin 9s linear infinite reverse, glowpulse 2.2s ease-in-out infinite; }
-@keyframes glowpulse { 0%, 100% { opacity: 0.35; } 50% { opacity: 0.85; } }
 .bubble .disc {
-  position: absolute; inset: 0; border-radius: 50%; overflow: hidden;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-align: center;
-  border: 1px solid rgba(255, 255, 255, 0.95);
-  background:
-    radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.4) 36%, rgba(255, 255, 255, 0) 62%),
-    radial-gradient(circle at 72% 80%, var(--tint2), rgba(255, 255, 255, 0) 60%),
-    linear-gradient(160deg, rgba(255, 255, 255, 0.62), var(--tint) 100%);
-  backdrop-filter: blur(10px) saturate(160%);
-  box-shadow: inset 0 1px 2px #fff, inset -6px -10px 22px var(--tint), 0 10px 28px var(--shadow);
+  position: absolute; inset: 0; border-radius: 50%; overflow: hidden; isolation: isolate;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-align: center;
+  background: rgba(190, 196, 225, 0.5);
+  box-shadow: 0 1px 2px rgba(15, 18, 24, 0.06), 0 14px 32px var(--shadow);
 }
-.bubble .ic { position: relative; width: var(--icon, 24px); height: var(--icon, 24px); color: var(--ink); --fo: 0.22; --sw: 1.6; --ac: var(--ink); }
-.bubble b { position: relative; font-size: 12.5px; font-weight: 600; letter-spacing: -0.01em; color: #1d1f2b; line-height: 1.1; }
-.bubble .disc span { position: relative; font-family: var(--mono); font-size: 10.5px; color: var(--ink-3); }
+.bubble .disc::before {
+  content: ''; position: absolute; left: 50%; top: 50%; width: 150%; height: 150%; margin: -75% 0 0 -75%; z-index: -2;
+  background: conic-gradient(from 0deg, transparent 0deg, var(--c1) 50deg, var(--c2) 95deg, transparent 140deg, transparent 360deg);
+  opacity: 0.7; animation: spin var(--spin, 12s) linear infinite;
+}
+.bubble .disc::after {
+  content: ''; position: absolute; inset: 1.5px; border-radius: 50%; z-index: -1;
+  background: radial-gradient(circle at 30% 18%, #ffffff 0%, rgba(255, 255, 255, 0.96) 40%, rgba(247, 247, 255, 0.9) 100%);
+  box-shadow: inset 0 1px 1px #fff, inset 0 -6px 16px var(--inner);
+}
+.bubble .b-ico {
+  width: var(--chip); height: var(--chip); border-radius: 50%; display: grid; place-items: center; flex: none; margin-bottom: 2px;
+  background: radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 45%), linear-gradient(135deg, var(--c1), var(--c2));
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.6), 0 4px 12px var(--shadow);
+}
+.bubble .b-ico .ic { width: 55%; height: 55%; color: #fff; --fo: 0.3; --sw: 2; --ac: #fff; }
+.bubble b { font-size: 12.5px; font-weight: 600; letter-spacing: -0.01em; color: var(--ink); line-height: 1.1; }
+.bubble .disc span.sz { font-family: var(--mono); font-size: 10.5px; color: var(--ink-3); }
 .bubble.small b { font-size: 12px; }
-@keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+.bubble.hot .disc::before { opacity: 1; animation-duration: 4.5s; }
+.bubble .badge {
+  position: absolute; right: -4px; top: 2px; z-index: 2; height: 22px; padding: 0 8px; border-radius: 999px;
+  display: none; align-items: center; font-family: var(--mono); font-size: 10.5px; font-weight: 500; color: #fff;
+  background: linear-gradient(135deg, #ffb347, #ff7aa8); box-shadow: 0 4px 12px rgba(255, 122, 168, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.5);
+}
+.bubble.hot .badge { display: inline-flex; }
+@keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 .map-foot { position: absolute; left: 24px; right: 24px; bottom: 18px; display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-3); }
-.map-foot i { width: 14px; height: 14px; border-radius: 50%; background: conic-gradient(#ffb347, #ff7aa8, #ffd36e, #ffb347); -webkit-mask: radial-gradient(closest-side, transparent 45%, #000 60%); mask: radial-gradient(closest-side, transparent 45%, #000 60%); filter: blur(0.6px); }
+.map-foot i { width: 18px; height: 10px; border-radius: 999px; background: linear-gradient(135deg, #ffb347, #ff7aa8); box-shadow: 0 2px 6px rgba(255, 122, 168, 0.35); }
 
 /* live cards */
 .cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; flex: 1; }
@@ -259,7 +263,7 @@ symbol .a { fill: var(--ac); stroke: none; }
 /* entrance */
 .rise { animation: rise 0.8s var(--ease) both; }
 @keyframes rise { from { opacity: 0; transform: translateY(14px); filter: blur(6px); } to { opacity: 1; transform: none; filter: blur(0); } }
-@media (prefers-reduced-motion: reduce) { .rise, .bubble, .halo, .cta::before, .lc .glow, .ember, .slider .fill::after, .parts i, .lc .shine { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .rise, .bubble, .bubble .disc::before, .cta::before, .lc .glow, .ember, .slider .fill::after, .parts i, .lc .shine { animation: none; } }
 </style>
 </head>
 <body>
@@ -435,7 +439,7 @@ symbol .a { fill: var(--ac); stroke: none; }
         <section class="map card-w rise" style="animation-delay: 0.16s" aria-label="Space map">
           <div class="map-head"><b>Space map</b><a href="#">Open ›</a></div>
           <div id="bubbles"></div>
-          <div class="map-foot"><i></i><span id="mapNote">Warm halo — folders with stuff to clean</span></div>
+          <div class="map-foot"><i></i><span id="mapNote">Badge — folders with stuff to clean</span></div>
         </section>
 
       </div>
@@ -527,30 +531,29 @@ symbol .a { fill: var(--ac); stroke: none; }
   }
 
   var bubbles = [
-    { name: 'Users', size: '142 GB', x: 104, y: 84, d: 196, icon: 'i-user', t: '120, 110, 255', t2: '255, 150, 210', h: ['#6d7bff', '#b48cff', '#ff9ccf'], ink: '#4b3fd6' },
-    { name: 'Games', size: '96 GB', x: 296, y: 168, d: 132, icon: 'i-game', t: '80, 160, 255', t2: '120, 230, 255', h: ['#4f9bff', '#7fd3ff', '#8a7bff'], ink: '#1f62c8' },
-    { name: 'Apps', size: '58 GB', x: 36, y: 268, d: 112, icon: 'i-apps', t: '160, 110, 255', t2: '255, 140, 205', h: ['#a77bff', '#ff9ccf', '#7f8bff'], ink: '#6a3bd6' },
-    { name: 'Downloads', size: '18.7 GB', x: 168, y: 306, d: 100, icon: 'i-down', t: '255, 170, 90', t2: '255, 130, 170', h: ['#ffb347', '#ff7aa8', '#ffd36e'], ink: '#c2610f', hot: true },
-    { name: 'Windows', size: '31 GB', x: 290, y: 320, d: 88, icon: 'i-chip', t: '160, 165, 210', t2: '200, 190, 255', h: ['#a9b0d8', '#c9b8ff', '#9fc4ff'], ink: '#575079' },
-    { name: '+12', size: '9 GB', x: 30, y: 120, d: 60, t: '170, 170, 200', t2: '210, 200, 255', h: ['#b8bce0', '#d6c8ff', '#b8d4ff'], ink: '#575079', small: true }
+    { name: 'Users', size: '142 GB', x: 104, y: 84, d: 196, icon: 'i-user', c1: '#6d7bff', c2: '#a77bff', sh: '109, 123, 255' },
+    { name: 'Games', size: '96 GB', x: 296, y: 168, d: 132, icon: 'i-game', c1: '#4f9bff', c2: '#7fd3ff', sh: '79, 155, 255' },
+    { name: 'Apps', size: '58 GB', x: 36, y: 268, d: 112, icon: 'i-apps', c1: '#a77bff', c2: '#ff8fc8', sh: '167, 123, 255' },
+    { name: 'Downloads', size: '18.7 GB', x: 168, y: 306, d: 100, icon: 'i-down', c1: '#ffb347', c2: '#ff7aa8', sh: '255, 150, 120', hot: '−18.7' },
+    { name: 'Windows', size: '31 GB', x: 290, y: 320, d: 88, icon: 'i-chip', c1: '#8e95b8', c2: '#b8a8ff', sh: '120, 125, 170' },
+    { name: '+12', size: '9 GB', x: 30, y: 120, d: 60, c1: '#aab0cc', c2: '#c9bdff', sh: '140, 145, 180', small: true }
   ];
   var wrap = document.getElementById('bubbles');
   bubbles.forEach(function (b, i) {
     var el = document.createElement('div');
     el.className = 'bubble' + (b.small ? ' small' : '');
-    el.style.setProperty('--tint', 'rgba(' + b.t + ', 0.42)');
-    el.style.setProperty('--tint2', 'rgba(' + b.t2 + ', 0.4)');
-    el.style.setProperty('--shadow', 'rgba(' + b.t + ', 0.22)');
-    el.style.setProperty('--c1', b.h[0]);
-    el.style.setProperty('--c2', b.h[1]);
-    el.style.setProperty('--c3', b.h[2]);
-    el.style.setProperty('--ink', b.ink);
-    el.style.setProperty('--icon', Math.round(Math.max(18, Math.min(32, b.d * 0.15))) + 'px');
+    el.style.setProperty('--c1', b.c1);
+    el.style.setProperty('--c2', b.c2);
+    el.style.setProperty('--shadow', 'rgba(' + b.sh + ', 0.2)');
+    el.style.setProperty('--inner', 'rgba(' + b.sh + ', 0.08)');
+    el.style.setProperty('--chip', Math.round(Math.max(26, Math.min(44, b.d * 0.24))) + 'px');
+    el.style.setProperty('--spin', (11 + (i % 3) * 2.5) + 's');
     el.style.setProperty('--dur', (5.5 + (i % 3) * 0.8) + 's');
     el.style.setProperty('--delay', (-i * 0.7) + 's');
-    el.innerHTML = '<span class="halo" aria-hidden="true"></span><span class="halo b" aria-hidden="true"></span>' +
-      '<div class="disc">' + (b.icon ? '<svg class="ic" aria-hidden="true"><use href="#' + b.icon + '"/></svg>' : '') +
-      '<b>' + b.name + '</b><span class="sz">' + b.size + '</span></div>';
+    el.innerHTML = '<div class="disc">' +
+      (b.icon ? '<span class="b-ico"><svg class="ic" aria-hidden="true"><use href="#' + b.icon + '"/></svg></span>' : '') +
+      '<b>' + b.name + '</b><span class="sz">' + b.size + '</span></div>' +
+      (b.hot ? '<span class="badge">' + b.hot + '</span>' : '');
     wrap.appendChild(el);
     b.el = el; b.sz = el.querySelector('.sz');
   });
@@ -589,12 +592,13 @@ symbol .a { fill: var(--ac); stroke: none; }
     document.getElementById('orbLabel').textContent = on ? 'Rescan' : 'Clean';
     document.getElementById('orbSub').textContent = on ? 'all clear' : '31.7 GB';
     document.getElementById('orb').classList.toggle('done', on);
+    document.querySelector('.map-foot i').style.visibility = on ? 'hidden' : '';
     document.getElementById('ctaIcon').setAttribute('href', on ? '#i-check' : '#i-broom');
     document.getElementById('eyebrow').textContent = on ? 'ALL CLEAR · JUST NOW' : 'SCAN COMPLETE · 14:32';
     document.getElementById('heroTitle').textContent = on ? 'Left to clean' : 'Ready to reclaim';
     document.getElementById('diskJunk').style.width = on ? '0%' : '6%';
     document.getElementById('diskNote').textContent = on ? 'You freed 31.7 GB' : '31.7 GB can be reclaimed';
-    document.getElementById('mapNote').textContent = on ? 'No folders left to clean' : 'Warm halo — folders with stuff to clean';
+    document.getElementById('mapNote').textContent = on ? 'No folders left to clean' : 'Badge — folders with stuff to clean';
     document.getElementById('navCount').style.display = on ? 'none' : '';
     document.getElementById('cleanNum').textContent = on ? '0' : '9.7';
     document.getElementById('cleanSub').textContent = on ? 'Caches & trash removed' : 'Caches · temp files · trash';
