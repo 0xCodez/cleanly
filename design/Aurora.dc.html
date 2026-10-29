@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Glint · Aurora</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Manrope',system-ui,sans-serif;background:#0d0524}
+a{color:#7fe9ff}a:hover{color:#c4f6ff}
+button{font-family:inherit}
+</style>
+</helmet>
+<div style="width: 1280px; height: 800px; position: relative; overflow: hidden; color: #ffffff; font-family: 'Manrope', system-ui, sans-serif; background: radial-gradient(circle at 78% 18%, rgba(255, 79, 216, 0.42), rgba(255, 79, 216, 0) 42%), radial-gradient(circle at 18% 92%, rgba(94, 231, 255, 0.22), rgba(94, 231, 255, 0) 40%), linear-gradient(135deg, #1b0b4a 0%, #2b0d5e 45%, #120634 100%)">
+
+<div style="height: 48px; display: flex; align-items: center; gap: 8px; padding: 0 20px; box-sizing: border-box">
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f57"></span>
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #febc2e"></span>
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #28c840"></span>
+<div style="flex: 1; text-align: center; font-size: 14px; font-weight: 600; color: rgba(255, 255, 255, 0.78); letter-spacing: 0.02em">Glint</div>
+<span style="width: 52px"></span>
+</div>
+
+<div style="display: flex; height: 752px">
+
+<nav aria-label="Разделы" style="width: 236px; padding: 8px 14px 20px; box-sizing: border-box; display: flex; flex-direction: column; gap: 4px">
+<sc-for list="{{nav}}" as="item" hint-placeholder-count="9">
+<a href="#" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 14px; border-radius: 14px; text-decoration: none; font-size: 14px; font-weight: 600; color: {{item.color}}; background: {{item.bg}}; border: {{item.border}}">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{item.d}}"></path></svg>
+<span>{{item.label}}</span>
+</a>
+</sc-for>
+<div style="flex: 1"></div>
+<div style="padding: 16px; border-radius: 18px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12); display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 600"><span>Диск C:</span><span style="color: rgba(255, 255, 255, 0.72)">381 из 512 ГБ</span></div>
+<div style="height: 6px; border-radius: 3px; background: rgba(255, 255, 255, 0.12); overflow: hidden; display: flex">
+<span style="width: 68%; background: linear-gradient(90deg, #7fe9ff, #ff4fd8)"></span>
+<span style="width: 6%; background: #ffd36e"></span>
+</div>
+<div style="font-size: 12px; color: rgba(255, 255, 255, 0.7)">31,7 ГБ можно вернуть</div>
+</div>
+</nav>
+
+<main style="flex: 1; min-width: 0; padding: 12px 32px 28px 12px; box-sizing: border-box; display: flex; flex-direction: column; gap: 20px">
+
+<div style="display: flex; gap: 20px; height: 470px">
+
+<section style="flex: 1; min-width: 0; border-radius: 28px; padding: 36px 40px; box-sizing: border-box; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.14); display: flex; flex-direction: column">
+<div style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #7fe9ff; letter-spacing: 0.04em; text-transform: uppercase">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg>
+Проверка завершена · 14:32
+</div>
+<h1 style="margin: 18px 0 0; font-size: 22px; font-weight: 600; color: rgba(255, 255, 255, 0.8)">Можно освободить</h1>
+<div style="font-size: 88px; line-height: 1; font-weight: 800; letter-spacing: -0.03em; margin-top: 8px; background: linear-gradient(90deg, #ffffff 0%, #ffb3f0 60%, #ff4fd8 100%); -webkit-background-clip: text; background-clip: text; color: transparent">31,7 ГБ</div>
+<p style="margin: 18px 0 0; max-width: 420px; font-size: 15px; line-height: 1.6; color: rgba(255, 255, 255, 0.74)">Мусор системы, кэш браузеров и забытые загрузки. Всё удалённое сначала попадает в корзину — вернуть можно в один клик.</p>
+<div style="flex: 1"></div>
+<div style="display: flex; align-items: center; gap: 28px">
+<button type="button" style="width: 116px; height: 116px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.55); background: radial-gradient(circle at 35% 30%, #ff9cea, #e01fb8 60%, #9b0f8a); color: #ffffff; font-size: 17px; font-weight: 700; cursor: pointer; box-shadow: 0 0 0 10px rgba(255, 79, 216, 0.14), 0 18px 48px rgba(255, 79, 216, 0.55)">Очистить</button>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<a href="#" style="font-size: 15px; font-weight: 700; text-decoration: none">Посмотреть, что удалим ›</a>
+<span style="font-size: 13px; color: rgba(255, 255, 255, 0.68)">1 284 файла · займёт ~20 секунд</span>
+</div>
+</div>
+</section>
+
+<section aria-label="Карта диска" style="width: 440px; border-radius: 28px; box-sizing: border-box; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.12); position: relative">
+<div style="position: absolute; left: 28px; top: 24px; right: 28px; display: flex; justify-content: space-between; align-items: center">
+<span style="font-size: 15px; font-weight: 700">Карта диска</span>
+<a href="#" style="font-size: 13px; font-weight: 600; text-decoration: none">Открыть ›</a>
+</div>
+<div style="position: absolute; left: 104px; top: 92px; width: 196px; height: 196px; border-radius: 50%; background: radial-gradient(circle at 35% 25%, rgba(255, 140, 230, 0.55), rgba(140, 30, 160, 0.35) 70%); border: 2px solid rgba(255, 160, 235, 0.7); box-shadow: 0 0 40px rgba(255, 79, 216, 0.35); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px">
+<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h6l2 2h10v11H3z"></path></svg>
+<span style="font-size: 15px; font-weight: 700">Пользователи</span>
+<span style="font-size: 13px; color: rgba(255, 255, 255, 0.8)">142 ГБ</span>
+</div>
+<div style="position: absolute; left: 286px; top: 168px; width: 132px; height: 132px; border-radius: 50%; background: radial-gradient(circle at 35% 25%, rgba(127, 233, 255, 0.45), rgba(40, 60, 160, 0.35) 70%); border: 2px solid rgba(127, 233, 255, 0.6); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px">
+<span style="font-size: 14px; font-weight: 700">Игры</span>
+<span style="font-size: 12px; color: rgba(255, 255, 255, 0.8)">96 ГБ</span>
+</div>
+<div style="position: absolute; left: 36px; top: 268px; width: 112px; height: 112px; border-radius: 50%; background: radial-gradient(circle at 35% 25%, rgba(190, 150, 255, 0.45), rgba(80, 40, 170, 0.35) 70%); border: 2px solid rgba(190, 150, 255, 0.6); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px">
+<span style="font-size: 14px; font-weight: 700">Программы</span>
+<span style="font-size: 12px; color: rgba(255, 255, 255, 0.8)">58 ГБ</span>
+</div>
+<div style="position: absolute; left: 168px; top: 306px; width: 100px; height: 100px; border-radius: 50%; background: radial-gradient(circle at 35% 25%, rgba(255, 211, 110, 0.5), rgba(170, 90, 40, 0.35) 70%); border: 2px solid rgba(255, 211, 110, 0.75); box-shadow: 0 0 0 6px rgba(255, 211, 110, 0.14); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px">
+<span style="font-size: 13px; font-weight: 700">Загрузки</span>
+<span style="font-size: 12px; color: rgba(255, 255, 255, 0.85)">18,7 ГБ</span>
+</div>
+<div style="position: absolute; left: 290px; top: 320px; width: 88px; height: 88px; border-radius: 50%; background: radial-gradient(circle at 35% 25%, rgba(255, 255, 255, 0.28), rgba(120, 60, 170, 0.3) 70%); border: 2px solid rgba(255, 255, 255, 0.4); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px">
+<span style="font-size: 13px; font-weight: 700">Windows</span>
+<span style="font-size: 12px; color: rgba(255, 255, 255, 0.8)">31 ГБ</span>
+</div>
+<div style="position: absolute; left: 58px; top: 140px; width: 60px; height: 60px; border-radius: 50%; background: rgba(255, 255, 255, 0.1); border: 2px solid rgba(255, 255, 255, 0.3); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700">+12</div>
+<div style="position: absolute; left: 28px; right: 28px; bottom: 22px; font-size: 12px; color: rgba(255, 255, 255, 0.68)">Жёлтый контур — папки, где мы нашли, что почистить</div>
+</section>
+
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; flex: 1">
+<article style="border-radius: 22px; padding: 20px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12); display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; align-items: center; justify-content: space-between">
+<span style="width: 38px; height: 38px; border-radius: 12px; background: linear-gradient(135deg, #ff4fd8, #9b30ff); display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18 M8 6V4h8v2 M6 6l1 14h10l1-14 M10 10v6 M14 10v6"></path></svg></span>
+<span style="font-size: 12px; font-weight: 700; color: #ffd36e">9,7 ГБ</span>
+</div>
+<div style="font-size: 16px; font-weight: 700; margin-top: 8px">Очистка</div>
+<div style="font-size: 13px; color: rgba(255, 255, 255, 0.7)">Мусор, кэш, корзина</div>
+</article>
+<article style="border-radius: 22px; padding: 20px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12); display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; align-items: center; justify-content: space-between">
+<span style="width: 38px; height: 38px; border-radius: 12px; background: linear-gradient(135deg, #3ee0a1, #1a8f8a); display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z M9 12l2 2 4-4"></path></svg></span>
+<span style="font-size: 12px; font-weight: 700; color: #7ff0c4">Всё ок</span>
+</div>
+<div style="font-size: 16px; font-weight: 700; margin-top: 8px">Защита</div>
+<div style="font-size: 13px; color: rgba(255, 255, 255, 0.7)">Угроз не найдено</div>
+</article>
+<article style="border-radius: 22px; padding: 20px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12); display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; align-items: center; justify-content: space-between">
+<span style="width: 38px; height: 38px; border-radius: 12px; background: linear-gradient(135deg, #ffb347, #ff5e62); display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7z"></path></svg></span>
+<span style="font-size: 12px; font-weight: 700; color: #ffd36e">9 программ</span>
+</div>
+<div style="font-size: 16px; font-weight: 700; margin-top: 8px">Ускорение</div>
+<div style="font-size: 13px; color: rgba(255, 255, 255, 0.7)">Лишнее в автозагрузке</div>
+</article>
+<article style="border-radius: 22px; padding: 20px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12); display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; align-items: center; justify-content: space-between">
+<span style="width: 38px; height: 38px; border-radius: 12px; background: linear-gradient(135deg, #7fe9ff, #3a6bff); display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h6v6H4z M14 4h6v6h-6z M4 14h6v6H4z M14 14h6v6h-6z"></path></svg></span>
+<span style="font-size: 12px; font-weight: 700; color: #ffd36e">4 обновления</span>
+</div>
+<div style="font-size: 16px; font-weight: 700; margin-top: 8px">Приложения</div>
+<div style="font-size: 13px; color: rgba(255, 255, 255, 0.7)">2 не открывались 6 мес.</div>
+</article>
+</div>
+
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var items = [
+      { label: 'Умная проверка', d: 'M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z M19 15l.8 2.2 2.2.8-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z' },
+      { label: 'Очистка', d: 'M3 6h18 M8 6V4h8v2 M6 6l1 14h10l1-14 M10 10v6 M14 10v6' },
+      { label: 'Защита', d: 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z M9 12l2 2 4-4' },
+      { label: 'Ускорение', d: 'M13 2L4 14h7l-1 8 9-12h-7z' },
+      { label: 'Приложения', d: 'M4 4h6v6H4z M14 4h6v6h-6z M4 14h6v6H4z M14 14h6v6h-6z' },
+      { label: 'Карта диска', d: 'M12 3a9 9 0 1 0 9 9h-9z M14 3.3A9 9 0 0 1 20.7 10H14z' },
+      { label: 'Большие файлы', d: 'M6 2h8l4 4v16H6z M14 2v4h4' },
+      { label: 'Дубликаты', d: 'M8 8h12v12H8z M16 8V4H4v12h4' },
+      { label: 'История', d: 'M12 7v5l3 3 M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z' }
+    ];
+    return {
+      nav: items.map(function (it, i) {
+        var on = i === 0;
+        return {
+          label: it.label,
+          d: it.d,
+          color: on ? '#ffffff' : 'rgba(255, 255, 255, 0.72)',
+          bg: on ? 'rgba(255, 255, 255, 0.12)' : 'transparent',
+          border: on ? '1px solid rgba(255, 255, 255, 0.18)' : '1px solid transparent'
+        };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>
