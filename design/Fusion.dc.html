@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Glint · Fusion</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&amp;family=Geist+Mono:wght@400;500&amp;family=Doto:wght@700;900&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Geist',system-ui,sans-serif;background:#eef0f3}
+a{color:#2b4cff}a:hover{color:#1a2fb0}
+button{font-family:inherit}
+</style>
+</helmet>
+<div style="width: 1280px; height: 800px; position: relative; overflow: hidden; color: #111317; font-family: 'Geist', system-ui, sans-serif; background-color: #f1f2f5; background-image: linear-gradient(#e4e6eb 1px, transparent 1px), linear-gradient(90deg, #e4e6eb 1px, transparent 1px); background-size: 22px 22px">
+
+<div style="height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 20px; box-sizing: border-box">
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f57"></span>
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #febc2e"></span>
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #28c840"></span>
+<div style="flex: 1"></div>
+<span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #5a606b">⌘K · search everything</span>
+</div>
+
+<div style="display: flex; height: 756px">
+
+<nav aria-label="Sections" style="width: 236px; padding: 4px 14px 24px; box-sizing: border-box; display: flex; flex-direction: column; gap: 2px">
+<div style="display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 14px; margin-bottom: 10px">
+<span style="font-family: 'Doto', monospace; font-size: 28px; font-weight: 900; line-height: 1; color: #2b4cff">*</span>
+<span style="font-size: 22px; font-weight: 500; letter-spacing: -0.03em">glint</span>
+</div>
+<sc-for list="{{nav}}" as="item" hint-placeholder-count="9">
+<a href="#" style="display: flex; align-items: center; gap: 12px; height: 42px; padding: 0 14px; border-radius: 12px; text-decoration: none; font-size: 14px; font-weight: {{item.weight}}; color: {{item.color}}; background: {{item.bg}}; box-shadow: {{item.shadow}}">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{item.d}}"></path></svg>
+<span>{{item.label}}</span>
+</a>
+</sc-for>
+<div style="flex: 1"></div>
+<div style="padding: 16px; border-radius: 18px; background: rgba(255, 255, 255, 0.8); border: 1px solid #e1e3e8; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 500"><span>Disk C:</span><span style="font-family: 'Geist Mono', monospace; color: #5a606b">381 / 512 GB</span></div>
+<div style="height: 6px; border-radius: 3px; background: #e8eaee; overflow: hidden; display: flex">
+<span style="width: 68%; background: linear-gradient(90deg, #2b4cff, #8a5cff)"></span>
+<span style="width: {{diskJunk}}; background: #ff6a8b"></span>
+</div>
+<div style="font-size: 12px; color: #5a606b">{{diskNote}}</div>
+</div>
+</nav>
+
+<main style="flex: 1; min-width: 0; padding: 4px 28px 24px 8px; box-sizing: border-box; display: flex; flex-direction: column; gap: 18px">
+
+<div style="display: flex; gap: 18px; height: 462px">
+
+<section aria-label="Scan result" style="flex: 1; min-width: 0; position: relative; overflow: hidden; border-radius: 28px; padding: 34px 38px; box-sizing: border-box; background: rgba(255, 255, 255, 0.82); border: 1px solid #e1e3e8; box-shadow: 0 24px 60px rgba(17, 19, 23, 0.06); display: flex; flex-direction: column">
+<pre aria-hidden="true" style="position: absolute; right: -36px; top: 40px; margin: 0; font-family: 'Geist Mono', monospace; font-size: 9px; line-height: 9px; white-space: pre; background: linear-gradient(100deg, #2b4cff 0%, #8a5cff 35%, #ff6a8b 70%, #ffb547 100%); -webkit-background-clip: text; background-clip: text; color: transparent; opacity: 0.6">{{ascii}}</pre>
+<div style="position: relative; display: flex; flex-direction: column; flex: 1">
+<span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #2b4cff; letter-spacing: 0.06em">{{eyebrow}}</span>
+<h1 style="margin: 18px 0 0; font-size: 34px; font-weight: 300; letter-spacing: -0.04em; color: #2a2e36">{{heroTitle}}</h1>
+<div style="font-family: 'Doto', monospace; font-size: 104px; font-weight: 900; line-height: 1; margin-top: 10px; letter-spacing: 0.02em; background: linear-gradient(100deg, #111317 0%, #2b4cff 45%, #8a5cff 70%, #ff6a8b 100%); -webkit-background-clip: text; background-clip: text; color: transparent">{{heroBig}}</div>
+<p style="margin: 16px 0 0; max-width: 380px; font-size: 15px; line-height: 1.6; color: #4b515c">System junk, browser caches and forgotten downloads. Everything goes to Trash first — undo in one click.</p>
+<div style="flex: 1"></div>
+<div style="display: flex; align-items: center; gap: 26px">
+<button type="button" onClick="{{fixAll}}" style="width: 112px; height: 112px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.7); background: radial-gradient(circle at 25% 20%, #ffc6ec 0%, rgba(255, 198, 236, 0) 40%), radial-gradient(circle at 80% 85%, #ffd36e 0%, rgba(255, 211, 110, 0) 40%), radial-gradient(circle at 60% 50%, #2b4cff 0%, #5a3cff 50%, #8a5cff 100%); color: #ffffff; font-size: 17px; font-weight: 600; cursor: pointer; box-shadow: 0 0 0 10px rgba(43, 76, 255, 0.08), 0 20px 44px rgba(90, 60, 255, 0.4)">{{ctaText}}</button>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<a href="#" style="font-size: 15px; font-weight: 500; text-decoration: none">Review what gets removed ›</a>
+<span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #5a606b">1,284 files · ~20 s · ↵ to clean</span>
+</div>
+</div>
+</div>
+</section>
+
+<section aria-label="Space map" style="width: 440px; flex: none; border-radius: 28px; box-sizing: border-box; background: rgba(255, 255, 255, 0.6); border: 1px solid #e1e3e8; position: relative; overflow: hidden">
+<div style="position: absolute; left: 26px; top: 22px; right: 26px; display: flex; justify-content: space-between; align-items: center">
+<span style="font-size: 15px; font-weight: 600">Space map</span>
+<a href="#" style="font-size: 13px; font-weight: 500; text-decoration: none">Open ›</a>
+</div>
+<sc-for list="{{bubbles}}" as="b" hint-placeholder-count="6">
+<div style="position: absolute; left: {{b.left}}; top: {{b.top}}; width: {{b.size}}; height: {{b.size}}; border-radius: 50%; overflow: hidden; background: #ffffff; border: {{b.border}}; box-shadow: {{b.ring}}">
+<pre aria-hidden="true" style="position: absolute; left: 0; top: 0; margin: 0; font-family: 'Geist Mono', monospace; font-size: 9px; line-height: 9px; white-space: pre; background: {{b.grad}}; -webkit-background-clip: text; background-clip: text; color: transparent">{{b.fill}}</pre>
+<div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center">
+<span style="padding: 5px 10px; border-radius: 10px; background: rgba(255, 255, 255, 0.9); box-shadow: 0 2px 8px rgba(17, 19, 23, 0.08); display: flex; flex-direction: column; align-items: center">
+<span style="font-size: 13px; font-weight: 600">{{b.name}}</span>
+<span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #4b515c">{{b.sizeText}}</span>
+</span>
+</div>
+</div>
+</sc-for>
+<div style="position: absolute; left: 26px; right: 26px; bottom: 20px; display: flex; align-items: center; gap: 8px; font-size: 12px; color: #5a606b"><span style="width: 12px; height: 12px; border-radius: 50%; border: 2px dashed #ff6a8b; box-sizing: border-box"></span>{{mapNote}}</div>
+</section>
+
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; flex: 1">
+<sc-for list="{{cards}}" as="card" hint-placeholder-count="4">
+<article style="border-radius: 24px; padding: 18px 20px; box-sizing: border-box; color: #ffffff; position: relative; overflow: hidden; display: flex; flex-direction: column; background: {{card.bg}}; box-shadow: 0 20px 44px rgba(40, 50, 120, 0.18)">
+<div style="display: flex; justify-content: space-between; align-items: baseline">
+<span style="font-size: 16px; font-weight: 600">{{card.title}}</span>
+<span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: rgba(255, 255, 255, 0.86)">{{card.sub}}</span>
+</div>
+<span style="flex: 1; display: flex; align-items: center; gap: 8px">
+<span style="font-family: 'Doto', monospace; font-size: 50px; font-weight: 900; line-height: 1; letter-spacing: 0.04em">{{card.big}}</span>
+<span style="font-family: 'Geist Mono', monospace; font-size: 12px; align-self: flex-end; margin-bottom: 30px">{{card.unit}}</span>
+</span>
+<sc-if value="{{card.todo}}" hint-placeholder-val="{{true}}">
+<button type="button" onClick="{{card.act}}" style="align-self: flex-start; height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.45); background: rgba(255, 255, 255, 0.2); color: #ffffff; font-size: 13px; font-weight: 500; cursor: pointer">{{card.cta}} →</button>
+</sc-if>
+<sc-if value="{{card.done}}" hint-placeholder-val="{{false}}">
+<span style="align-self: flex-start; height: 36px; padding: 0 14px; border-radius: 999px; background: #ffffff; color: #111317; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 6px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg>{{card.doneText}}</span>
+</sc-if>
+</article>
+</sc-for>
+</div>
+
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800},"spin":{"editor":"range","default":1,"min":0,"max":3,"step":0.1,"section":"Motion"}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.a = 0.6;
+    this.b = 0.2;
+    this.boost = 0;
+    this.tick = 0;
+    this.state = { done: {}, ascii: this.torus(0.6, 0.2), seed: 1 };
+  }
+  torus(A, B) {
+    var W = 70, H = 30, chars = '.,-~:;=!*#$@';
+    var out = [], zb = [];
+    for (var k = 0; k < W * H; k++) { out.push(' '); zb.push(0); }
+    var cA = Math.cos(A), sA = Math.sin(A), cB = Math.cos(B), sB = Math.sin(B);
+    for (var j = 0; j < 6.283; j += 0.08) {
+      var ct = Math.cos(j), st = Math.sin(j);
+      for (var i = 0; i < 6.283; i += 0.025) {
+        var sp = Math.sin(i), cp = Math.cos(i);
+        var h = ct + 2;
+        var D = 1 / (sp * h * sA + st * cA + 5);
+        var t = sp * h * cA - st * sA;
+        var x = Math.floor(W / 2 + W * 0.36 * D * (cp * h * cB - t * sB));
+        var y = Math.floor(H / 2 + H * 0.62 * D * (cp * h * sB + t * cB));
+        var N = Math.floor(8 * ((st * sA - sp * ct * cA) * cB - sp * ct * sA - st * cA - cp * ct * sB));
+        var o = x + W * y;
+        if (y >= 0 && y < H && x >= 0 && x < W && D > zb[o]) {
+          zb[o] = D;
+          out[o] = chars.charAt(N > 0 ? N : 0);
+        }
+      }
+    }
+    var lines = [];
+    for (var r = 0; r < H; r++) { lines.push(out.slice(r * W, r * W + W).join('')); }
+    return lines.join('\n');
+  }
+  sphere(size, seed) {
+    var chars = ' .:-=+tS%X#@';
+    var cw = 5.4, lh = 9;
+    var cols = Math.ceil(size / cw), rows = Math.ceil(size / lh);
+    var s = seed * 9301 + size * 49297;
+    var rnd = function () { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+    var lines = [];
+    for (var r = 0; r < rows; r++) {
+      var line = '';
+      for (var c = 0; c < cols; c++) {
+        var nx = ((c + 0.5) * cw) / size * 2 - 1;
+        var ny = ((r + 0.5) * lh) / size * 2 - 1;
+        var d2 = nx * nx + ny * ny;
+        if (d2 > 1) { line += ' '; continue; }
+        var nz = Math.sqrt(1 - d2);
+        var l = -0.45 * nx - 0.55 * ny + 0.7 * nz;
+        l = Math.max(0, Math.min(1, l * 0.9 + (rnd() - 0.5) * 0.35));
+        line += chars.charAt(Math.floor(l * (chars.length - 1)));
+      }
+      lines.push(line);
+    }
+    return lines.join('\n');
+  }
+  componentDidMount() {
+    var self = this;
+    this.timer = setInterval(function () {
+      var s = (self.props.spin == null ? 1 : self.props.spin) * (1 + self.boost * 4);
+      if (self.boost > 0) { self.boost = Math.max(0, self.boost - 0.03); }
+      self.a += 0.05 * s;
+      self.b += 0.025 * s;
+      self.tick += 1;
+      var next = { ascii: self.torus(self.a, self.b) };
+      if (self.tick % 8 === 0) { next.seed = self.state.seed + 1; }
+      self.setState(next);
+    }, 70);
+  }
+  componentWillUnmount() {
+    clearInterval(this.timer);
+  }
+  renderVals() {
+    var self = this;
+    var done = this.state.done;
+    var seed = this.state.seed;
+    var mark = function (ids) {
+      var next = Object.assign({}, self.state.done);
+      ids.forEach(function (id) { next[id] = true; });
+      self.boost = 1;
+      self.setState({ done: next });
+    };
+    var cleaned = !!done.cleanup;
+    var reclaim = cleaned ? 0 : 31.7;
+    var blue = 'linear-gradient(120deg, #2b4cff, #8a5cff)';
+    var warm = 'linear-gradient(120deg, #ff6a8b, #ffb547)';
+    var teal = 'linear-gradient(120deg, #1f8f84, #2b4cff)';
+    var violet = 'linear-gradient(120deg, #8a5cff, #ff6a8b)';
+    var grey = 'linear-gradient(120deg, #5a606b, #9aa0ab)';
+    var bubbleData = [
+      { name: 'Users', sizeText: '142 GB', left: 104, top: 84, size: 196, grad: blue },
+      { name: 'Games', sizeText: '96 GB', left: 296, top: 168, size: 132, grad: teal },
+      { name: 'Apps', sizeText: '58 GB', left: 36, top: 268, size: 112, grad: violet },
+      { name: 'Downloads', sizeText: cleaned ? '0.4 GB' : '18.7 GB', left: 168, top: 306, size: cleaned ? 72 : 100, grad: warm, hot: !cleaned },
+      { name: 'Windows', sizeText: '31 GB', left: 290, top: 320, size: 88, grad: grey },
+      { name: '+12', sizeText: '9 GB', left: 30, top: 120, size: 60, grad: grey }
+    ];
+    var cardData = [
+      { id: 'cleanup', title: 'Cleanup', sub: 'junk · cache · trash', big: '9.7', unit: 'GB', cta: 'Remove', doneText: 'Removed', bg: 'radial-gradient(circle at 18% 12%, #c9b8ff 0%, rgba(201, 184, 255, 0) 38%), radial-gradient(circle at 85% 90%, #ffd36e 0%, rgba(255, 211, 110, 0) 40%), radial-gradient(circle at 70% 45%, #2b4cff 0%, #3a2fd6 45%, #6a4bff 100%)' },
+      { id: 'protect', title: 'Protection', sub: '41,382 files', big: 'OK', unit: '', cta: 'Deep scan', doneText: 'No threats', bg: 'radial-gradient(circle at 80% 15%, #7fe3c4 0%, rgba(127, 227, 196, 0) 40%), linear-gradient(160deg, #0f4a44 0%, #1f8f84 55%, #2b4cff 100%)' },
+      { id: 'speed', title: 'Speed', sub: 'login items', big: '03', unit: 'heavy', cta: 'Disable', doneText: '~12 s faster', bg: 'radial-gradient(circle at 20% 10%, #1f6f62 0%, rgba(31, 111, 98, 0) 45%), radial-gradient(circle at 80% 100%, #ff8a3d 0%, rgba(255, 138, 61, 0) 50%), linear-gradient(170deg, #0f3d3a 0%, #5a1236 60%, #c2452d 100%)' },
+      { id: 'apps', title: 'Apps', sub: 'updates ready', big: '04', unit: 'apps', cta: 'Update', doneText: 'Up to date', bg: 'radial-gradient(circle at 85% 15%, #ffc6ec 0%, rgba(255, 198, 236, 0) 40%), radial-gradient(circle at 15% 85%, #7fe3ff 0%, rgba(127, 227, 255, 0) 45%), linear-gradient(160deg, #8a5cff 0%, #c2449b 55%, #3a6bff 100%)' }
+    ];
+    var items = [
+      { label: 'Smart Scan', d: 'M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z M19 15l.8 2.2 2.2.8-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z' },
+      { label: 'Cleanup', d: 'M3 6h18 M8 6V4h8v2 M6 6l1 14h10l1-14 M10 10v6 M14 10v6' },
+      { label: 'Protection', d: 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z M9 12l2 2 4-4' },
+      { label: 'Speed', d: 'M13 2L4 14h7l-1 8 9-12h-7z' },
+      { label: 'Apps', d: 'M4 4h6v6H4z M14 4h6v6h-6z M4 14h6v6H4z M14 14h6v6h-6z' },
+      { label: 'Space Map', d: 'M12 3a9 9 0 1 0 9 9h-9z M14 3.3A9 9 0 0 1 20.7 10H14z' },
+      { label: 'Large Files', d: 'M6 2h8l4 4v16H6z M14 2v4h4' },
+      { label: 'Duplicates', d: 'M8 8h12v12H8z M16 8V4H4v12h4' },
+      { label: 'History', d: 'M12 7v5l3 3 M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z' }
+    ];
+    return {
+      ascii: this.state.ascii,
+      eyebrow: cleaned ? 'ALL CLEAR · JUST NOW' : 'SCAN COMPLETE · 14:32',
+      heroTitle: cleaned ? 'You freed up' : 'Ready to reclaim',
+      heroBig: cleaned ? '31.7 GB' : reclaim.toFixed(1) + ' GB',
+      ctaText: cleaned ? 'Rescan' : 'Clean',
+      fixAll: function () { mark(['cleanup']); },
+      diskJunk: cleaned ? '0%' : '6%',
+      diskNote: cleaned ? 'Nothing left to reclaim' : '31.7 GB can be reclaimed',
+      mapNote: cleaned ? 'No folders left to clean' : 'Dashed ring — folders with stuff to clean',
+      nav: items.map(function (it, i) {
+        var on = i === 0;
+        return {
+          label: it.label, d: it.d,
+          weight: on ? '600' : '500',
+          color: on ? '#111317' : '#4b515c',
+          bg: on ? '#ffffff' : 'transparent',
+          shadow: on ? '0 1px 2px rgba(17, 19, 23, 0.08), 0 6px 18px rgba(17, 19, 23, 0.06)' : 'none'
+        };
+      }),
+      bubbles: bubbleData.map(function (b, i) {
+        return {
+          name: b.name, sizeText: b.sizeText, grad: b.grad,
+          left: b.left + 'px', top: b.top + 'px', size: b.size + 'px',
+          border: b.hot ? '2px dashed #ff6a8b' : '1px solid #e1e3e8',
+          ring: b.hot ? '0 0 0 6px rgba(255, 106, 139, 0.12)' : 'none',
+          fill: self.sphere(b.size, seed + i * 7)
+        };
+      }),
+      cards: cardData.map(function (c) {
+        var isDone = !!done[c.id];
+        return {
+          title: c.title, sub: c.sub, big: isDone && c.id === 'cleanup' ? '0' : c.big, unit: c.unit,
+          cta: c.cta, doneText: c.doneText, bg: c.bg,
+          done: isDone, todo: !isDone,
+          act: function () { mark([c.id]); }
+        };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>
