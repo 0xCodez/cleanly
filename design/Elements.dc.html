@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Glint · Elements</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&amp;family=Instrument+Serif:ital@0;1&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Instrument Sans',system-ui,sans-serif;background:#060608}
+a{color:#ffffff}a:hover{color:#ffd9c2}
+button{font-family:inherit}
+@keyframes gl-flicker{0%{transform:translateY(0) scale(1,1);opacity:.85}50%{transform:translateY(-10px) scale(.9,1.14);opacity:1}100%{transform:translateY(-3px) scale(1.06,.94);opacity:.8}}
+@keyframes gl-spin{to{transform:rotate(360deg)}}
+@keyframes gl-spin-rev{to{transform:rotate(-360deg)}}
+@keyframes gl-pulse{0%,100%{transform:scale(1);opacity:.9}50%{transform:scale(1.07);opacity:1}}
+@keyframes gl-rise{0%{transform:translateY(0);opacity:0}15%{opacity:1}100%{transform:translateY(-160px);opacity:0}}
+@keyframes gl-breathe{0%,100%{opacity:.45}50%{opacity:.75}}
+</style>
+</helmet>
+<div style="width: 1280px; height: 800px; position: relative; overflow: hidden; color: #ffffff; font-family: 'Instrument Sans', system-ui, sans-serif; background: radial-gradient(ellipse at 50% 120%, #1a1014 0%, #060608 60%)">
+
+<div aria-hidden="true" style="position: absolute; left: 190px; top: 120px; width: 900px; height: 620px; border-radius: 50%; background: radial-gradient(closest-side, {{glow}}, rgba(0, 0, 0, 0)); animation: gl-breathe 4s ease-in-out infinite"></div>
+<div aria-hidden="true" style="position: absolute; left: 290px; top: 612px; width: 700px; height: 90px; border-radius: 50%; background: radial-gradient(closest-side, {{glow}}, rgba(0, 0, 0, 0)); filter: blur(8px)"></div>
+
+<header style="position: absolute; left: 32px; right: 32px; top: 24px; height: 48px; display: flex; align-items: center; gap: 14px">
+<span style="font-family: 'Instrument Serif', serif; font-style: italic; font-size: 36px; line-height: 1; letter-spacing: -0.01em">glint</span>
+<span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #8d8d9a; letter-spacing: 0.12em; margin-top: 8px">FOR WINDOWS &amp; MACOS</span>
+<div style="flex: 1"></div>
+<button type="button" style="height: 44px; padding: 0 18px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.16); background: rgba(255, 255, 255, 0.06); backdrop-filter: blur(20px); color: #ffffff; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 8px; cursor: pointer; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"></path></svg>Ask Claude</button>
+<button type="button" aria-label="Settings" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.16); background: rgba(255, 255, 255, 0.06); color: #c9c9d6; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10 M18 7h2 M4 17h4 M12 17h8 M16 5v4 M10 15v4"></path></svg></button>
+</header>
+
+<section aria-label="Active element" style="position: absolute; left: 0; right: 0; top: 96px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center">
+<span style="font-family: 'Geist Mono', monospace; font-size: 12px; letter-spacing: 0.22em; color: {{tint}}">{{label}}</span>
+<h1 style="margin: 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 72px; line-height: 1; letter-spacing: -0.02em">{{titleA}} <span style="font-style: italic; color: {{tint}}">{{titleB}}</span></h1>
+<p style="margin: 4px 0 0; font-size: 16px; color: #b4b4c2; max-width: 520px">{{sub}}</p>
+</section>
+
+<div style="position: absolute; left: 0; right: 0; top: 296px; height: 320px; display: flex; align-items: center; justify-content: center; gap: 48px">
+<sc-for list="{{els}}" as="el" hint-placeholder-count="4">
+<div style="position: relative; width: {{el.w}}; height: {{el.h}}; opacity: {{el.opacity}}">
+
+<sc-if value="{{el.ember}}" hint-placeholder-val="{{false}}">
+<div aria-hidden="true" style="position: absolute; left: -40px; right: -40px; top: -96px; height: 210px; display: flex; align-items: flex-end; justify-content: center">
+<span style="width: 90px; height: 150px; margin-right: -40px; border-radius: 50% 50% 45% 45% / 62% 62% 38% 38%; background: radial-gradient(circle at 50% 78%, #fff1b0 0%, #ffb340 24%, #ff4a1c 52%, rgba(255, 40, 20, 0) 74%); filter: blur(5px); mix-blend-mode: screen; transform-origin: 50% 100%; animation: gl-flicker 0.9s ease-in-out infinite alternate"></span>
+<span style="width: 120px; height: 200px; border-radius: 50% 50% 45% 45% / 62% 62% 38% 38%; background: radial-gradient(circle at 50% 78%, #fff6c8 0%, #ffc04a 22%, #ff5a1c 50%, rgba(255, 40, 20, 0) 74%); filter: blur(5px); mix-blend-mode: screen; transform-origin: 50% 100%; animation: gl-flicker 1.1s ease-in-out -0.4s infinite alternate"></span>
+<span style="width: 84px; height: 140px; margin-left: -40px; border-radius: 50% 50% 45% 45% / 62% 62% 38% 38%; background: radial-gradient(circle at 50% 78%, #fff1b0 0%, #ff9a3a 24%, #ff3b3b 52%, rgba(255, 40, 20, 0) 74%); filter: blur(5px); mix-blend-mode: screen; transform-origin: 50% 100%; animation: gl-flicker 0.8s ease-in-out -0.2s infinite alternate"></span>
+</div>
+<span aria-hidden="true" style="position: absolute; left: 30%; top: -20px; width: 4px; height: 4px; border-radius: 50%; background: #ffc04a; box-shadow: 0 0 8px #ff7a2b; animation: gl-rise 2.2s linear infinite"></span>
+<span aria-hidden="true" style="position: absolute; left: 62%; top: -10px; width: 3px; height: 3px; border-radius: 50%; background: #ffd36e; box-shadow: 0 0 8px #ff7a2b; animation: gl-rise 2.8s linear -1s infinite"></span>
+<span aria-hidden="true" style="position: absolute; left: 80%; top: 10px; width: 3px; height: 3px; border-radius: 50%; background: #ffb340; box-shadow: 0 0 8px #ff7a2b; animation: gl-rise 2.4s linear -1.6s infinite"></span>
+<span aria-hidden="true" style="position: absolute; left: 14%; top: 20px; width: 3px; height: 3px; border-radius: 50%; background: #ffd36e; box-shadow: 0 0 8px #ff7a2b; animation: gl-rise 3s linear -0.5s infinite"></span>
+</sc-if>
+
+<sc-if value="{{el.breeze}}" hint-placeholder-val="{{false}}">
+<span aria-hidden="true" style="position: absolute; left: 50%; top: 50%; width: 300px; height: 380px; margin: -190px 0 0 -150px; border-radius: 50%; border: 2px solid rgba(92, 242, 192, 0.6); border-left-color: rgba(92, 242, 192, 0); border-bottom-color: rgba(92, 242, 192, 0); box-shadow: 0 0 22px rgba(92, 242, 192, 0.25); animation: gl-spin 3.2s linear infinite"></span>
+<span aria-hidden="true" style="position: absolute; left: 50%; top: 50%; width: 340px; height: 340px; margin: -170px 0 0 -170px; border-radius: 50%; border: 1.5px dashed rgba(92, 242, 192, 0.45); border-right-color: rgba(92, 242, 192, 0); animation: gl-spin-rev 6s linear infinite"></span>
+<span aria-hidden="true" style="position: absolute; left: 50%; top: 50%; width: 260px; height: 400px; margin: -200px 0 0 -130px; border-radius: 50%; border: 1px solid rgba(182, 255, 230, 0.5); border-top-color: rgba(182, 255, 230, 0); animation: gl-spin 4.6s linear infinite"></span>
+</sc-if>
+
+<sc-if value="{{el.bloom}}" hint-placeholder-val="{{false}}">
+<div aria-hidden="true" style="position: absolute; left: 50%; top: 58%; width: 0; height: 0; animation: gl-pulse 3s ease-in-out infinite">
+<sc-for list="{{el.petals}}" as="p" hint-placeholder-count="7">
+<span style="position: absolute; left: -46px; top: -210px; width: 92px; height: 210px; border-radius: 50% 50% 50% 50% / 72% 72% 28% 28%; background: linear-gradient(0deg, rgba(255, 92, 200, 0) 10%, rgba(255, 150, 225, 0.85) 80%, rgba(255, 220, 245, 0.95) 100%); box-shadow: 0 0 30px rgba(255, 92, 200, 0.45); transform-origin: 46px 210px; transform: {{p.t}}"></span>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{el.solar}}" hint-placeholder-val="{{false}}">
+<span aria-hidden="true" style="position: absolute; left: 50%; top: 50%; width: 560px; height: 560px; margin: -280px 0 0 -280px; border-radius: 50%; background: repeating-conic-gradient(rgba(255, 214, 120, 0.6) 0deg 1.4deg, rgba(255, 214, 120, 0) 1.4deg 8deg); -webkit-mask-image: radial-gradient(circle, #000000 22%, rgba(0, 0, 0, 0) 66%); mask-image: radial-gradient(circle, #000000 22%, rgba(0, 0, 0, 0) 66%); animation: gl-spin 40s linear infinite"></span>
+<span aria-hidden="true" style="position: absolute; left: 50%; top: 50%; width: 300px; height: 380px; margin: -190px 0 0 -150px; border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 220, 130, 0.65), rgba(255, 180, 60, 0)); animation: gl-pulse 2.4s ease-in-out infinite"></span>
+</sc-if>
+
+<button type="button" onClick="{{el.pick}}" aria-label="{{el.name}}" aria-pressed="{{el.pressed}}" style="position: absolute; inset: 0; border-radius: 999px; border: 1px solid {{el.border}}; background: {{el.bg}}; box-shadow: {{el.shadow}}; color: #ffffff; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 0; overflow: hidden">
+<span aria-hidden="true" style="position: absolute; left: 1px; right: 1px; top: 1px; height: 46%; border-radius: 999px 999px 40% 40%; background: linear-gradient(180deg, rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0))"></span>
+<span style="position: absolute; top: 20px; font-family: 'Geist Mono', monospace; font-size: 10px; letter-spacing: 0.2em; opacity: 0.7">{{el.num}}</span>
+<svg width="{{el.icon}}" height="{{el.icon}}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="position: relative"><path d="{{el.d}}"></path></svg>
+<span style="position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px">
+<span style="font-size: 17px; font-weight: 600">{{el.name}}</span>
+<span style="font-family: 'Geist Mono', monospace; font-size: 9px; letter-spacing: 0.2em; opacity: 0.75">{{el.caps}}</span>
+</span>
+</button>
+</div>
+</sc-for>
+</div>
+
+<span style="position: absolute; left: 0; right: 0; top: 628px; text-align: center; font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.14em; color: #7d7d8c">← → SWITCH ELEMENT · ↵ RUN</span>
+
+<section aria-label="Details" style="position: absolute; left: 220px; width: 840px; top: 664px; height: 104px; border-radius: 32px; box-sizing: border-box; padding: 0 16px 0 36px; display: flex; align-items: center; gap: 36px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.14); backdrop-filter: blur(24px) saturate(160%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 20px 50px rgba(0, 0, 0, 0.4)">
+<sc-for list="{{stats}}" as="s" hint-placeholder-count="3">
+<div style="display: flex; flex-direction: column; gap: 4px; min-width: 96px">
+<span style="font-size: 13px; color: #a4a4b4">{{s.k}}</span>
+<span style="font-size: 24px; font-weight: 600; letter-spacing: -0.02em; color: {{tint}}">{{s.v}}</span>
+</div>
+</sc-for>
+<div style="flex: 1"></div>
+<a href="#" style="font-size: 14px; font-weight: 500; text-decoration: none; color: #d4d4e0">Ask AI why ›</a>
+<button type="button" onClick="{{run}}" style="height: 72px; padding: 0 30px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.4); background: {{ctaBg}}; color: #ffffff; font-size: 17px; font-weight: 600; cursor: pointer; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 0 40px {{glow}}">{{cta}}</button>
+</section>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { active: 'ember', done: {} };
+  }
+  renderVals() {
+    var self = this;
+    var data = [
+      { id: 'ember', name: 'Ember', caps: 'FIRE · CLEANUP', d: 'M12 3c1 3 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5 0 2 1 3 2 3 0-3-1-5 1-8.5z',
+        label: 'ELEMENT 01 · CLEANUP', titleA: 'Burn the', titleB: 'junk.', sub: '9.7 GB of caches, temp files and trash. Everything goes to Trash first.',
+        stats: [{ k: 'Found', v: '9.7 GB' }, { k: 'Files', v: '1,284' }, { k: 'Safe', v: '100%' }], cta: 'Ignite cleanup', doneCta: 'Burned ✓',
+        tint: '#ffa36b', glow: 'rgba(255, 80, 40, 0.5)', active: 'linear-gradient(165deg, #ffb36b 0%, #ff4f7a 48%, #8a2be2 100%)', idle: 'linear-gradient(180deg, #121216 30%, #3d0d14 100%)' },
+      { id: 'breeze', name: 'Breeze', caps: 'AIR · SPEED', d: 'M3 9h11a3 3 0 1 0-3-3 M3 15h15a3 3 0 1 1-3 3 M3 12h8',
+        label: 'ELEMENT 02 · SPEED', titleA: 'Let it', titleB: 'breathe.', sub: '3 heavy apps launch at boot. Turn them off for a ~12 s faster start.',
+        stats: [{ k: 'At startup', v: '9 apps' }, { k: 'Heavy', v: '3' }, { k: 'Boot time', v: '−12 s' }], cta: 'Clear the air', doneCta: 'Breathing ✓',
+        tint: '#6ff5c6', glow: 'rgba(40, 220, 160, 0.42)', active: 'linear-gradient(165deg, #b6ffe6 0%, #2fd39a 48%, #0f5f5a 100%)', idle: 'linear-gradient(180deg, #121216 30%, #0b3322 100%)' },
+      { id: 'bloom', name: 'Bloom', caps: 'EARTH · SPACE', d: 'M12 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4z M12 10c-1.5-3-1.5-5 0-7 1.5 2 1.5 4 0 7z M12 14c1.5 3 1.5 5 0 7-1.5-2-1.5-4 0-7z M10 12c-3 1.5-5 1.5-7 0 2-1.5 4-1.5 7 0z M14 12c3-1.5 5-1.5 7 0-2 1.5-4 1.5-7 0z',
+        label: 'ELEMENT 03 · SPACE', titleA: 'Make', titleB: 'room.', sub: '18.7 GB of downloads untouched for 90+ days. Keep only what blooms.',
+        stats: [{ k: 'Old files', v: '412' }, { k: 'Size', v: '18.7 GB' }, { k: 'Oldest', v: '2 yrs' }], cta: 'Start declutter', doneCta: 'Room made ✓',
+        tint: '#ff9ade', glow: 'rgba(255, 60, 190, 0.45)', active: 'linear-gradient(165deg, #ffd1f0 0%, #ff5cc8 48%, #7a1fa8 100%)', idle: 'linear-gradient(180deg, #121216 30%, #380c2c 100%)' },
+      { id: 'solar', name: 'Solar', caps: 'SUN · SHIELD', d: 'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z M12 2v2 M12 20v2 M4.9 4.9l1.4 1.4 M17.7 17.7l1.4 1.4 M2 12h2 M20 12h2 M4.9 19.1l1.4-1.4 M17.7 6.3l1.4-1.4',
+        label: 'ELEMENT 04 · SHIELD', titleA: 'Stay', titleB: 'bright.', sub: 'No threats found. 41,382 files checked, privacy traces cleared weekly.',
+        stats: [{ k: 'Threats', v: '0' }, { k: 'Checked', v: '41,382' }, { k: 'Score', v: '97' }], cta: 'Run deep scan', doneCta: 'All bright ✓',
+        tint: '#ffd36e', glow: 'rgba(255, 190, 60, 0.45)', active: 'linear-gradient(165deg, #fff3c4 0%, #ffc845 48%, #c0581b 100%)', idle: 'linear-gradient(180deg, #121216 30%, #3a2a0c 100%)' }
+    ];
+    var cur = data[0];
+    data.forEach(function (e) { if (e.id === self.state.active) { cur = e; } });
+    var isDone = !!this.state.done[cur.id];
+    return {
+      label: cur.label, titleA: cur.titleA, titleB: cur.titleB, sub: cur.sub, stats: cur.stats,
+      tint: cur.tint, glow: cur.glow, ctaBg: cur.active,
+      cta: isDone ? cur.doneCta : cur.cta,
+      run: function () {
+        var next = Object.assign({}, self.state.done);
+        next[cur.id] = true;
+        self.setState({ done: next });
+      },
+
+      els: data.map(function (e, i) {
+        var on = e.id === cur.id;
+        return {
+          name: e.name, caps: e.caps, d: e.d, num: '0' + (i + 1),
+          petals: [-96, -64, -32, 0, 32, 64, 96].map(function (a) { return { t: "rotate(" + a + "deg)" }; }),
+          w: on ? '196px' : '150px', h: on ? '300px' : '232px', icon: on ? '48' : '38',
+          opacity: on ? '1' : '0.72',
+          bg: on ? e.active : e.idle,
+          border: on ? 'rgba(255, 255, 255, 0.55)' : 'rgba(255, 255, 255, 0.12)',
+          shadow: on ? 'inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 0 60px ' + e.glow : 'inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+          pressed: on ? 'true' : 'false',
+          ember: on && e.id === 'ember', breeze: on && e.id === 'breeze', bloom: on && e.id === 'bloom', solar: on && e.id === 'solar',
+          pick: function () { self.setState({ active: e.id }); }
+        };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

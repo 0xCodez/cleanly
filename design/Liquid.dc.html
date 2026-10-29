@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Glint · Liquid</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..800&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Inter',system-ui,sans-serif;background:#e8ebf4}
+a{color:#1f4fe0}a:hover{color:#123496}
+button,input{font-family:inherit}
+@keyframes lq-drift{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(60px,-40px) scale(1.08)}66%{transform:translate(-40px,30px) scale(.95)}}
+@keyframes lq-glow{0%,100%{transform:translate(-20px,0) scale(1);opacity:.85}50%{transform:translate(30px,10px) scale(1.15);opacity:1}}
+@keyframes lq-float{0%,100%{transform:translate(0,0);opacity:.35}50%{transform:translate(8px,-14px);opacity:.95}}
+@keyframes lq-sheen{0%{transform:translateX(-120%)}100%{transform:translateX(320%)}}
+</style>
+</helmet>
+<div style="width: 1280px; height: 800px; position: relative; overflow: hidden; color: #0e1220; font-family: 'Inter', system-ui, sans-serif; background: #e8ebf4">
+
+<div aria-hidden="true" style="position: absolute; inset: 0; filter: blur(70px)">
+<span style="position: absolute; left: -120px; top: -140px; width: 620px; height: 620px; border-radius: 50%; background: #6e97ff; animation: lq-drift 18s ease-in-out infinite"></span>
+<span style="position: absolute; left: 640px; top: -180px; width: 580px; height: 520px; border-radius: 50%; background: #ff9ade; animation: lq-drift 22s ease-in-out -6s infinite"></span>
+<span style="position: absolute; left: 880px; top: 420px; width: 540px; height: 520px; border-radius: 50%; background: #ffbf80; animation: lq-drift 20s ease-in-out -3s infinite"></span>
+<span style="position: absolute; left: 80px; top: 500px; width: 500px; height: 460px; border-radius: 50%; background: #7ff0cc; animation: lq-drift 24s ease-in-out -9s infinite"></span>
+<span style="position: absolute; left: 470px; top: 280px; width: 420px; height: 380px; border-radius: 50%; background: #b9a2ff; animation: lq-drift 16s ease-in-out -4s infinite"></span>
+</div>
+
+<header style="position: absolute; left: 28px; right: 28px; top: 20px; height: 52px; display: flex; align-items: center; gap: 16px">
+<div style="display: flex; align-items: center; gap: 10px; width: 404px">
+<span aria-hidden="true" style="width: 34px; height: 34px; border-radius: 11px; background: linear-gradient(140deg, #8fb0ff, #5b5fe0 55%, #ff7ab8); box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.8), 0 4px 12px rgba(91, 95, 224, 0.35); display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"></path></svg></span>
+<span style="font-size: 24px; font-weight: 750; letter-spacing: -0.035em">Glint</span>
+</div>
+<label style="flex: 1; max-width: 420px; height: 46px; border-radius: 999px; display: flex; align-items: center; gap: 10px; padding: 0 18px; box-sizing: border-box; background: rgba(255, 255, 255, 0.38); border: 1px solid rgba(255, 255, 255, 0.75); backdrop-filter: blur(24px) saturate(180%); box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.9), 0 8px 30px rgba(30, 40, 90, 0.08); color: #4a5068">
+<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14z M20 20l-4-4"></path></svg>
+<input type="search" placeholder="Search files, apps and spaces" aria-label="Search" style="flex: 1; border: 0; outline: 0; background: transparent; font-size: 15px; color: #0e1220">
+</label>
+<div style="flex: 1"></div>
+<div role="group" aria-label="AI provider" style="height: 46px; padding: 4px; box-sizing: border-box; border-radius: 999px; display: flex; gap: 2px; background: rgba(255, 255, 255, 0.38); border: 1px solid rgba(255, 255, 255, 0.75); backdrop-filter: blur(24px) saturate(180%); box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.9)">
+<sc-for list="{{providers}}" as="p" hint-placeholder-count="2">
+<button type="button" onClick="{{p.pick}}" aria-pressed="{{p.pressed}}" style="height: 36px; padding: 0 16px; border-radius: 999px; border: 0; background: {{p.bg}}; color: {{p.color}}; box-shadow: {{p.shadow}}; font-size: 14px; font-weight: 600; cursor: pointer">{{p.name}}</button>
+</sc-for>
+</div>
+</header>
+
+<div style="position: absolute; left: 28px; top: 96px; width: 404px; display: flex; flex-direction: column; gap: 14px">
+
+<article style="position: relative; height: 186px; border-radius: 36px; overflow: hidden; padding: 22px 24px; box-sizing: border-box; background: linear-gradient(160deg, #a11d2a, #c42a3c); box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.12), 0 18px 40px rgba(161, 29, 42, 0.3); color: #ffffff; display: flex; flex-direction: column">
+<span aria-hidden="true" style="position: absolute; left: 110px; top: -40px; width: 220px; height: 240px; border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 170, 200, 0.95), rgba(255, 60, 100, 0.5) 50%, rgba(255, 60, 100, 0)); filter: blur(14px); animation: lq-glow 5s ease-in-out infinite"></span>
+<span style="position: relative; font-size: 28px; font-weight: 750; letter-spacing: -0.03em; color: #ffd6d9">Scanning</span>
+<span style="position: relative; font-size: 15px; font-weight: 650; color: #ff9aa6">Disk C: · NVMe</span>
+<div style="flex: 1"></div>
+<div style="position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); text-align: center">
+<span style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 15px; font-weight: 500">Files</span><span style="font-family: 'Geist Mono', monospace; font-size: 13px; color: #ffc2ca">1,284,330</span></span>
+<span style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 15px; font-weight: 500">Speed</span><span style="font-family: 'Geist Mono', monospace; font-size: 13px; color: #ffc2ca">2.1 GB/s</span></span>
+<span style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 15px; font-weight: 500">Progress</span><span style="font-family: 'Geist Mono', monospace; font-size: 13px; color: #ffc2ca">86%</span></span>
+</div>
+<span aria-hidden="true" style="position: absolute; left: 167px; bottom: 7px; width: 70px; height: 3px; border-radius: 2px; background: rgba(255, 255, 255, 0.55)"></span>
+</article>
+
+<article style="position: relative; height: 186px; border-radius: 36px; overflow: hidden; padding: 22px 24px; box-sizing: border-box; background: linear-gradient(160deg, #3a4c12, #4d671b); box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.1), 0 18px 40px rgba(58, 76, 18, 0.3); color: #ffffff; display: flex; flex-direction: column">
+<span aria-hidden="true" style="position: absolute; left: 140px; top: 70px; width: 220px; height: 160px; border-radius: 50%; background: radial-gradient(closest-side, rgba(200, 255, 230, 0.45), rgba(120, 200, 120, 0)); filter: blur(16px); animation: lq-glow 6s ease-in-out -2s infinite"></span>
+<div style="position: relative; display: flex; gap: 16px">
+<div style="display: flex; flex-direction: column; flex: 1">
+<span style="font-size: 28px; font-weight: 750; letter-spacing: -0.03em; color: #eaff7c">Cleaning</span>
+<span style="font-size: 15px; font-weight: 650; color: #a7c45a">{{modeName}} mode</span>
+</div>
+<div style="display: grid; grid-template-columns: auto auto; column-gap: 22px; row-gap: 2px; font-size: 14px; font-weight: 500; color: #eaff7c; align-content: start">
+<span>browser_cache</span><span style="text-align: right; color: #c3dd6e">3.4 GB</span>
+<span>temp_files</span><span style="text-align: right; color: #c3dd6e">4.2 GB</span>
+<span>{{thirdName}}</span><span style="text-align: right; color: #c3dd6e">{{thirdSize}}</span>
+</div>
+</div>
+<div style="flex: 1"></div>
+<div style="position: relative; height: 46px; border-radius: 999px; background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.35); box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.45), inset 0 -2px 6px rgba(0, 0, 0, 0.15)">
+<span aria-hidden="true" style="position: absolute; left: 6px; top: 8px; height: 28px; width: {{fillW}}; border-radius: 999px; background: linear-gradient(90deg, #f6ffb0 0%, #ffffff 55%, rgba(255, 255, 255, 0.55) 100%); box-shadow: 0 0 22px rgba(234, 255, 124, 0.9), 0 0 50px rgba(234, 255, 124, 0.5)"></span>
+<span aria-hidden="true" style="position: absolute; left: {{knobX}}; top: 3px; width: 38px; height: 38px; border-radius: 50%; background: rgba(255, 255, 255, 0.35); border: 1px solid rgba(255, 255, 255, 0.9); backdrop-filter: blur(6px); box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.9), 0 4px 10px rgba(0, 0, 0, 0.2)"></span>
+<div style="position: absolute; inset: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr))">
+<sc-for list="{{levels}}" as="l" hint-placeholder-count="3">
+<button type="button" onClick="{{l.pick}}" aria-label="{{l.name}}" aria-pressed="{{l.pressed}}" style="border: 0; background: transparent; cursor: pointer; border-radius: 999px"></button>
+</sc-for>
+</div>
+</div>
+<span aria-hidden="true" style="position: absolute; left: 167px; bottom: 7px; width: 70px; height: 3px; border-radius: 2px; background: rgba(255, 255, 255, 0.5)"></span>
+</article>
+
+<article style="position: relative; height: 186px; border-radius: 36px; overflow: hidden; padding: 22px 24px; box-sizing: border-box; background: linear-gradient(160deg, #565ade, #7b80f2); box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.14), 0 18px 40px rgba(86, 90, 222, 0.3); color: #ffffff; display: flex; flex-direction: column">
+<span aria-hidden="true" style="position: absolute; left: 60px; top: 90px; width: 300px; height: 160px; border-radius: 50%; background: radial-gradient(closest-side, rgba(190, 220, 255, 0.85), rgba(140, 160, 255, 0)); filter: blur(18px); animation: lq-glow 7s ease-in-out -1s infinite"></span>
+<div style="position: relative; display: flex; gap: 16px">
+<div style="display: flex; flex-direction: column; flex: 1">
+<span style="font-size: 28px; font-weight: 750; letter-spacing: -0.03em; color: #f0f1ff">Optimizing</span>
+<span style="font-size: 15px; font-weight: 650; color: #c9cbff">with {{providerName}}</span>
+</div>
+<div style="display: grid; grid-template-columns: auto auto; column-gap: 22px; row-gap: 2px; font-size: 14px; font-weight: 500; color: #f0f1ff; align-content: start">
+<span>startup_items</span><span style="text-align: right; color: #c9cbff">3</span>
+<span>background_apps</span><span style="text-align: right; color: #c9cbff">5</span>
+<span>app_updates</span><span style="text-align: right; color: #c9cbff">4</span>
+</div>
+</div>
+<div style="flex: 1"></div>
+<div style="position: relative; display: flex; align-items: flex-end; gap: 18px">
+<span style="font-size: 44px; font-weight: 700; letter-spacing: -0.04em; line-height: 1; color: #f0f1ff">97%</span>
+<div aria-hidden="true" style="position: relative; flex: 1; height: 40px">
+<span style="position: absolute; left: 4%; top: 18px; width: 14px; height: 14px; border-radius: 50%; background: #ffffff; filter: blur(3px); animation: lq-float 2.4s ease-in-out infinite"></span>
+<span style="position: absolute; left: 14%; top: 8px; width: 10px; height: 10px; border-radius: 50%; background: #ffffff; filter: blur(2px); animation: lq-float 3s ease-in-out -0.6s infinite"></span>
+<span style="position: absolute; left: 24%; top: 22px; width: 16px; height: 16px; border-radius: 50%; background: #dfe6ff; filter: blur(4px); animation: lq-float 2.7s ease-in-out -1.2s infinite"></span>
+<span style="position: absolute; left: 35%; top: 6px; width: 9px; height: 9px; border-radius: 50%; background: #ffffff; filter: blur(1px); animation: lq-float 2.2s ease-in-out -0.3s infinite"></span>
+<span style="position: absolute; left: 45%; top: 20px; width: 13px; height: 13px; border-radius: 50%; background: #ffffff; filter: blur(3px); animation: lq-float 3.2s ease-in-out -1.8s infinite"></span>
+<span style="position: absolute; left: 56%; top: 10px; width: 11px; height: 11px; border-radius: 50%; background: #e6ecff; filter: blur(2px); animation: lq-float 2.6s ease-in-out -0.9s infinite"></span>
+<span style="position: absolute; left: 66%; top: 24px; width: 15px; height: 15px; border-radius: 50%; background: #ffffff; filter: blur(4px); animation: lq-float 2.9s ease-in-out -2.1s infinite"></span>
+<span style="position: absolute; left: 77%; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: #ffffff; filter: blur(2px); animation: lq-float 2.3s ease-in-out -1.4s infinite"></span>
+<span style="position: absolute; left: 88%; top: 16px; width: 12px; height: 12px; border-radius: 50%; background: #dfe6ff; filter: blur(3px); animation: lq-float 3.1s ease-in-out -0.2s infinite"></span>
+</div>
+</div>
+<span aria-hidden="true" style="position: absolute; left: 167px; bottom: 7px; width: 70px; height: 3px; border-radius: 2px; background: rgba(255, 255, 255, 0.55)"></span>
+</article>
+
+</div>
+
+<section aria-label="Spaces" style="position: absolute; left: 456px; top: 96px; width: 796px; height: 586px; border-radius: 36px; padding: 22px 24px; box-sizing: border-box; background: rgba(255, 255, 255, 0.32); border: 1px solid rgba(255, 255, 255, 0.75); backdrop-filter: blur(30px) saturate(180%); box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.95), 0 24px 60px rgba(30, 40, 90, 0.12); display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; align-items: baseline; gap: 14px">
+<h1 style="margin: 0; font-size: 30px; font-weight: 750; letter-spacing: -0.035em">Spaces</h1>
+<span style="font-size: 15px; color: #4a5068">381 GB of 512 GB · 31.7 GB reclaimable</span>
+<div style="flex: 1"></div>
+<a href="#" style="font-size: 14px; font-weight: 600; text-decoration: none">Map view ›</a>
+</div>
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; flex: 1">
+<sc-for list="{{spaces}}" as="s" hint-placeholder-count="12">
+<button type="button" onClick="{{s.pick}}" aria-pressed="{{s.pressed}}" style="position: relative; overflow: hidden; text-align: left; border-radius: 26px; padding: 14px; box-sizing: border-box; background: {{s.bg}}; border: 1px solid {{s.border}}; box-shadow: {{s.shadow}}; cursor: pointer; display: flex; flex-direction: column; gap: 8px; color: #0e1220">
+<span style="display: flex; justify-content: space-between; align-items: flex-start">
+<span aria-hidden="true" style="position: relative; overflow: hidden; width: 52px; height: 52px; border-radius: 16px; background: {{s.grad}}; box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.85), inset 0 -2px 4px rgba(0, 0, 0, 0.12), 0 6px 14px {{s.glow}}; display: flex; align-items: center; justify-content: center">
+<span style="position: absolute; left: 3px; right: 3px; top: 2px; height: 46%; border-radius: 14px 14px 50% 50%; background: linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0))"></span>
+<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="position: relative" aria-hidden="true"><path d="{{s.d}}"></path></svg>
+</span>
+<sc-if value="{{s.hot}}" hint-placeholder-val="{{false}}">
+<span style="height: 24px; padding: 0 10px; border-radius: 999px; background: rgba(255, 255, 255, 0.7); font-size: 12px; font-weight: 650; color: #b4235a; display: flex; align-items: center">{{s.hotText}}</span>
+</sc-if>
+</span>
+<span style="font-size: 16px; font-weight: 650; letter-spacing: -0.015em">{{s.name}}</span>
+<span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #4a5068">{{s.sizeText}}</span>
+<span style="height: 5px; border-radius: 3px; background: rgba(14, 18, 32, 0.08); overflow: hidden; display: block"><span style="display: block; height: 5px; width: {{s.bar}}; border-radius: 3px; background: {{s.grad}}"></span></span>
+</button>
+</sc-for>
+</div>
+</section>
+
+<nav aria-label="Tabs" style="position: absolute; left: 352px; top: 708px; height: 68px; display: flex; align-items: center; gap: 12px">
+<div style="height: 68px; padding: 6px; box-sizing: border-box; border-radius: 999px; display: flex; gap: 2px; background: rgba(255, 255, 255, 0.4); border: 1px solid rgba(255, 255, 255, 0.8); backdrop-filter: blur(30px) saturate(180%); box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.95), 0 14px 40px rgba(30, 40, 90, 0.16)">
+<sc-for list="{{tabs}}" as="t" hint-placeholder-count="5">
+<a href="#" style="width: 92px; height: 56px; border-radius: 999px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-decoration: none; font-size: 11px; font-weight: 600; color: {{t.color}}; background: {{t.bg}}; box-shadow: {{t.shadow}}">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{t.d}}"></path></svg>
+{{t.label}}
+</a>
+</sc-for>
+</div>
+<button type="button" aria-label="Ask {{providerName}}" style="position: relative; overflow: hidden; width: 68px; height: 68px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.85); background: linear-gradient(140deg, #8fb0ff, #5b5fe0 55%, #ff7ab8); box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.85), 0 14px 34px rgba(91, 95, 224, 0.4); color: #ffffff; display: flex; align-items: center; justify-content: center; cursor: pointer">
+<span aria-hidden="true" style="position: absolute; top: 0; left: 0; width: 30%; height: 100%; background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0)); animation: lq-sheen 3s ease-in-out infinite"></span>
+<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="position: relative"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z M19 15l.8 2.2 2.2.8-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"></path></svg>
+</button>
+</nav>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { provider: 'Claude', level: 1, space: 'downloads' };
+  }
+  renderVals() {
+    var self = this;
+    var st = this.state;
+    var levels = [
+      { name: 'Safe', third: 'trash', thirdSize: '1.1 GB', fill: '34%', knob: '29%' },
+      { name: 'Balanced', third: 'update_cache', thirdSize: '2.1 GB', fill: '61%', knob: '57%' },
+      { name: 'Deep', third: 'old_installers', thirdSize: '6.6 GB', fill: '93%', knob: '88%' }
+    ];
+    var lv = levels[st.level];
+    var spaces = [
+      { id: 'docs', name: 'Documents', size: 24, grad: 'linear-gradient(150deg, #7aa2ff, #3a5bff)', glow: 'rgba(58, 91, 255, 0.35)', d: 'M6 2h8l4 4v16H6z M14 2v4h4 M9 13h6 M9 17h6' },
+      { id: 'games', name: 'Games', size: 96, grad: 'linear-gradient(150deg, #ff8aa4, #d42a52)', glow: 'rgba(212, 42, 82, 0.35)', d: 'M6 9h12a4 4 0 0 1 3.9 4.8l-.8 3.6a2.5 2.5 0 0 1-4.3 1.1L15 16H9l-1.8 2.5a2.5 2.5 0 0 1-4.3-1.1l-.8-3.6A4 4 0 0 1 6 9z M7.5 11.5v3 M6 13h3 M16 12.5h.01 M17.5 14h.01' },
+      { id: 'apps', name: 'Applications', size: 58, grad: 'linear-gradient(150deg, #b9a2ff, #6a4bff)', glow: 'rgba(106, 75, 255, 0.35)', d: 'M4 4h6v6H4z M14 4h6v6h-6z M4 14h6v6H4z M14 14h6v6h-6z' },
+      { id: 'photos', name: 'Photos', size: 41, grad: 'linear-gradient(150deg, #ffc27a, #ff6a3d)', glow: 'rgba(255, 106, 61, 0.35)', d: 'M4 5h16v14H4z M4 16l5-5 4 4 3-3 4 4 M15.5 8.5h.01' },
+      { id: 'video', name: 'Videos', size: 52, grad: 'linear-gradient(150deg, #ff7ab0, #a81fd0)', glow: 'rgba(168, 31, 208, 0.35)', d: 'M3 6h13v12H3z M16 10l5-3v10l-5-3' },
+      { id: 'music', name: 'Music', size: 6.2, grad: 'linear-gradient(150deg, #ff9ac4, #ff3b6b)', glow: 'rgba(255, 59, 107, 0.35)', d: 'M9 18V5l11-2v13 M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0z M20 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z' },
+      { id: 'downloads', name: 'Downloads', size: 18.7, hot: 'Clean 18.7', grad: 'linear-gradient(150deg, #6fd6ff, #1f7ae0)', glow: 'rgba(31, 122, 224, 0.35)', d: 'M12 3v12 M7 10l5 5 5-5 M4 20h16' },
+      { id: 'dev', name: 'Developer', size: 22, hot: 'Clean 4.1', grad: 'linear-gradient(150deg, #5ef0b8, #0f8a6a)', glow: 'rgba(15, 138, 106, 0.35)', d: 'M8 8l-4 4 4 4 M16 8l4 4-4 4 M14 5l-4 14' },
+      { id: 'system', name: 'System', size: 31, grad: 'linear-gradient(150deg, #a3a9bd, #4f5568)', glow: 'rgba(79, 85, 104, 0.35)', d: 'M7 7h10v10H7z M10 3v4 M14 3v4 M10 17v4 M14 17v4 M3 10h4 M3 14h4 M17 10h4 M17 14h4' },
+      { id: 'cache', name: 'Caches', size: 9.7, hot: 'Clean 9.7', grad: 'linear-gradient(150deg, #ffe08a, #f29a1d)', glow: 'rgba(242, 154, 29, 0.35)', d: 'M12 3l9 5-9 5-9-5z M3 13l9 5 9-5 M3 17l9 5 9-5' },
+      { id: 'mail', name: 'Mail', size: 3.1, grad: 'linear-gradient(150deg, #7fd8ff, #2b6bff)', glow: 'rgba(43, 107, 255, 0.35)', d: 'M3 5h18v14H3z M3 6l9 7 9-7' },
+      { id: 'cloud', name: 'Cloud', size: 12.3, grad: 'linear-gradient(150deg, #cdd7ff, #6f86ff)', glow: 'rgba(111, 134, 255, 0.35)', d: 'M7 18a5 5 0 1 1 1-9.9A6 6 0 0 1 19 10a4 4 0 0 1 0 8z' }
+    ];
+    var tabs = [
+      { label: 'Home', d: 'M3 11l9-7 9 7 M5 9.5V20h14V9.5' },
+      { label: 'Clean', d: 'M3 6h18 M8 6V4h8v2 M6 6l1 14h10l1-14' },
+      { label: 'Spaces', d: 'M12 3a9 9 0 1 0 9 9h-9z M14 3.3A9 9 0 0 1 20.7 10H14z' },
+      { label: 'Speed', d: 'M13 2L4 14h7l-1 8 9-12h-7z' },
+      { label: 'Shield', d: 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z' }
+    ];
+    return {
+      providerName: st.provider,
+      modeName: lv.name, thirdName: lv.third, thirdSize: lv.thirdSize, fillW: 'calc(' + lv.fill + ' - 12px)', knobX: lv.knob,
+      levels: levels.map(function (l, i) {
+        return { name: l.name, pressed: i === st.level ? 'true' : 'false', pick: function () { self.setState({ level: i }); } };
+      }),
+      providers: ['Claude', 'ChatGPT'].map(function (n) {
+        var on = n === st.provider;
+        return {
+          name: n, pressed: on ? 'true' : 'false',
+          bg: on ? 'rgba(255, 255, 255, 0.95)' : 'transparent',
+          color: on ? '#0e1220' : '#4a5068',
+          shadow: on ? '0 2px 8px rgba(30, 40, 90, 0.12)' : 'none',
+          pick: function () { self.setState({ provider: n }); }
+        };
+      }),
+      spaces: spaces.map(function (s) {
+        var on = s.id === st.space;
+        return {
+          name: s.name, d: s.d, grad: s.grad, glow: s.glow,
+          sizeText: (s.size < 10 ? s.size.toFixed(1) : String(s.size)) + ' GB',
+          bar: Math.max(4, Math.round(s.size / 96 * 100)) + '%',
+          hot: !!s.hot, hotText: s.hot || '',
+          pressed: on ? 'true' : 'false',
+          bg: on ? 'rgba(255, 255, 255, 0.82)' : 'rgba(255, 255, 255, 0.36)',
+          border: on ? 'rgba(255, 255, 255, 1)' : 'rgba(255, 255, 255, 0.7)',
+          shadow: on ? 'inset 0 1px 1px #ffffff, 0 0 0 3px rgba(91, 95, 224, 0.45), 0 12px 28px rgba(30, 40, 90, 0.14)' : 'inset 0 1px 1px rgba(255, 255, 255, 0.9)',
+          pick: function () { self.setState({ space: s.id }); }
+        };
+      }),
+      tabs: tabs.map(function (t, i) {
+        var on = i === 2;
+        return {
+          label: t.label, d: t.d,
+          color: on ? '#3a3fd0' : '#3a4058',
+          bg: on ? 'rgba(255, 255, 255, 0.9)' : 'transparent',
+          shadow: on ? '0 2px 10px rgba(30, 40, 90, 0.12)' : 'none'
+        };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

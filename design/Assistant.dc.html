@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Glint · Assistant</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..800&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Bricolage Grotesque',system-ui,sans-serif;background:#0a0a16}
+a{color:#ffffff}a:hover{color:#ffd9c8}
+button,input{font-family:inherit}
+@keyframes as-drift{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(70px,-50px) scale(1.12)}}
+@keyframes as-float{0%,100%{transform:translate(0,0);opacity:.3}50%{transform:translate(6px,-12px);opacity:1}}
+@keyframes as-blink{0%,100%{opacity:.35}50%{opacity:1}}
+</style>
+</helmet>
+<div style="width: 1280px; height: 800px; position: relative; overflow: hidden; color: #f4f2ff; font-family: 'Bricolage Grotesque', system-ui, sans-serif; background: #0a0a16">
+
+<div aria-hidden="true" style="position: absolute; inset: 0; filter: blur(90px); opacity: 0.6">
+<span style="position: absolute; left: -160px; top: 260px; width: 560px; height: 520px; border-radius: 50%; background: #5b3cff; animation: as-drift 16s ease-in-out infinite"></span>
+<span style="position: absolute; left: 900px; top: -120px; width: 520px; height: 480px; border-radius: 50%; background: {{blob}}; animation: as-drift 20s ease-in-out -5s infinite"></span>
+<span style="position: absolute; left: 520px; top: 560px; width: 520px; height: 400px; border-radius: 50%; background: #1f7fbf; animation: as-drift 18s ease-in-out -9s infinite"></span>
+</div>
+<div aria-hidden="true" style="position: absolute; inset: 0; background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, rgba(255, 255, 255, 0) 1px); background-size: 22px 22px"></div>
+
+<div style="position: absolute; left: 32px; top: 26px; display: flex; align-items: center; gap: 10px">
+<span aria-hidden="true" style="width: 32px; height: 32px; border-radius: 10px; background: {{accentGrad}}; box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.7), 0 6px 18px rgba(0, 0, 0, 0.3); display: flex; align-items: center; justify-content: center"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"></path></svg></span>
+<span style="font-size: 26px; font-weight: 700; letter-spacing: -0.04em">glint</span>
+</div>
+
+<div role="group" aria-label="AI provider" style="position: absolute; left: 50%; top: 22px; margin-left: -200px; width: 400px; height: 48px; padding: 4px; box-sizing: border-box; border-radius: 999px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px; background: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255, 255, 255, 0.16); backdrop-filter: blur(24px); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14)">
+<sc-for list="{{providers}}" as="p" hint-placeholder-count="3">
+<button type="button" onClick="{{p.pick}}" aria-pressed="{{p.pressed}}" style="border-radius: 999px; border: 0; background: {{p.bg}}; color: {{p.color}}; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: {{p.shadow}}"><span aria-hidden="true" style="width: 8px; height: 8px; border-radius: 50%; background: {{p.dot}}"></span>{{p.name}}</button>
+</sc-for>
+</div>
+
+<div style="position: absolute; right: 32px; top: 26px; height: 40px; padding: 0 14px; border-radius: 999px; display: flex; align-items: center; gap: 8px; font-size: 13px; color: #cfcbe6; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.14)">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 11h12v10H6z M8 11V7a4 4 0 0 1 8 0v4"></path></svg>{{privacy}}
+</div>
+
+<nav aria-label="Sections" style="position: absolute; left: 32px; top: 200px; width: 60px; padding: 8px 0; border-radius: 30px; display: flex; flex-direction: column; align-items: center; gap: 6px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.14); backdrop-filter: blur(24px); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12)">
+<sc-for list="{{rail}}" as="r" hint-placeholder-count="5">
+<a href="#" aria-label="{{r.label}}" style="width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: {{r.color}}; background: {{r.bg}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{r.d}}"></path></svg></a>
+</sc-for>
+</nav>
+
+<main style="position: absolute; left: 200px; top: 96px; width: 880px; display: flex; flex-direction: column; gap: 16px">
+
+<div style="align-self: flex-end; max-width: 520px; padding: 14px 20px; border-radius: 22px 22px 6px 22px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.16); font-size: 16px; line-height: 1.45">My disk is almost full. What can I safely delete?</div>
+
+<div style="display: flex; align-items: center; gap: 10px; font-size: 14px">
+<span aria-hidden="true" style="width: 28px; height: 28px; border-radius: 50%; background: {{accentGrad}}; box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.6)"></span>
+<span style="font-weight: 700">{{providerName}}</span>
+<span style="color: #a9a4c8">· thought for 2.4 s</span>
+</div>
+
+<div style="display: flex; gap: 14px">
+<div style="position: relative; overflow: hidden; width: 470px; border-radius: 28px; padding: 18px 22px; box-sizing: border-box; background: {{stepsBg}}; border: 1px solid rgba(255, 255, 255, 0.18); box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.25), 0 20px 40px rgba(0, 0, 0, 0.3); display: flex; gap: 22px">
+<span aria-hidden="true" style="position: absolute; left: 120px; top: -60px; width: 260px; height: 220px; border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0)); filter: blur(10px); animation: as-drift 7s ease-in-out infinite"></span>
+<div style="position: relative; display: flex; flex-direction: column; gap: 2px; min-width: 128px">
+<span style="font-size: 26px; font-weight: 700; letter-spacing: -0.03em; color: {{accentLight}}">Reasoning</span>
+<span style="font-size: 14px; font-weight: 600; color: rgba(255, 255, 255, 0.72)">{{providerName}}</span>
+</div>
+<div style="position: relative; flex: 1; display: grid; grid-template-columns: 1fr auto; row-gap: 4px; font-family: 'Geist Mono', monospace; font-size: 13px; color: {{accentLight}}; align-content: start">
+<span>scan_disk</span><span style="text-align: right; color: rgba(255, 255, 255, 0.72)">1.2 s</span>
+<span>read_metadata</span><span style="text-align: right; color: rgba(255, 255, 255, 0.72)">0.8 s</span>
+<span>cross_reference</span><span style="text-align: right; color: rgba(255, 255, 255, 0.72)">0.4 s</span>
+<span>rank_by_safety</span><span style="text-align: right; color: rgba(255, 255, 255, 0.72)">0.2 s</span>
+</div>
+</div>
+<div style="position: relative; overflow: hidden; flex: 1; border-radius: 28px; padding: 18px 22px; box-sizing: border-box; background: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255, 255, 255, 0.16); box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.16); display: flex; align-items: flex-end; gap: 18px">
+<div style="display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 14px; color: #a9a4c8">Confidence</span>
+<span style="font-size: 52px; font-weight: 700; letter-spacing: -0.05em; line-height: 1">97%</span>
+</div>
+<div aria-hidden="true" style="position: relative; flex: 1; height: 54px">
+<span style="position: absolute; left: 4%; top: 30px; width: 14px; height: 14px; border-radius: 50%; background: {{accentLight}}; filter: blur(3px); animation: as-float 2.4s ease-in-out infinite"></span>
+<span style="position: absolute; left: 16%; top: 14px; width: 10px; height: 10px; border-radius: 50%; background: #ffffff; filter: blur(2px); animation: as-float 3s ease-in-out -0.7s infinite"></span>
+<span style="position: absolute; left: 28%; top: 34px; width: 16px; height: 16px; border-radius: 50%; background: {{accentLight}}; filter: blur(4px); animation: as-float 2.7s ease-in-out -1.3s infinite"></span>
+<span style="position: absolute; left: 41%; top: 10px; width: 9px; height: 9px; border-radius: 50%; background: #ffffff; filter: blur(1px); animation: as-float 2.2s ease-in-out -0.4s infinite"></span>
+<span style="position: absolute; left: 53%; top: 28px; width: 13px; height: 13px; border-radius: 50%; background: #ffffff; filter: blur(3px); animation: as-float 3.2s ease-in-out -1.9s infinite"></span>
+<span style="position: absolute; left: 66%; top: 16px; width: 11px; height: 11px; border-radius: 50%; background: {{accentLight}}; filter: blur(2px); animation: as-float 2.6s ease-in-out -1s infinite"></span>
+<span style="position: absolute; left: 79%; top: 32px; width: 15px; height: 15px; border-radius: 50%; background: #ffffff; filter: blur(4px); animation: as-float 2.9s ease-in-out -2.2s infinite"></span>
+<span style="position: absolute; left: 90%; top: 12px; width: 10px; height: 10px; border-radius: 50%; background: {{accentLight}}; filter: blur(2px); animation: as-float 2.3s ease-in-out -1.5s infinite"></span>
+</div>
+</div>
+</div>
+
+<p style="margin: 2px 0 0; font-size: 18px; line-height: 1.5; color: #e6e2fb; max-width: 760px">Found <span style="font-weight: 700; color: {{accentLight}}">31.7 GB</span> you won’t miss. Nothing personal — installers you already ran, caches that rebuild themselves and exact duplicates. One group is worth a look first.</p>
+
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px">
+<sc-for list="{{finds}}" as="f" hint-placeholder-count="4">
+<label style="position: relative; border-radius: 22px; padding: 14px 16px; box-sizing: border-box; background: {{f.bg}}; border: 1px solid {{f.border}}; box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.14); display: flex; flex-direction: column; gap: 6px; cursor: pointer">
+<span style="display: flex; justify-content: space-between; align-items: center">
+<span aria-hidden="true" style="width: 38px; height: 38px; border-radius: 12px; background: {{f.grad}}; box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.7); display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{f.d}}"></path></svg></span>
+<input type="checkbox" checked="{{f.on}}" onChange="{{f.toggle}}" style="width: 20px; height: 20px; margin: 0; accent-color: {{accent}}">
+</span>
+<span style="font-size: 15px; font-weight: 650">{{f.name}}</span>
+<span style="display: flex; justify-content: space-between; align-items: center">
+<span style="font-family: 'Geist Mono', monospace; font-size: 13px; color: #cfcbe6">{{f.size}}</span>
+<span style="font-size: 12px; font-weight: 650; color: {{f.tagColor}}">{{f.tag}}</span>
+</span>
+</label>
+</sc-for>
+</div>
+
+<div style="display: flex; align-items: center; gap: 14px">
+<button type="button" onClick="{{clean}}" style="height: 54px; padding: 0 26px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.4); background: {{accentGrad}}; color: #ffffff; font-size: 16px; font-weight: 700; cursor: pointer; box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.55), 0 12px 34px {{accentShadow}}">{{cleanText}}</button>
+<button type="button" style="height: 54px; padding: 0 22px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(255, 255, 255, 0.06); color: #f4f2ff; font-size: 15px; font-weight: 600; cursor: pointer">Explain each item</button>
+<span style="font-size: 13px; color: #a9a4c8">Moves to Trash · undo for 30 days</span>
+</div>
+
+</main>
+
+<section aria-label="Ask" style="position: absolute; left: 200px; top: 646px; width: 880px; border-radius: 28px; padding: 14px 14px 12px 20px; box-sizing: border-box; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.18); backdrop-filter: blur(30px) saturate(150%); box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.18), 0 24px 60px rgba(0, 0, 0, 0.35); display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; gap: 8px">
+<button type="button" style="height: 30px; padding: 0 12px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.16); background: rgba(255, 255, 255, 0.05); color: #dcd8f2; font-size: 13px; cursor: pointer">Why is System so big?</button>
+<button type="button" style="height: 30px; padding: 0 12px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.16); background: rgba(255, 255, 255, 0.05); color: #dcd8f2; font-size: 13px; cursor: pointer">Files I haven’t opened in a year</button>
+<button type="button" style="height: 30px; padding: 0 12px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.16); background: rgba(255, 255, 255, 0.05); color: #dcd8f2; font-size: 13px; cursor: pointer">Speed up boot</button>
+</div>
+<div style="display: flex; align-items: center; gap: 12px">
+<input type="text" placeholder="Ask {{providerName}} about your disk…" aria-label="Message" style="flex: 1; border: 0; outline: 0; background: transparent; font-size: 17px; color: #f4f2ff">
+<span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #a9a4c8">↵ send · ⇧↵ newline</span>
+<button type="button" aria-label="Attach folder" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.16); background: rgba(255, 255, 255, 0.05); color: #dcd8f2; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14 M5 12h14"></path></svg></button>
+<button type="button" aria-label="Send" style="width: 44px; height: 44px; border-radius: 50%; border: 0; background: {{accentGrad}}; color: #ffffff; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.6)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7 M8 7h9v9"></path></svg></button>
+</div>
+</section>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { provider: 'claude', sel: { installers: true, caches: true, dupes: true, recordings: false }, cleaned: false };
+  }
+  renderVals() {
+    var self = this;
+    var st = this.state;
+    var prov = {
+      claude: { name: 'Claude', accent: '#ff8a5c', light: '#ffc9ae', grad: 'linear-gradient(130deg, #ffa36b, #ff5c7a)', blob: '#ff6a4c', steps: 'linear-gradient(150deg, rgba(255, 120, 80, 0.55), rgba(160, 40, 80, 0.55))', shadow: 'rgba(255, 106, 92, 0.4)', privacy: 'Names & sizes only — never file contents' },
+      chatgpt: { name: 'ChatGPT', accent: '#3fd0a6', light: '#b6f5df', grad: 'linear-gradient(130deg, #5ff0c4, #1f9fd0)', blob: '#1fbf9a', steps: 'linear-gradient(150deg, rgba(60, 200, 160, 0.5), rgba(20, 90, 120, 0.55))', shadow: 'rgba(63, 208, 166, 0.4)', privacy: 'Names & sizes only — never file contents' },
+      local: { name: 'On-device', accent: '#9b8cff', light: '#d6cfff', grad: 'linear-gradient(130deg, #b9a2ff, #5b5fe0)', blob: '#6a4bff', steps: 'linear-gradient(150deg, rgba(150, 130, 255, 0.55), rgba(70, 60, 200, 0.55))', shadow: 'rgba(155, 140, 255, 0.4)', privacy: 'Runs locally — nothing leaves your PC' }
+    };
+    var cur = prov[st.provider];
+    var finds = [
+      { id: 'installers', name: 'Old installers', size: 12.4, tag: 'Safe', d: 'M12 3v12 M7 10l5 5 5-5 M4 20h16', grad: 'linear-gradient(150deg, #6fd6ff, #1f7ae0)' },
+      { id: 'caches', name: 'App & browser caches', size: 9.7, tag: 'Safe', d: 'M12 3l9 5-9 5-9-5z M3 13l9 5 9-5 M3 17l9 5 9-5', grad: 'linear-gradient(150deg, #ffe08a, #f29a1d)' },
+      { id: 'dupes', name: 'Exact duplicates', size: 3.3, tag: 'Safe', d: 'M8 8h12v12H8z M16 8V4H4v12h4', grad: 'linear-gradient(150deg, #b9a2ff, #6a4bff)' },
+      { id: 'recordings', name: 'Screen recordings', size: 6.3, tag: 'Look first', d: 'M3 6h13v12H3z M16 10l5-3v10l-5-3', grad: 'linear-gradient(150deg, #ff7ab0, #a81fd0)' }
+    ];
+    var total = 0;
+    finds.forEach(function (f) { if (st.sel[f.id]) { total += f.size; } });
+    var rail = [
+      { label: 'Home', d: 'M3 11l9-7 9 7 M5 9.5V20h14V9.5' },
+      { label: 'Assistant', d: 'M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z' },
+      { label: 'Spaces', d: 'M12 3a9 9 0 1 0 9 9h-9z M14 3.3A9 9 0 0 1 20.7 10H14z' },
+      { label: 'History', d: 'M12 7v5l3 3 M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z' },
+      { label: 'Settings', d: 'M4 7h10 M18 7h2 M4 17h4 M12 17h8 M16 5v4 M10 15v4' }
+    ];
+    return {
+      providerName: cur.name, accent: cur.accent, accentLight: cur.light, accentGrad: cur.grad,
+      accentShadow: cur.shadow, blob: cur.blob, stepsBg: cur.steps, privacy: cur.privacy,
+      cleanText: st.cleaned ? 'Freed ' + total.toFixed(1) + ' GB ✓' : 'Clean ' + total.toFixed(1) + ' GB',
+      clean: function () { self.setState({ cleaned: true }); },
+      providers: ['claude', 'chatgpt', 'local'].map(function (id) {
+        var p = prov[id];
+        var on = id === st.provider;
+        return {
+          name: p.name, dot: p.accent, pressed: on ? 'true' : 'false',
+          bg: on ? 'rgba(255, 255, 255, 0.92)' : 'transparent',
+          color: on ? '#14122a' : '#cfcbe6',
+          shadow: on ? '0 4px 14px rgba(0, 0, 0, 0.25)' : 'none',
+          pick: function () { self.setState({ provider: id }); }
+        };
+      }),
+      finds: finds.map(function (f) {
+        var on = !!st.sel[f.id];
+        return {
+          name: f.name, d: f.d, grad: f.grad, tag: f.tag, on: on,
+          size: f.size.toFixed(1) + ' GB',
+          tagColor: f.tag === 'Safe' ? '#7ff0c4' : '#ffd36e',
+          bg: on ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.04)',
+          border: on ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.12)',
+          toggle: function () {
+            var next = Object.assign({}, self.state.sel);
+            next[f.id] = !on;
+            self.setState({ sel: next, cleaned: false });
+          }
+        };
+      }),
+      rail: rail.map(function (r, i) {
+        var on = i === 1;
+        return { label: r.label, d: r.d, color: on ? '#14122a' : '#cfcbe6', bg: on ? 'rgba(255, 255, 255, 0.92)' : 'transparent' };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>
