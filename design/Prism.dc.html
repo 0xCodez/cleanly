@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Glint · Prism</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&amp;family=Geist+Mono:wght@400;500&amp;family=Doto:wght@700;900&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Geist',system-ui,sans-serif;background:#eef0f3}
+a{color:#2b4cff}a:hover{color:#1a2fb0}
+button{font-family:inherit}
+</style>
+</helmet>
+<div style="width: 1280px; height: 800px; position: relative; overflow: hidden; color: #111317; font-family: 'Geist', system-ui, sans-serif; background-color: #f1f2f5; background-image: linear-gradient(#e4e6eb 1px, transparent 1px), linear-gradient(90deg, #e4e6eb 1px, transparent 1px); background-size: 22px 22px">
+
+<div aria-hidden="true" style="position: absolute; left: 240px; top: 60px; width: 800px; height: 480px; border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0))"></div>
+
+<pre aria-hidden="true" style="position: absolute; left: 352px; top: 66px; margin: 0; font-family: 'Geist Mono', monospace; font-size: 10px; line-height: 10px; letter-spacing: 0; white-space: pre; background: linear-gradient(100deg, #2b4cff 0%, #8a5cff 35%, #ff6a8b 65%, #ffb547 100%); -webkit-background-clip: text; background-clip: text; color: transparent; opacity: {{asciiOpacity}}">{{ascii}}</pre>
+
+<pre aria-hidden="true" style="position: absolute; left: 36px; top: 150px; margin: 0; font-family: 'Geist Mono', monospace; font-size: 11px; line-height: 13px; color: #9aa0ab">{{edgeLeft}}</pre>
+<pre aria-hidden="true" style="position: absolute; right: 36px; top: 96px; margin: 0; font-family: 'Geist Mono', monospace; font-size: 11px; line-height: 13px; color: #9aa0ab; text-align: right">{{edgeRight}}</pre>
+
+<header style="position: absolute; left: 28px; right: 28px; top: 20px; height: 48px; display: flex; align-items: center">
+<div style="display: flex; align-items: center; gap: 10px; flex: 1">
+<span style="font-family: 'Doto', monospace; font-size: 26px; font-weight: 900; line-height: 1; color: #2b4cff">*</span>
+<span style="font-size: 20px; font-weight: 500; letter-spacing: -0.03em">glint</span>
+</div>
+<nav aria-label="Sections" style="display: flex; gap: 2px; padding: 4px; border-radius: 14px; background: rgba(255, 255, 255, 0.78); border: 1px solid #e1e3e8; box-shadow: 0 8px 24px rgba(17, 19, 23, 0.06)">
+<a href="#" style="height: 36px; padding: 0 16px; border-radius: 10px; display: flex; align-items: center; text-decoration: none; font-size: 14px; font-weight: 500; color: #111317; background: #ffffff; box-shadow: 0 1px 3px rgba(17, 19, 23, 0.1)">Home</a>
+<a href="#" style="height: 36px; padding: 0 16px; border-radius: 10px; display: flex; align-items: center; text-decoration: none; font-size: 14px; color: #4b515c">Cleanup</a>
+<a href="#" style="height: 36px; padding: 0 16px; border-radius: 10px; display: flex; align-items: center; text-decoration: none; font-size: 14px; color: #4b515c">Space</a>
+<a href="#" style="height: 36px; padding: 0 16px; border-radius: 10px; display: flex; align-items: center; text-decoration: none; font-size: 14px; color: #4b515c">Apps</a>
+<a href="#" style="height: 36px; padding: 0 16px; border-radius: 10px; display: flex; align-items: center; text-decoration: none; font-size: 14px; color: #4b515c">Speed</a>
+<a href="#" style="height: 36px; padding: 0 16px; border-radius: 10px; display: flex; align-items: center; text-decoration: none; font-size: 14px; color: #4b515c">History</a>
+</nav>
+<div style="flex: 1; display: flex; justify-content: flex-end; gap: 10px">
+<button type="button" role="switch" aria-checked="{{autoOn}}" onClick="{{toggleAuto}}" style="height: 44px; padding: 0 14px 0 16px; border-radius: 14px; border: 1px solid #e1e3e8; background: rgba(255, 255, 255, 0.78); display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 500; color: #111317; cursor: pointer">Autopilot<span style="width: 34px; height: 20px; border-radius: 999px; padding: 2px; box-sizing: border-box; background: {{autoTrack}}; display: flex; justify-content: {{autoAlign}}"><span style="width: 16px; height: 16px; border-radius: 50%; background: #ffffff"></span></span></button>
+<button type="button" aria-label="Settings" style="width: 44px; height: 44px; border-radius: 14px; border: 1px solid #e1e3e8; background: rgba(255, 255, 255, 0.78); color: #4b515c; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h10 M18 7h2 M4 17h4 M12 17h8 M16 5v4 M10 15v4"></path></svg></button>
+</div>
+</header>
+
+<section aria-label="System health" style="position: absolute; left: 0; right: 0; top: 168px; display: flex; flex-direction: column; align-items: center; gap: 26px">
+<h1 style="margin: 0; font-size: 76px; font-weight: 300; letter-spacing: -0.055em; line-height: 1">{{headline}}</h1>
+<div style="width: 660px; border-radius: 20px; background: rgba(255, 255, 255, 0.72); border: 1px solid #e1e3e8; box-shadow: 0 20px 60px rgba(17, 19, 23, 0.08); padding: 18px 18px 14px 22px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; align-items: center; gap: 18px">
+<div style="display: flex; flex-direction: column; gap: 2px; flex: 1">
+<span style="font-size: 13px; color: #5a606b">Health score</span>
+<span style="display: flex; align-items: baseline; gap: 10px"><span style="font-family: 'Doto', monospace; font-size: 40px; font-weight: 900; line-height: 1; color: #111317">{{score}}</span><span style="font-size: 15px; color: #5a606b">/ 100 · {{reclaimText}}</span></span>
+</div>
+<button type="button" onClick="{{fixAll}}" style="height: 52px; padding: 0 22px; border-radius: 14px; border: 0; background: #111317; color: #ffffff; font-size: 16px; font-weight: 500; display: flex; align-items: center; gap: 10px; cursor: pointer">{{ctaText}}<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7 M8 7h9v9"></path></svg></button>
+</div>
+<div style="height: 4px; border-radius: 2px; background: #e8eaee; overflow: hidden"><div style="height: 4px; width: {{scoreWidth}}; background: linear-gradient(90deg, #2b4cff, #8a5cff, #ff6a8b)"></div></div>
+<div style="display: flex; gap: 18px; font-family: 'Geist Mono', monospace; font-size: 12px; color: #5a606b">
+<span>↵ clean</span><span>space · rescan</span><span>⌘K · find files</span><span style="flex: 1; text-align: right">files go to Trash first · undo 30 days</span>
+</div>
+</div>
+</section>
+
+<div aria-hidden="true" style="position: absolute; left: -90px; top: 520px; width: 150px; height: 250px; border-radius: 26px; background: radial-gradient(circle at 70% 40%, #7fe3ff, #2b4cff 60%, #c9b8ff); filter: blur(14px); opacity: 0.7"></div>
+<div aria-hidden="true" style="position: absolute; right: -90px; top: 520px; width: 150px; height: 250px; border-radius: 26px; background: radial-gradient(circle at 30% 40%, #ffb3e6, #8a5cff 55%, #7fe3ff); filter: blur(14px); opacity: 0.7"></div>
+
+<section aria-label="Suggestions" style="position: absolute; left: 0; right: 0; top: 510px; display: flex; justify-content: center; gap: 36px">
+<sc-for list="{{cards}}" as="card" hint-placeholder-count="3">
+<article style="width: 300px; height: 258px; border-radius: 26px; padding: 22px; box-sizing: border-box; color: #ffffff; position: relative; overflow: hidden; display: flex; flex-direction: column; transform: {{card.tilt}}; background: {{card.bg}}; box-shadow: 0 30px 60px rgba(40, 50, 120, 0.22)">
+<span style="font-size: 18px; font-weight: 600; letter-spacing: -0.02em">{{card.title}}</span>
+<span style="font-size: 13px; color: rgba(255, 255, 255, 0.86)">{{card.sub}}</span>
+<span style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px">
+<span style="font-family: 'Doto', monospace; font-size: 64px; font-weight: 900; line-height: 1; letter-spacing: 0.04em">{{card.big}}</span>
+<span style="font-family: 'Geist Mono', monospace; font-size: 13px; align-self: flex-end; margin-bottom: 10px">{{card.unit}}</span>
+</span>
+<sc-if value="{{card.todo}}" hint-placeholder-val="{{true}}">
+<button type="button" onClick="{{card.act}}" style="align-self: flex-start; height: 40px; padding: 0 16px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.45); background: rgba(255, 255, 255, 0.2); color: #ffffff; font-size: 14px; font-weight: 500; cursor: pointer">{{card.cta}} →</button>
+</sc-if>
+<sc-if value="{{card.done}}" hint-placeholder-val="{{false}}">
+<span style="align-self: flex-start; height: 40px; padding: 0 16px; border-radius: 999px; background: #ffffff; color: #111317; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg>{{card.doneText}}</span>
+</sc-if>
+</article>
+</sc-for>
+</section>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800},"spin":{"editor":"range","default":1,"min":0,"max":3,"step":0.1,"section":"Motion"}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.a = 0.6;
+    this.b = 0.2;
+    this.boost = 0;
+    this.state = { done: {}, auto: true, ascii: this.frame(0.6, 0.2) };
+  }
+  frame(A, B) {
+    var W = 96, H = 30, chars = '.,-~:;=!*#$@';
+    var out = [], zb = [];
+    for (var k = 0; k < W * H; k++) { out.push(' '); zb.push(0); }
+    var cA = Math.cos(A), sA = Math.sin(A), cB = Math.cos(B), sB = Math.sin(B);
+    for (var j = 0; j < 6.283; j += 0.07) {
+      var ct = Math.cos(j), st = Math.sin(j);
+      for (var i = 0; i < 6.283; i += 0.02) {
+        var sp = Math.sin(i), cp = Math.cos(i);
+        var h = ct + 2;
+        var D = 1 / (sp * h * sA + st * cA + 5);
+        var t = sp * h * cA - st * sA;
+        var x = Math.floor(W / 2 + W * 0.36 * D * (cp * h * cB - t * sB));
+        var y = Math.floor(H / 2 + H * 0.66 * D * (cp * h * sB + t * cB));
+        var N = Math.floor(8 * ((st * sA - sp * ct * cA) * cB - sp * ct * sA - st * cA - cp * ct * sB));
+        var o = x + W * y;
+        if (y >= 0 && y < H && x >= 0 && x < W && D > zb[o]) {
+          zb[o] = D;
+          out[o] = chars.charAt(N > 0 ? N : 0);
+        }
+      }
+    }
+    var lines = [];
+    for (var r = 0; r < H; r++) { lines.push(out.slice(r * W, r * W + W).join('')); }
+    return lines.join('\n');
+  }
+  componentDidMount() {
+    var self = this;
+    this.timer = setInterval(function () {
+      var s = (self.props.spin == null ? 1 : self.props.spin) * (1 + self.boost * 4);
+      if (self.boost > 0) { self.boost = Math.max(0, self.boost - 0.03); }
+      self.a += 0.05 * s;
+      self.b += 0.025 * s;
+      self.setState({ ascii: self.frame(self.a, self.b) });
+    }, 70);
+  }
+  componentWillUnmount() {
+    clearInterval(this.timer);
+  }
+  renderVals() {
+    var self = this;
+    var done = this.state.done;
+    var mark = function (ids) {
+      var next = Object.assign({}, self.state.done);
+      ids.forEach(function (id) { next[id] = true; });
+      self.boost = 1;
+      self.setState({ done: next });
+    };
+    var data = [
+      { id: 'junk', gain: 10, title: 'Junk', sub: 'System, browser & update caches', big: '9.7', unit: 'GB', cta: 'Remove', doneText: 'Removed', tilt: 'perspective(1100px) rotateY(16deg)', bg: 'radial-gradient(circle at 18% 12%, #c9b8ff 0%, rgba(201, 184, 255, 0) 38%), radial-gradient(circle at 85% 90%, #ffd36e 0%, rgba(255, 211, 110, 0) 40%), radial-gradient(circle at 70% 45%, #2b4cff 0%, #3a2fd6 45%, #6a4bff 100%)' },
+      { id: 'startup', gain: 9, title: 'Startup', sub: 'Heavy apps launching at boot', big: '03', unit: 'apps', cta: 'Disable', doneText: '~12 s faster boot', tilt: 'translateY(-14px)', bg: 'radial-gradient(circle at 20% 10%, #1f6f62 0%, rgba(31, 111, 98, 0) 45%), radial-gradient(circle at 50% 55%, #4a1030 0%, rgba(74, 16, 48, 0) 55%), radial-gradient(circle at 80% 100%, #ff8a3d 0%, rgba(255, 138, 61, 0) 50%), linear-gradient(170deg, #0f3d3a 0%, #5a1236 60%, #c2452d 100%)' },
+      { id: 'downloads', gain: 6, title: 'Downloads', sub: 'Untouched for 90+ days', big: '18.7', unit: 'GB', cta: 'Review', doneText: 'Reviewed', tilt: 'perspective(1100px) rotateY(-16deg)', bg: 'radial-gradient(circle at 85% 15%, #ffc6ec 0%, rgba(255, 198, 236, 0) 40%), radial-gradient(circle at 15% 85%, #7fe3ff 0%, rgba(127, 227, 255, 0) 45%), linear-gradient(160deg, #8a5cff 0%, #c2449b 55%, #3a6bff 100%)' }
+    ];
+    var score = 72;
+    var reclaim = 31.7;
+    data.forEach(function (c) { if (done[c.id]) { score += c.gain; } });
+    if (done.junk) { reclaim -= 9.7; }
+    if (done.downloads) { reclaim -= 18.7; }
+    var allDone = done.junk && done.startup && done.downloads;
+    var auto = this.state.auto;
+    return {
+      ascii: this.state.ascii,
+      asciiOpacity: '0.55',
+      edgeLeft: '· ·\n  .  ;\n·  :  .\n  ~\n.  -  ·\n   ;\n ·',
+      edgeRight: '$ # @\n  * ; .\n. ! ~\n   : ·\n  .\n·',
+      headline: allDone ? 'all clear.' : 'your pc, lighter.',
+      score: score,
+      scoreWidth: score + '%',
+      reclaimText: allDone ? 'nothing left to clean' : reclaim.toFixed(1) + ' GB reclaimable',
+      ctaText: allDone ? 'Rescan' : 'Clean up',
+      fixAll: function () { mark(['junk', 'startup', 'downloads']); },
+      autoOn: auto ? 'true' : 'false',
+      autoTrack: auto ? '#2b4cff' : '#c4c8d0',
+      autoAlign: auto ? 'flex-end' : 'flex-start',
+      toggleAuto: function () { self.setState({ auto: !self.state.auto }); },
+      cards: data.map(function (c) {
+        var isDone = !!done[c.id];
+        return {
+          title: c.title, sub: c.sub, big: isDone ? '0' : c.big, unit: c.unit,
+          cta: c.cta, doneText: c.doneText, tilt: c.tilt, bg: c.bg,
+          done: isDone, todo: !isDone,
+          act: function () { mark([c.id]); }
+        };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>
