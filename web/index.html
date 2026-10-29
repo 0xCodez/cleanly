@@ -46,11 +46,35 @@ a:hover { color: #1a2fb0; }
   width: 1280px; height: 800px; position: relative; overflow: hidden;
   border-radius: 22px;
   background-color: var(--paper);
-  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
-  background-size: 22px 22px;
   box-shadow: 0 0 0 1px rgba(15, 18, 24, 0.06), 0 40px 120px rgba(30, 40, 90, 0.22);
   display: flex; flex-direction: column;
+  transition: background-color 0.8s var(--ease);
 }
+.app > .titlebar, .app > .body { position: relative; z-index: 1; }
+.bg-layer { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; opacity: 0; transition: opacity 0.9s var(--ease); }
+.app[data-bg="grid"] { background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 22px 22px; }
+.app[data-bg="mist"] { background-color: #f6f5f9; }
+.app[data-bg="mist"] #bgMist { opacity: 1; }
+.app[data-bg="dots"] { background-color: #f5f6f9; background-image: radial-gradient(circle, #d2d6e0 1px, transparent 1.5px); background-size: 18px 18px; }
+.app[data-bg="dots"] #bgDots { opacity: 1; }
+#bgDots i { position: absolute; border-radius: 50%; filter: blur(70px); animation: wander 22s ease-in-out infinite; }
+#bgDots i:nth-child(1) { right: -120px; top: -140px; width: 520px; height: 460px; background: rgba(255, 150, 190, 0.55); }
+#bgDots i:nth-child(2) { left: -160px; bottom: -180px; width: 560px; height: 480px; background: rgba(120, 170, 255, 0.5); animation-delay: -7s; }
+#bgDots i:nth-child(3) { left: 46%; bottom: -220px; width: 460px; height: 360px; background: rgba(255, 200, 140, 0.45); animation-delay: -14s; }
+@keyframes wander { 0%, 100% { transform: translate(0, 0) scale(1); } 33% { transform: translate(60px, 40px) scale(1.08); } 66% { transform: translate(-40px, -30px) scale(0.95); } }
+.app[data-bg="grain"] { background-color: #f3f1ee; }
+.app[data-bg="grain"] #bgGrain { opacity: 1; }
+#bgGrain { background: radial-gradient(1100px 700px at 20% -10%, #ffffff 0%, rgba(255, 255, 255, 0) 60%), radial-gradient(900px 600px at 110% 110%, rgba(214, 205, 255, 0.55) 0%, rgba(214, 205, 255, 0) 60%); }
+#bgGrain::before { content: ''; position: absolute; inset: -20%; background: conic-gradient(from 0deg at 60% 40%, rgba(255, 210, 225, 0), rgba(255, 210, 225, 0.45), rgba(200, 220, 255, 0.4), rgba(255, 230, 200, 0.4), rgba(255, 210, 225, 0)); filter: blur(80px); animation: slowspin 40s linear infinite; }
+#bgGrain::after { content: ''; position: absolute; inset: 0; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.4  0 0 0 0 0.38  0 0 0 0 0.36  0 0 0 0.55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); opacity: 0.55; mix-blend-mode: multiply; }
+@keyframes slowspin { to { transform: rotate(360deg); } }
+
+.bgpick { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 10; display: flex; align-items: center; gap: 4px; padding: 5px; border-radius: 999px; background: rgba(255, 255, 255, 0.78); backdrop-filter: blur(20px) saturate(160%); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.9), 0 10px 30px rgba(30, 40, 90, 0.16); }
+.bgpick > span { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.14em; color: var(--ink-3); padding: 0 8px 0 12px; }
+.bgpick button { height: 34px; padding: 0 14px; border-radius: 999px; border: 0; background: transparent; font-size: 13px; font-weight: 550; color: var(--ink-2); cursor: pointer; transition: background 0.2s, color 0.2s; }
+.bgpick button:hover { color: var(--ink); }
+.bgpick button[aria-pressed="true"] { background: #fff; color: var(--ink); box-shadow: 0 1px 2px rgba(15, 18, 24, 0.08), 0 4px 12px rgba(15, 18, 24, 0.08); }
+.bgpick kbd { font-family: var(--mono); font-size: 10px; color: var(--ink-3); margin-left: 6px; }
 
 /* icons: duotone = soft fill + crisp outline; styled through custom properties so they reach <use> clones */
 .ic { width: 20px; height: 20px; flex: none; --fo: 0.16; --sw: 1.7; --ac: var(--pink); }
@@ -81,7 +105,7 @@ symbol .a { fill: var(--ac); stroke: none; }
 .nav a.on { background: #fff; color: var(--ink); font-weight: 600; box-shadow: 0 1px 2px rgba(15, 18, 24, 0.08), 0 6px 18px rgba(15, 18, 24, 0.06); }
 .nav a.on .ic { color: var(--blue); }
 .nav .count { margin-left: auto; font-family: var(--mono); font-size: 11px; color: #b4235a; background: rgba(255, 93, 143, 0.12); padding: 2px 7px; border-radius: 999px; }
-.disk { margin-top: auto; padding: 16px; border-radius: 18px; background: rgba(255, 255, 255, 0.85); border: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; }
+.disk { margin-top: auto; padding: 16px; border-radius: 18px; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(16px); border: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; }
 .disk-row { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; font-weight: 600; }
 .disk-row span:last-child { font-family: var(--mono); font-weight: 400; font-size: 12px; color: var(--ink-3); }
 .bar { height: 6px; border-radius: 3px; background: #e8eaee; overflow: hidden; display: flex; }
@@ -92,16 +116,10 @@ symbol .a { fill: var(--ac); stroke: none; }
 /* main */
 .main { flex: 1; min-width: 0; padding: 4px 28px 24px 8px; display: flex; flex-direction: column; gap: 18px; }
 .top { display: flex; gap: 18px; height: 462px; }
-.card-w { border-radius: 28px; background: rgba(255, 255, 255, 0.84); border: 1px solid var(--line); box-shadow: 0 24px 60px rgba(15, 18, 24, 0.06); }
+.card-w { border-radius: 28px; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(22px) saturate(150%); border: 1px solid var(--line); box-shadow: 0 24px 60px rgba(15, 18, 24, 0.06); }
 
 .hero { flex: 1; min-width: 0; position: relative; overflow: hidden; padding: 32px 36px; display: flex; flex-direction: column; }
-.torus {
-  position: absolute; right: -40px; top: 34px; margin: 0;
-  font-family: var(--mono); font-size: 9px; line-height: 9px; white-space: pre;
-  background: linear-gradient(100deg, var(--blue) 0%, var(--violet) 35%, var(--pink) 70%, var(--amber) 100%);
-  -webkit-background-clip: text; background-clip: text; color: transparent; opacity: 0.55;
-  pointer-events: none; user-select: none;
-}
+.plume { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .hero-in { position: relative; display: flex; flex-direction: column; flex: 1; }
 .eyebrow { font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.14em; color: var(--blue); display: flex; align-items: center; gap: 8px; }
 .eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--mint); box-shadow: 0 0 0 4px rgba(31, 191, 143, 0.15); }
@@ -263,7 +281,7 @@ symbol .a { fill: var(--ac); stroke: none; }
 /* entrance */
 .rise { animation: rise 0.8s var(--ease) both; }
 @keyframes rise { from { opacity: 0; transform: translateY(14px); filter: blur(6px); } to { opacity: 1; transform: none; filter: blur(0); } }
-@media (prefers-reduced-motion: reduce) { .rise, .bubble, .bubble .disc::before, .cta::before, .lc .glow, .ember, .slider .fill::after, .parts i, .lc .shine { animation: none; } }
+@media (prefers-reduced-motion: reduce) { #bgDots i, #bgGrain::before, .rise, .bubble, .bubble .disc::before, .cta::before, .lc .glow, .ember, .slider .fill::after, .parts i, .lc .shine { animation: none; } }
 </style>
 </head>
 <body>
@@ -380,7 +398,10 @@ symbol .a { fill: var(--ac); stroke: none; }
 </svg>
 
 <div class="stage" id="stage">
-<div class="app">
+<div class="app" id="app" data-bg="grid">
+  <canvas class="bg-layer" id="bgMist" aria-hidden="true"></canvas>
+  <div class="bg-layer" id="bgDots" aria-hidden="true"><i></i><i></i><i></i></div>
+  <div class="bg-layer" id="bgGrain" aria-hidden="true"></div>
 
   <div class="titlebar">
     <span class="light" style="background: #ff5f57"></span>
@@ -420,7 +441,7 @@ symbol .a { fill: var(--ac); stroke: none; }
       <div class="top">
 
         <section class="hero card-w rise" style="animation-delay: 0.08s" aria-label="Scan result">
-          <pre class="torus" id="torus" aria-hidden="true"></pre>
+          <canvas class="plume" id="plume" aria-hidden="true"></canvas>
           <div class="hero-in">
             <span class="eyebrow"><span class="dot"></span><span id="eyebrow">SCAN COMPLETE · 14:32</span></span>
             <h1 id="heroTitle">Ready to reclaim</h1>
@@ -494,41 +515,109 @@ symbol .a { fill: var(--ac); stroke: none; }
 </div>
 </div>
 
+<div class="bgpick" role="group" aria-label="App background">
+  <span>BACKGROUND</span>
+  <button type="button" data-bg="grid" aria-pressed="true">Grid<kbd>1</kbd></button>
+  <button type="button" data-bg="mist" aria-pressed="false">Mist<kbd>2</kbd></button>
+  <button type="button" data-bg="dots" aria-pressed="false">Dots<kbd>3</kbd></button>
+  <button type="button" data-bg="grain" aria-pressed="false">Grain<kbd>4</kbd></button>
+</div>
+
 <script>
 (function () {
   // fit the 1280×800 window into the viewport
   var stage = document.getElementById('stage');
   function fit() {
-    var s = Math.min((window.innerWidth - 48) / 1280, (window.innerHeight - 48) / 800, 1);
-    stage.style.transform = 'translate(-50%, -50%) scale(' + Math.max(s, 0.3) + ')';
+    var s = Math.min((window.innerWidth - 48) / 1280, (window.innerHeight - 110) / 800, 1);
+    stage.style.transform = 'translate(-50%, calc(-50% - 26px)) scale(' + Math.max(s, 0.3) + ')';
   }
   window.addEventListener('resize', fit);
   fit();
 
-  var state = { cleaned: false, shown: 0, target: 31.7, boost: 0, a: 0.6, b: 0.2 };
+  var state = { cleaned: false, shown: 0, target: 31.7, boost: 0 };
 
-  // ASCII torus behind the hero number
-  function torus(A, B) {
-    var W = 70, H = 30, chars = '.,-~:;=!*#$@';
-    var out = new Array(W * H).fill(' '), zb = new Array(W * H).fill(0);
-    var cA = Math.cos(A), sA = Math.sin(A), cB = Math.cos(B), sB = Math.sin(B);
-    for (var j = 0; j < 6.283; j += 0.08) {
-      var ct = Math.cos(j), st = Math.sin(j);
-      for (var i = 0; i < 6.283; i += 0.025) {
-        var sp = Math.sin(i), cp = Math.cos(i), h = ct + 2;
-        var D = 1 / (sp * h * sA + st * cA + 5);
-        var t = sp * h * cA - st * sA;
-        var x = Math.floor(W / 2 + W * 0.36 * D * (cp * h * cB - t * sB));
-        var y = Math.floor(H / 2 + H * 0.62 * D * (cp * h * sB + t * cB));
-        var N = Math.floor(8 * ((st * sA - sp * ct * cA) * cB - sp * ct * sA - st * cA - cp * ct * sB));
-        var o = x + W * y;
-        if (y >= 0 && y < H && x >= 0 && x < W && D > zb[o]) { zb[o] = D; out[o] = chars.charAt(N > 0 ? N : 0); }
-      }
+  // "cosmic wind": domain-warped fbm smoke, drawn with WebGL
+  var FRAG = [
+    'precision highp float;',
+    'uniform vec2 r; uniform float t; uniform float energy; uniform float mode;',
+    'uniform vec3 c1; uniform vec3 c2; uniform vec3 c3; uniform vec3 c4;',
+    'float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }',
+    'float noise(vec2 p){ vec2 i = floor(p), f = fract(p); vec2 u = f * f * (3.0 - 2.0 * f);',
+    '  return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y); }',
+    'float fbm(vec2 p){ float v = 0.0, a = 0.5; mat2 m = mat2(1.6, 1.2, -1.2, 1.6);',
+    '  for (int i = 0; i < 5; i++) { v += a * noise(p); p = m * p; a *= 0.5; } return v; }',
+    'void main(){',
+    '  vec2 uv = gl_FragCoord.xy / r;',
+    '  vec2 p = vec2(uv.x * r.x / r.y, uv.y) * 2.3;',
+    '  float T = t * 0.12;',
+    '  vec2 q = vec2(fbm(p + vec2(0.0, -T * 2.0)), fbm(p + vec2(5.2, 1.3 - T * 2.0)));',
+    '  vec2 w = vec2(fbm(p + 3.0 * q + vec2(1.7, 9.2) - vec2(0.0, T * 3.0)), fbm(p + 3.0 * q + vec2(8.3, 2.8) - vec2(0.0, T * 2.5)));',
+    '  float f = fbm(p + 2.6 * w);',
+    '  float mask;',
+    '  if (mode < 0.5) {',
+    '    float h = uv.y - (f - 0.5) * 0.65 - 0.06 * sin(p.x * 1.4 + T * 5.0);',
+    '    mask = smoothstep(0.62, 0.0, h) * (0.45 + 0.55 * smoothstep(0.05, 0.75, uv.x));',
+    '  } else {',
+    '    mask = (0.3 + 0.7 * smoothstep(0.3, 0.85, f)) * (0.55 + 0.45 * smoothstep(1.0, 0.0, uv.y));',
+    '  }',
+    '  vec3 col = mix(c1, c2, smoothstep(0.2, 0.8, w.x));',
+    '  col = mix(col, c3, smoothstep(0.3, 0.9, q.y));',
+    '  col = mix(col, c4, smoothstep(0.55, 0.95, f));',
+    '  float a = clamp(mask * energy * (0.35 + 0.6 * f), 0.0, 0.92);',
+    '  gl_FragColor = vec4(col * a, a);',
+    '}'
+  ].join('\n');
+
+  function hex(h) { var n = parseInt(h.slice(1), 16); return [(n >> 16 & 255) / 255, (n >> 8 & 255) / 255, (n & 255) / 255]; }
+
+  function flow(canvas, mode, scale) {
+    var gl = canvas.getContext('webgl', { premultipliedAlpha: true, alpha: true, antialias: false });
+    if (!gl) return null;
+    function sh(type, src) { var o = gl.createShader(type); gl.shaderSource(o, src); gl.compileShader(o); return o; }
+    var prog = gl.createProgram();
+    gl.attachShader(prog, sh(gl.VERTEX_SHADER, 'attribute vec2 p; void main(){ gl_Position = vec4(p, 0.0, 1.0); }'));
+    gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FRAG));
+    gl.linkProgram(prog);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return null;
+    gl.useProgram(prog);
+    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+    var loc = gl.getAttribLocation(prog, 'p');
+    gl.enableVertexAttribArray(loc);
+    gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+    var u = {};
+    ['r', 't', 'energy', 'mode', 'c1', 'c2', 'c3', 'c4'].forEach(function (k) { u[k] = gl.getUniformLocation(prog, k); });
+    function size() {
+      canvas.width = Math.max(2, Math.round(canvas.clientWidth * scale));
+      canvas.height = Math.max(2, Math.round(canvas.clientHeight * scale));
+      gl.viewport(0, 0, canvas.width, canvas.height);
     }
-    var lines = [];
-    for (var r = 0; r < H; r++) lines.push(out.slice(r * W, r * W + W).join(''));
-    return lines.join('\n');
+    size();
+    return {
+      colors: null,
+      draw: function (time, energy, target) {
+        if (!this.colors) this.colors = target.map(function (c) { return c.slice(); });
+        var cur = this.colors;
+        for (var i = 0; i < 4; i++) for (var j = 0; j < 3; j++) cur[i][j] += (target[i][j] - cur[i][j]) * 0.03;
+        gl.uniform2f(u.r, canvas.width, canvas.height);
+        gl.uniform1f(u.t, time);
+        gl.uniform1f(u.energy, energy);
+        gl.uniform1f(u.mode, mode);
+        gl.uniform3fv(u.c1, cur[0]); gl.uniform3fv(u.c2, cur[1]); gl.uniform3fv(u.c3, cur[2]); gl.uniform3fv(u.c4, cur[3]);
+        gl.clearColor(0, 0, 0, 0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+      }
+    };
   }
+
+  var PAL = {
+    plume: ['#ffa8c4', '#ffd2a1', '#a9d6ff', '#cbb9ff'].map(hex),
+    calm: ['#8fefc9', '#a8dcff', '#d4f6ff', '#b9f0e0'].map(hex),
+    mist: ['#ffc2d6', '#bfe0ff', '#ffe0bf', '#d8ccff'].map(hex)
+  };
+  var plume = flow(document.getElementById('plume'), 0, 0.75);
+  var mist = flow(document.getElementById('bgMist'), 1, 0.5);
 
   var bubbles = [
     { name: 'Users', size: '142 GB', x: 104, y: 84, d: 196, icon: 'i-user', c1: '#6d7bff', c2: '#a77bff', sh: '109, 123, 255' },
@@ -571,19 +660,36 @@ symbol .a { fill: var(--ac); stroke: none; }
   }
   layoutBubbles();
 
-  var torusEl = document.getElementById('torus');
   var bigNum = document.getElementById('bigNum');
+  var app = document.getElementById('app');
   var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var clock = 0, mistClock = 0, last = performance.now();
 
-  setInterval(function () {
-    var s = reduce ? 0.2 : 1 + state.boost * 4;
-    if (state.boost > 0) state.boost = Math.max(0, state.boost - 0.03);
-    state.a += 0.05 * s; state.b += 0.025 * s;
-    torusEl.textContent = torus(state.a, state.b);
+  function frame(now) {
+    var dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    var speed = reduce ? 0.15 : 1 + state.boost * 3;
+    state.boost = Math.max(0, state.boost - dt * 0.8);
+    clock += dt * speed;
+    mistClock += dt * (reduce ? 0.15 : 0.6);
+    if (plume) plume.draw(clock + 20, 1 + state.boost * 0.25, state.cleaned ? PAL.calm : PAL.plume);
+    if (mist && app.dataset.bg === 'mist') mist.draw(mistClock + 50, 1.15, PAL.mist);
     var diff = state.target - state.shown;
-    if (Math.abs(diff) > 0.04) state.shown += diff * 0.12; else state.shown = state.target;
+    state.shown = Math.abs(diff) > 0.04 ? state.shown + diff * (1 - Math.exp(-dt * 7)) : state.target;
     bigNum.textContent = state.shown.toFixed(1);
-  }, 70);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  // background picker
+  var picks = document.querySelectorAll('.bgpick button');
+  function setBg(name) {
+    app.dataset.bg = name;
+    picks.forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.bg === name ? 'true' : 'false'); });
+    try { localStorage.setItem('glint-bg', name); } catch (e) {}
+  }
+  picks.forEach(function (b) { b.addEventListener('click', function () { setBg(b.dataset.bg); }); });
+  try { var saved = localStorage.getItem('glint-bg'); if (saved) setBg(saved); } catch (e) {}
 
   function setCleaned(on) {
     state.cleaned = on;
@@ -626,6 +732,8 @@ symbol .a { fill: var(--ac); stroke: none; }
     document.getElementById('updSub').textContent = 'Everything is up to date';
   });
   document.addEventListener('keydown', function (e) {
+    var n = ['1', '2', '3', '4'].indexOf(e.key);
+    if (n >= 0) setBg(['grid', 'mist', 'dots', 'grain'][n]);
     if (e.key === 'Enter' && document.activeElement === document.body && !state.cleaned) setCleaned(true);
   });
 })();
