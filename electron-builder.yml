@@ -10,7 +10,8 @@ files:
   - dist-electron/**
   - package.json
 asar: true
-artifactName: ${productName}-${version}-${os}-${arch}.${ext}
+# no version in file names, so releases/latest/download/<name> links never go stale
+artifactName: ${productName}-${os}-${arch}.${ext}
 publish: null
 
 win:
@@ -26,9 +27,9 @@ nsis:
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: true
   shortcutName: Cleanly
-  artifactName: ${productName}-${version}-setup.${ext}
+  artifactName: ${productName}-setup.${ext}
 portable:
-  artifactName: ${productName}-${version}-portable.${ext}
+  artifactName: ${productName}-portable.${ext}
 
 mac:
   icon: build/icon.png
