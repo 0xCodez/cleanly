@@ -137,63 +137,92 @@ symbol .a { fill: var(--ac); stroke: none; }
 .map-head b { font-family: var(--display); font-size: 14px; font-weight: 500; letter-spacing: -0.01em; }
 .map-head a { font-size: 13px; font-weight: 550; text-decoration: none; }
 .bubble {
-  position: absolute; border-radius: 50%; background: #fff; border: 1px solid var(--line);
-  transition: width 1s var(--ease), height 1s var(--ease), left 1s var(--ease), top 1s var(--ease), box-shadow 0.6s;
+  position: absolute; border-radius: 50%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-align: center;
+  background: radial-gradient(circle at 32% 24%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.55) 28%, var(--t2) 100%);
+  border: 1.5px solid var(--t1);
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.9), inset 0 -10px 24px var(--t3), 0 14px 34px var(--t3), 0 0 46px var(--t3);
+  backdrop-filter: blur(6px);
+  animation: bob var(--dur, 6s) ease-in-out var(--delay, 0s) infinite;
+  transition: width 1s var(--ease), height 1s var(--ease), left 1s var(--ease), top 1s var(--ease);
 }
-.bubble.hot { border: 2px dashed var(--pink); box-shadow: 0 0 0 6px rgba(255, 93, 143, 0.12); }
-.bubble .fill { position: absolute; inset: 0; border-radius: 50%; overflow: hidden; }
-.bubble pre { position: absolute; left: 0; top: 0; margin: 0; font-family: var(--mono); font-size: 9px; line-height: 9px; white-space: pre; -webkit-background-clip: text; background-clip: text; color: transparent; }
-.chip {
-  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-  padding: 6px 10px 6px 7px; border-radius: 12px; background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 2px 10px rgba(15, 18, 24, 0.1); display: flex; align-items: center; gap: 7px; white-space: nowrap;
-}
-.chip .ico { width: 24px; height: 24px; border-radius: 8px; display: grid; place-items: center; color: #fff; }
-.chip .ico .ic { width: 15px; height: 15px; }
-.chip .ico .ic { --fo: 0.3; --sw: 2; --ac: #fff; }
-.chip .t { display: flex; flex-direction: column; line-height: 1.15; }
-.chip .t b { font-size: 12.5px; font-weight: 600; }
-.chip .t span { font-family: var(--mono); font-size: 10.5px; color: var(--ink-3); }
+.bubble::before { content: ''; position: absolute; left: 16%; top: 9%; width: 42%; height: 24%; border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0)); transform: rotate(-24deg); pointer-events: none; }
+.bubble .ic { position: relative; width: var(--icon, 24px); height: var(--icon, 24px); color: var(--ink); --fo: 0.22; --sw: 1.6; --ac: var(--ink); }
+.bubble b { position: relative; font-size: 12.5px; font-weight: 600; letter-spacing: -0.01em; color: #1d1f2b; line-height: 1.1; }
+.bubble span { position: relative; font-family: var(--mono); font-size: 10.5px; color: var(--ink-3); }
+.bubble.small b { font-size: 12px; }
+.bubble.hot::after { content: ''; position: absolute; inset: -7px; border-radius: 50%; border: 2px solid rgba(255, 170, 60, 0.85); box-shadow: 0 0 18px rgba(255, 170, 60, 0.55); animation: hotpulse 2.2s ease-in-out infinite; }
+@keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+@keyframes hotpulse { 0%, 100% { opacity: 0.55; transform: scale(1); } 50% { opacity: 1; transform: scale(1.04); } }
 .map-foot { position: absolute; left: 24px; right: 24px; bottom: 18px; display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-3); }
-.map-foot i { width: 12px; height: 12px; border-radius: 50%; border: 2px dashed var(--pink); }
+.map-foot i { width: 12px; height: 12px; border-radius: 50%; border: 2px solid rgba(255, 170, 60, 0.9); box-shadow: 0 0 8px rgba(255, 170, 60, 0.6); }
 
-/* holo cards */
+/* live cards */
 .cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; flex: 1; }
-.holo {
-  position: relative; overflow: hidden; border-radius: 24px; padding: 16px 18px 18px; color: #fff;
-  display: flex; flex-direction: column; box-shadow: 0 20px 44px rgba(40, 50, 120, 0.18);
+.lc {
+  position: relative; overflow: hidden; overflow: clip; border-radius: 26px; padding: 16px 18px 22px; color: #fff;
+  display: flex; flex-direction: column;
+  border: 1px solid transparent;
+  background: var(--bg) padding-box, linear-gradient(150deg, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.08) 45%, rgba(255, 255, 255, 0.45)) border-box;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.4), 0 18px 40px var(--sh);
   transition: transform 0.35s var(--ease), box-shadow 0.35s var(--ease);
 }
-.holo:hover { transform: translateY(-4px); box-shadow: 0 28px 56px rgba(40, 50, 120, 0.26); }
-.holo::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0) 45%); pointer-events: none; }
-.holo-top { position: relative; display: flex; align-items: center; gap: 10px; }
-.glass-ico { width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center; background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.45); box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.5); }
-.glass-ico .ic { width: 18px; height: 18px; color: #fff; --fo: 0.3; --ac: #ffd36e; }
-.holo-top div { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
-.holo-top b { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
-.holo-top span { font-family: var(--mono); font-size: 10.5px; color: rgba(255, 255, 255, 0.85); white-space: nowrap; }
-.holo-num { position: relative; flex: 1; display: flex; align-items: baseline; align-content: center; flex-wrap: wrap; gap: 8px; padding-top: 18px; }
-.holo-num strong { font-family: var(--display); font-size: 42px; font-weight: 500; letter-spacing: -0.04em; line-height: 1; font-variant-numeric: tabular-nums; }
-.holo-num em { font-style: normal; font-family: var(--mono); font-size: 12px; opacity: 0.9; }
+.lc:hover { transform: translateY(-4px); box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.4), 0 26px 52px var(--sh); }
+.lc::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0) 45%); pointer-events: none; }
+.lc::after { content: ''; position: absolute; left: 50%; bottom: 8px; width: 56px; height: 3px; margin-left: -28px; border-radius: 2px; background: rgba(255, 255, 255, 0.5); }
+.lc .glow { position: absolute; width: 240px; height: 210px; border-radius: 50%; background: var(--blob); filter: blur(18px); pointer-events: none; animation: drift var(--bd, 6s) ease-in-out infinite; }
+@keyframes drift { 0%, 100% { transform: translate(-18px, 0) scale(1); opacity: 0.85; } 50% { transform: translate(24px, 12px) scale(1.18); opacity: 1; } }
+.lc-top { position: relative; display: flex; align-items: center; gap: 10px; }
+.lc-top b { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; color: var(--tc); }
+.glass-ico { width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.45); box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.5); }
+.glass-ico .ic { width: 17px; height: 17px; color: #fff; --fo: 0.3; --ac: #fff; }
+.lc-num { position: relative; display: flex; align-items: baseline; gap: 6px; margin-top: 16px; }
+.lc-num strong { font-family: var(--display); font-size: 40px; font-weight: 300; letter-spacing: -0.05em; line-height: 1; font-variant-numeric: tabular-nums; }
+.lc-num em { font-style: normal; font-size: 13px; font-weight: 600; color: var(--tc); }
+.lc-sub { position: relative; font-size: 12.5px; color: var(--sc); margin-top: 6px; }
+.lc-foot { position: relative; margin-top: auto; }
 .pill {
-  position: relative; align-self: flex-start; height: 34px; padding: 0 14px; border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.45); background: rgba(255, 255, 255, 0.18); color: #fff;
-  font-size: 13px; font-weight: 550; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
-  backdrop-filter: blur(6px); transition: background 0.2s;
+  height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.18); color: #fff; font-size: 13px; font-weight: 600; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px; backdrop-filter: blur(6px);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.5); transition: background 0.2s;
 }
 .pill:hover { background: rgba(255, 255, 255, 0.3); }
 .pill.done { background: #fff; color: var(--ink); border-color: #fff; cursor: default; }
 .pill .ic { width: 14px; height: 14px; }
 
-.c1 { background: radial-gradient(circle at 18% 12%, #c9b8ff 0%, rgba(201, 184, 255, 0) 38%), radial-gradient(circle at 85% 90%, #ffd36e 0%, rgba(255, 211, 110, 0) 40%), radial-gradient(circle at 70% 45%, #2b4cff 0%, #3a2fd6 45%, #6a4bff 100%); }
-.c2 { background: radial-gradient(circle at 80% 15%, #7fe3c4 0%, rgba(127, 227, 196, 0) 40%), linear-gradient(160deg, #0f4a44 0%, #1f8f84 55%, #2b4cff 100%); }
-.c3 { background: radial-gradient(circle at 20% 10%, #1f6f62 0%, rgba(31, 111, 98, 0) 45%), radial-gradient(circle at 80% 100%, #ff8a3d 0%, rgba(255, 138, 61, 0) 50%), linear-gradient(170deg, #0f3d3a 0%, #5a1236 60%, #c2452d 100%); }
-.c4 { background: radial-gradient(circle at 85% 15%, #ffc6ec 0%, rgba(255, 198, 236, 0) 40%), radial-gradient(circle at 15% 85%, #7fe3ff 0%, rgba(127, 227, 255, 0) 45%), linear-gradient(160deg, #8a5cff 0%, #c2449b 55%, #3a6bff 100%); }
+/* cleanup: embers drifting up */
+.ember { position: absolute; bottom: -8px; width: 5px; height: 5px; border-radius: 50%; background: #ffd0d8; box-shadow: 0 0 10px #ff8aa0; animation: ember var(--ed, 3s) linear var(--edl, 0s) infinite; pointer-events: none; }
+@keyframes ember { 0% { transform: translateY(0) scale(0.6); opacity: 0; } 15% { opacity: 1; } 100% { transform: translate(12px, -190px) scale(1.1); opacity: 0; } }
+.lc.calm .ember { animation-play-state: paused; opacity: 0; }
+
+/* speed: liquid slider */
+.slider { position: relative; width: 100%; height: 38px; padding: 0; border-radius: 999px; cursor: pointer; background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.4); box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.45), inset 0 -2px 6px rgba(0, 0, 0, 0.18); }
+.slider .fill { position: absolute; left: 5px; top: 6px; height: 24px; width: 36%; border-radius: 999px; overflow: hidden; background: linear-gradient(90deg, #f6ffb0 0%, #ffffff 60%, rgba(255, 255, 255, 0.6) 100%); box-shadow: 0 0 18px rgba(234, 255, 124, 0.95), 0 0 40px rgba(234, 255, 124, 0.45); transition: width 0.9s var(--ease); }
+.slider .fill::after { content: ''; position: absolute; top: 0; bottom: 0; width: 40%; background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(220, 255, 120, 0.9), rgba(255, 255, 255, 0)); animation: sweep 2.2s ease-in-out infinite; }
+@keyframes sweep { from { left: -40%; } to { left: 100%; } }
+.slider .knob { position: absolute; left: calc(36% - 14px); top: 2px; width: 32px; height: 32px; border-radius: 50%; background: rgba(255, 255, 255, 0.35); border: 1px solid rgba(255, 255, 255, 0.95); backdrop-filter: blur(4px); box-shadow: inset 0 1px 2px #fff, 0 4px 10px rgba(0, 0, 0, 0.22); transition: left 0.9s var(--ease); }
+.slider.on .fill { width: calc(100% - 10px); }
+.slider.on .knob { left: calc(100% - 36px); }
+
+/* protection: floating particles */
+.parts { height: 34px; }
+.parts i { position: absolute; border-radius: 50%; background: #fff; animation: float var(--fd, 2.6s) ease-in-out var(--fdl, 0s) infinite; }
+@keyframes float { 0%, 100% { transform: translate(0, 0); opacity: 0.35; } 50% { transform: translate(6px, -12px); opacity: 0.95; } }
+
+/* apps: shimmer sweep across the card */
+.lc .shine { position: absolute; top: -20%; left: 0; width: 30%; height: 140%; background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0)); transform: skewX(-18deg); animation: shine 4.5s ease-in-out infinite; pointer-events: none; }
+@keyframes shine { 0% { left: -40%; } 55%, 100% { left: 130%; } }
+
+.c-clean { --bg: linear-gradient(165deg, #c4253a 0%, #8f1430 100%); --blob: radial-gradient(closest-side, rgba(255, 180, 205, 0.95), rgba(255, 70, 120, 0.4) 55%, rgba(255, 70, 120, 0)); --sh: rgba(160, 25, 50, 0.3); --tc: #ffd9df; --sc: #ffc0cb; }
+.c-speed { --bg: linear-gradient(165deg, #4f6a14 0%, #2f420c 100%); --blob: radial-gradient(closest-side, rgba(230, 255, 190, 0.6), rgba(150, 220, 90, 0.2) 55%, rgba(150, 220, 90, 0)); --sh: rgba(60, 85, 15, 0.3); --tc: #efff8a; --sc: #d2e87a; }
+.c-prot { --bg: linear-gradient(165deg, #6a6ef0 0%, #4045c8 100%); --blob: radial-gradient(closest-side, rgba(215, 230, 255, 0.85), rgba(150, 170, 255, 0.3) 55%, rgba(150, 170, 255, 0)); --sh: rgba(70, 75, 210, 0.3); --tc: #f0f1ff; --sc: #e0e2ff; }
+.c-apps { --bg: linear-gradient(165deg, #1a86c4 0%, #0b4f7a 100%); --blob: radial-gradient(closest-side, rgba(170, 240, 255, 0.85), rgba(70, 180, 255, 0.35) 55%, rgba(70, 180, 255, 0)); --sh: rgba(15, 90, 140, 0.3); --tc: #dff4ff; --sc: #c4e8fa; }
 
 /* entrance */
 .rise { animation: rise 0.8s var(--ease) both; }
 @keyframes rise { from { opacity: 0; transform: translateY(14px); filter: blur(6px); } to { opacity: 1; transform: none; filter: blur(0); } }
-@media (prefers-reduced-motion: reduce) { .rise, .orb::after { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .rise, .orb::after, .bubble, .bubble.hot::after, .lc .glow, .ember, .slider .fill::after, .parts i, .lc .shine { animation: none; } }
 </style>
 </head>
 <body>
@@ -369,31 +398,53 @@ symbol .a { fill: var(--ac); stroke: none; }
         <section class="map card-w rise" style="animation-delay: 0.16s" aria-label="Space map">
           <div class="map-head"><b>Space map</b><a href="#">Open ›</a></div>
           <div id="bubbles"></div>
-          <div class="map-foot"><i></i><span id="mapNote">Dashed ring — folders with stuff to clean</span></div>
+          <div class="map-foot"><i></i><span id="mapNote">Glowing ring — folders with stuff to clean</span></div>
         </section>
 
       </div>
 
       <div class="cards">
-        <article class="holo c1 rise" style="animation-delay: 0.24s">
-          <div class="holo-top"><span class="glass-ico"><svg class="ic"><use href="#i-broom"/></svg></span><div><b>Cleanup</b><span>junk · cache · trash</span></div></div>
-          <div class="holo-num"><strong id="cleanNum">9.7</strong><em>GB</em></div>
-          <button type="button" class="pill" data-card="cleanup" data-done="Removed">Remove <svg class="ic"><use href="#i-arrow"/></svg></button>
+        <article class="lc c-clean rise" id="cardClean" style="animation-delay: 0.24s">
+          <span class="glow" style="left: 40px; top: -70px; --bd: 5s"></span>
+          <i class="ember" style="left: 18%; --ed: 3.2s; --edl: 0s"></i>
+          <i class="ember" style="left: 36%; --ed: 2.6s; --edl: -1.1s"></i>
+          <i class="ember" style="left: 55%; --ed: 3.6s; --edl: -2s"></i>
+          <i class="ember" style="left: 72%; --ed: 2.9s; --edl: -0.6s"></i>
+          <i class="ember" style="left: 88%; --ed: 3.4s; --edl: -1.7s"></i>
+          <div class="lc-top"><span class="glass-ico"><svg class="ic"><use href="#i-broom"/></svg></span><b>Cleanup</b></div>
+          <div class="lc-num"><strong id="cleanNum">9.7</strong><em>GB</em></div>
+          <div class="lc-sub" id="cleanSub">Caches · temp files · trash</div>
+          <div class="lc-foot"><button type="button" class="pill" id="cleanBtn">Remove <svg class="ic"><use href="#i-arrow"/></svg></button></div>
         </article>
-        <article class="holo c2 rise" style="animation-delay: 0.3s">
-          <div class="holo-top"><span class="glass-ico"><svg class="ic"><use href="#i-shield"/></svg></span><div><b>Protection</b><span>41,382 files</span></div></div>
-          <div class="holo-num"><strong>OK</strong><em>no threats</em></div>
-          <button type="button" class="pill" data-card="protect" data-done="All safe">Deep scan <svg class="ic"><use href="#i-arrow"/></svg></button>
+        <article class="lc c-speed rise" style="animation-delay: 0.3s">
+          <span class="glow" style="left: 20px; top: 80px; --bd: 6s"></span>
+          <div class="lc-top"><span class="glass-ico"><svg class="ic"><use href="#i-gauge"/></svg></span><b>Speed</b></div>
+          <div class="lc-num"><strong id="bootNum">24</strong><em>s boot</em></div>
+          <div class="lc-sub" id="bootSub">3 heavy apps at login</div>
+          <div class="lc-foot"><button type="button" class="slider" id="boost" aria-pressed="false" aria-label="Turn off heavy login items"><span class="fill"></span><span class="knob"></span></button></div>
         </article>
-        <article class="holo c3 rise" style="animation-delay: 0.36s">
-          <div class="holo-top"><span class="glass-ico"><svg class="ic"><use href="#i-gauge"/></svg></span><div><b>Speed</b><span>login items</span></div></div>
-          <div class="holo-num"><strong>03</strong><em>heavy</em></div>
-          <button type="button" class="pill" data-card="speed" data-done="~12 s faster">Disable <svg class="ic"><use href="#i-arrow"/></svg></button>
+        <article class="lc c-prot rise" style="animation-delay: 0.36s">
+          <span class="glow" style="left: 0; top: 100px; --bd: 7s"></span>
+          <div class="lc-top"><span class="glass-ico"><svg class="ic"><use href="#i-shield"/></svg></span><b>Protection</b></div>
+          <div class="lc-num"><strong>97</strong><em>/ 100</em></div>
+          <div class="lc-sub">No threats · 41,382 files</div>
+          <div class="lc-foot parts" aria-hidden="true">
+            <i style="left: 2%; top: 18px; width: 12px; height: 12px; filter: blur(3px); --fd: 2.4s"></i>
+            <i style="left: 16%; top: 6px; width: 9px; height: 9px; filter: blur(2px); --fd: 3s; --fdl: -0.6s"></i>
+            <i style="left: 30%; top: 20px; width: 14px; height: 14px; filter: blur(4px); --fd: 2.7s; --fdl: -1.2s"></i>
+            <i style="left: 44%; top: 4px; width: 8px; height: 8px; filter: blur(1px); --fd: 2.2s; --fdl: -0.3s"></i>
+            <i style="left: 57%; top: 18px; width: 12px; height: 12px; filter: blur(3px); --fd: 3.2s; --fdl: -1.8s"></i>
+            <i style="left: 71%; top: 8px; width: 10px; height: 10px; filter: blur(2px); --fd: 2.6s; --fdl: -0.9s"></i>
+            <i style="left: 85%; top: 20px; width: 13px; height: 13px; filter: blur(4px); --fd: 2.9s; --fdl: -2.1s"></i>
+          </div>
         </article>
-        <article class="holo c4 rise" style="animation-delay: 0.42s">
-          <div class="holo-top"><span class="glass-ico"><svg class="ic"><use href="#i-apps"/></svg></span><div><b>Apps</b><span>updates ready</span></div></div>
-          <div class="holo-num"><strong>04</strong><em>apps</em></div>
-          <button type="button" class="pill" data-card="apps" data-done="Up to date">Update <svg class="ic"><use href="#i-arrow"/></svg></button>
+        <article class="lc c-apps rise" style="animation-delay: 0.42s">
+          <span class="glow" style="left: 60px; top: -60px; --bd: 6.5s"></span>
+          <span class="shine"></span>
+          <div class="lc-top"><span class="glass-ico"><svg class="ic"><use href="#i-apps"/></svg></span><b>Applications</b></div>
+          <div class="lc-num"><strong id="updNum">4</strong><em>updates</em></div>
+          <div class="lc-sub" id="updSub">2 unused for 6 months</div>
+          <div class="lc-foot"><button type="button" class="pill" id="updBtn">Update all <svg class="ic"><use href="#i-arrow"/></svg></button></div>
         </article>
       </div>
     </main>
@@ -413,7 +464,7 @@ symbol .a { fill: var(--ac); stroke: none; }
   window.addEventListener('resize', fit);
   fit();
 
-  var state = { cleaned: false, shown: 0, target: 31.7, boost: 0, a: 0.6, b: 0.2, tick: 0, seed: 1 };
+  var state = { cleaned: false, shown: 0, target: 31.7, boost: 0, a: 0.6, b: 0.2 };
 
   // ASCII torus behind the hero number
   function torus(A, B) {
@@ -438,79 +489,43 @@ symbol .a { fill: var(--ac); stroke: none; }
     return lines.join('\n');
   }
 
-  // ASCII-shaded sphere for space-map bubbles
-  function sphere(size, seed) {
-    var chars = ' .:-=+tS%X#@', cw = 5.4, lh = 9;
-    var cols = Math.ceil(size / cw), rows = Math.ceil(size / lh);
-    var s = seed * 9301 + size * 49297;
-    function rnd() { s = (s * 9301 + 49297) % 233280; return s / 233280; }
-    var lines = [];
-    for (var r = 0; r < rows; r++) {
-      var line = '';
-      for (var c = 0; c < cols; c++) {
-        var nx = ((c + 0.5) * cw) / size * 2 - 1, ny = ((r + 0.5) * lh) / size * 2 - 1, d2 = nx * nx + ny * ny;
-        if (d2 > 1) { line += ' '; continue; }
-        var l = -0.45 * nx - 0.55 * ny + 0.7 * Math.sqrt(1 - d2);
-        l = Math.max(0, Math.min(1, l * 0.9 + (rnd() - 0.5) * 0.35));
-        line += chars.charAt(Math.floor(l * (chars.length - 1)));
-      }
-      lines.push(line);
-    }
-    return lines.join('\n');
-  }
-
-  var G = {
-    blue: 'linear-gradient(120deg, #2b4cff, #8a5cff)',
-    warm: 'linear-gradient(120deg, #ff5d8f, #ffb547)',
-    teal: 'linear-gradient(120deg, #1f8f84, #2b4cff)',
-    violet: 'linear-gradient(120deg, #8a5cff, #ff5d8f)',
-    grey: 'linear-gradient(120deg, #5b6270, #9aa0ab)'
-  };
   var bubbles = [
-    { name: 'Users', size: '142 GB', x: 104, y: 84, d: 196, g: G.blue, icon: 'i-user' },
-    { name: 'Games', size: '96 GB', x: 296, y: 168, d: 132, g: G.teal, icon: 'i-game' },
-    { name: 'Apps', size: '58 GB', x: 36, y: 268, d: 112, g: G.violet, icon: 'i-apps' },
-    { name: 'Downloads', size: '18.7 GB', x: 168, y: 306, d: 100, g: G.warm, icon: 'i-down', hot: true },
-    { name: 'Windows', size: '31 GB', x: 290, y: 320, d: 88, g: G.grey, icon: 'i-chip' },
-    { name: '+12', size: '9 GB', x: 30, y: 120, d: 60, g: G.grey, icon: 'i-more', compact: true }
+    { name: 'Users', size: '142 GB', x: 104, y: 84, d: 196, icon: 'i-user', t: '106, 92, 255', ink: '#4b3fd6' },
+    { name: 'Games', size: '96 GB', x: 296, y: 168, d: 132, icon: 'i-game', t: '43, 140, 255', ink: '#1f62c8' },
+    { name: 'Apps', size: '58 GB', x: 36, y: 268, d: 112, icon: 'i-apps', t: '154, 92, 255', ink: '#6a3bd6' },
+    { name: 'Downloads', size: '18.7 GB', x: 168, y: 306, d: 100, icon: 'i-down', t: '255, 154, 61', ink: '#c2610f', hot: true },
+    { name: 'Windows', size: '31 GB', x: 290, y: 320, d: 88, icon: 'i-chip', t: '150, 140, 190', ink: '#575079' },
+    { name: '+12', size: '9 GB', x: 30, y: 120, d: 60, t: '160, 160, 185', ink: '#575079', small: true }
   ];
   var wrap = document.getElementById('bubbles');
-  bubbles.forEach(function (b) {
+  bubbles.forEach(function (b, i) {
     var el = document.createElement('div');
-    el.className = 'bubble' + (b.hot ? ' hot' : '');
-    var pre = document.createElement('pre');
-    pre.setAttribute('aria-hidden', 'true');
-    pre.style.backgroundImage = b.g;
-    var fill = document.createElement('div');
-    fill.className = 'fill';
-    fill.appendChild(pre);
-    el.appendChild(fill);
-    var chip = document.createElement('div');
-    chip.className = 'chip';
-    chip.innerHTML = b.compact
-      ? '<span class="t"><b>' + b.name + '</b><span>' + b.size + '</span></span>'
-      : '<span class="ico" style="background:' + b.g + '"><svg class="ic"><use href="#' + b.icon + '"/></svg></span><span class="t"><b>' + b.name + '</b><span class="sz">' + b.size + '</span></span>';
-    el.appendChild(chip);
+    el.className = 'bubble' + (b.small ? ' small' : '');
+    el.style.setProperty('--t1', 'rgba(' + b.t + ', 0.55)');
+    el.style.setProperty('--t2', 'rgba(' + b.t + ', 0.3)');
+    el.style.setProperty('--t3', 'rgba(' + b.t + ', 0.22)');
+    el.style.setProperty('--ink', b.ink);
+    el.style.setProperty('--icon', Math.round(Math.max(18, Math.min(34, b.d * 0.16))) + 'px');
+    el.style.setProperty('--dur', (5.5 + (i % 3) * 0.8) + 's');
+    el.style.setProperty('--delay', (-i * 0.7) + 's');
+    el.innerHTML = (b.icon ? '<svg class="ic" aria-hidden="true"><use href="#' + b.icon + '"/></svg>' : '') +
+      '<b>' + b.name + '</b><span class="sz">' + b.size + '</span>';
     wrap.appendChild(el);
-    b.el = el; b.pre = pre; b.sz = chip.querySelector('.sz');
+    b.el = el; b.sz = el.querySelector('.sz');
   });
   function layoutBubbles() {
     bubbles.forEach(function (b) {
-      var d = b.hot && state.cleaned ? 72 : b.d;
+      var d = b.hot && state.cleaned ? 76 : b.d;
       var off = (b.d - d) / 2;
       b.el.style.left = (b.x + off) + 'px';
       b.el.style.top = (b.y + off) + 'px';
       b.el.style.width = d + 'px';
       b.el.style.height = d + 'px';
       b.el.classList.toggle('hot', !!b.hot && !state.cleaned);
-      if (b.hot && b.sz) b.sz.textContent = state.cleaned ? '0.4 GB' : b.size;
+      if (b.hot) b.sz.textContent = state.cleaned ? '0.4 GB' : b.size;
     });
   }
-  function paintBubbles() {
-    bubbles.forEach(function (b, i) { b.pre.textContent = sphere(b.hot && state.cleaned ? 72 : b.d, state.seed + i * 7); });
-  }
   layoutBubbles();
-  paintBubbles();
 
   var torusEl = document.getElementById('torus');
   var bigNum = document.getElementById('bigNum');
@@ -519,9 +534,8 @@ symbol .a { fill: var(--ac); stroke: none; }
   setInterval(function () {
     var s = reduce ? 0.2 : 1 + state.boost * 4;
     if (state.boost > 0) state.boost = Math.max(0, state.boost - 0.03);
-    state.a += 0.05 * s; state.b += 0.025 * s; state.tick++;
+    state.a += 0.05 * s; state.b += 0.025 * s;
     torusEl.textContent = torus(state.a, state.b);
-    if (state.tick % 8 === 0) { state.seed++; paintBubbles(); }
     var diff = state.target - state.shown;
     if (Math.abs(diff) > 0.04) state.shown += diff * 0.12; else state.shown = state.target;
     bigNum.textContent = state.shown.toFixed(1);
@@ -537,28 +551,32 @@ symbol .a { fill: var(--ac); stroke: none; }
     document.getElementById('heroTitle').textContent = on ? 'Left to clean' : 'Ready to reclaim';
     document.getElementById('diskJunk').style.width = on ? '0%' : '6%';
     document.getElementById('diskNote').textContent = on ? 'You freed 31.7 GB' : '31.7 GB can be reclaimed';
-    document.getElementById('mapNote').textContent = on ? 'No folders left to clean' : 'Dashed ring — folders with stuff to clean';
+    document.getElementById('mapNote').textContent = on ? 'No folders left to clean' : 'Glowing ring — folders with stuff to clean';
     document.getElementById('navCount').style.display = on ? 'none' : '';
     document.getElementById('cleanNum').textContent = on ? '0' : '9.7';
-    var p = document.querySelector('[data-card="cleanup"]');
-    markPill(p, on);
+    document.getElementById('cleanSub').textContent = on ? 'Caches & trash removed' : 'Caches · temp files · trash';
+    document.getElementById('cardClean').classList.toggle('calm', on);
+    var btn = document.getElementById('cleanBtn');
+    btn.classList.toggle('done', on);
+    btn.innerHTML = on ? '<svg class="ic"><use href="#i-check"/></svg>Removed' : 'Remove <svg class="ic"><use href="#i-arrow"/></svg>';
     layoutBubbles();
-    paintBubbles();
-  }
-  function markPill(p, done) {
-    if (!p.dataset.label) p.dataset.label = p.firstChild.textContent.trim();
-    p.classList.toggle('done', done);
-    p.innerHTML = done
-      ? '<svg class="ic"><use href="#i-check"/></svg>' + p.dataset.done
-      : p.dataset.label + ' <svg class="ic"><use href="#i-arrow"/></svg>';
   }
 
   document.getElementById('orb').addEventListener('click', function () { setCleaned(!state.cleaned); });
-  document.querySelectorAll('.pill').forEach(function (p) {
-    p.addEventListener('click', function () {
-      if (p.dataset.card === 'cleanup') { setCleaned(true); return; }
-      if (!p.classList.contains('done')) { state.boost = 1; markPill(p, true); }
-    });
+  document.getElementById('cleanBtn').addEventListener('click', function () { if (!state.cleaned) setCleaned(true); });
+  document.getElementById('boost').addEventListener('click', function () {
+    var on = this.classList.toggle('on');
+    state.boost = 1;
+    this.setAttribute('aria-pressed', on ? 'true' : 'false');
+    document.getElementById('bootNum').textContent = on ? '12' : '24';
+    document.getElementById('bootSub').textContent = on ? 'Heavy login items turned off' : '3 heavy apps at login';
+  });
+  document.getElementById('updBtn').addEventListener('click', function () {
+    if (this.classList.contains('done')) return;
+    this.classList.add('done');
+    this.innerHTML = '<svg class="ic"><use href="#i-check"/></svg>Updated';
+    document.getElementById('updNum').textContent = '0';
+    document.getElementById('updSub').textContent = 'Everything is up to date';
   });
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Enter' && document.activeElement === document.body && !state.cleaned) setCleaned(true);
