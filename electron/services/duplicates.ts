@@ -158,7 +158,7 @@ function windowsLocalOnly(entries: Entry[]): Promise<Entry[]> {
       const CLOUD = 0x1000 | 0x40000 | 0x400000; // OFFLINE | RECALL_ON_OPEN | RECALL_ON_DATA_ACCESS
       resolve(entries.filter((_, i) => attrs[i] >= 0 && (attrs[i] & CLOUD) === 0));
     };
-    const child = spawn('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', script], {
+    const child = spawn(path.join(process.env.SystemRoot ?? process.env.windir ?? 'C:\\Windows', 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe'), ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', script], {
       windowsHide: true,
       stdio: ['pipe', 'pipe', 'ignore'],
     });

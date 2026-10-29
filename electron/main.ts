@@ -13,7 +13,8 @@ import {
 } from '../shared/types';
 import { askAi } from './services/ai';
 import { listApps, uninstallApp } from './services/apps';
-import { getDisk } from './services/disk';
+import { getDisk, listDisks } from './services/disk';
+import { getFileIcons } from './services/icons';
 import { scanDuplicates } from './services/duplicates';
 import { sendFeedback } from './services/feedback';
 import { cleanJunk, scanJunk } from './services/junk';
@@ -82,9 +83,11 @@ type Handlers = Omit<CleanlyApi, 'onProgress'>;
 const handlers: Handlers = {
   system: async () => systemInfo(),
   disk: () => getDisk(),
+  disks: () => listDisks(),
+  fileIcons: (paths) => getFileIcons(paths),
   scanJunk: () => scanJunk(progress),
   cleanJunk: (ids) => cleanJunk(ids, progress),
-  scanSpaces: () => scanSpaces(progress),
+  scanSpaces: (root) => scanSpaces(progress, root),
   scanLargeFiles: (minBytes) => scanLargeFiles(minBytes, progress),
   scanDuplicates: () => scanDuplicates(progress),
   trashPaths: (paths) => trashPaths(paths),

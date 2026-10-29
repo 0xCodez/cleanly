@@ -1,5 +1,6 @@
 import { execFile } from 'node:child_process';
 import { promises as fs } from 'node:fs';
+import path from 'node:path';
 import type { ProtectionStatus } from '../../shared/types';
 
 interface RunResult {
@@ -85,7 +86,7 @@ function asArray<T>(v: T[] | T | null | undefined): T[] {
 }
 
 async function windowsStatus(): Promise<ProtectionStatus> {
-  const res = await run('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', WIN_SCRIPT], 30000);
+  const res = await run(path.join(process.env.SystemRoot ?? process.env.windir ?? 'C:\\Windows', 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe'), ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', WIN_SCRIPT], 30000);
   let raw: WinRaw = {};
   try {
     const json = res.stdout.trim();

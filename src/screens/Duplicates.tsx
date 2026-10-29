@@ -4,7 +4,8 @@ import { api } from '../api';
 import { Icon } from '../components/Icon';
 import { Empty, Progress, ScreenHead } from '../components/ui';
 import { formatBytes, formatDate, shortPath, splitBytes, sum } from '../lib/format';
-import { useStore } from '../state';
+import { useFileIcons } from '../lib/useFileIcons';
+import { driveOf, useStore } from '../state';
 import './files.css';
 
 const PAGE = 30;
@@ -45,7 +46,7 @@ function scan(): Promise<DuplicateGroup[]> {
 }
 
 export default function Duplicates() {
-  const { progress, system, settings, toast, refreshDisk } = useStore();
+  const { progress, system, disks, settings, toast, refreshDisk } = useStore();
   const [groups, setGroups] = useState<DuplicateGroup[] | null>(cache);
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -135,6 +136,8 @@ export default function Duplicates() {
     }
   };
 
+  const icons = useFileIcons((groups ?? []).slice(0, limit).map((g) => g.files[0]?.path));
+
   const total = splitBytes(totalWasted);
   const sel = splitBytes(trashSize);
   const n = toTrash.length;
@@ -213,9 +216,15 @@ export default function Duplicates() {
                       onChange={() => toggleGroup(g.hash)}
                       aria-label={`Include ${name}`}
                     />
-                    <span className="chip-ico">
-                      <Icon name={iconFor(name)} />
-                    </span>
+                    {icons[g.files[0].path] ? (
+                      <span className="chip-ico real">
+                        <img src={icons[g.files[0].path]} alt="" draggable={false} />
+                      </span>
+                    ) : (
+                      <span className="chip-ico">
+                        <Icon name={iconFor(name)} />
+                      </span>
+                    )}
                     <div className="grow">
                       <div className="title" title={name}>
                         {name}
@@ -232,6 +241,7 @@ export default function Duplicates() {
                   <div className="list fx-copies" role="radiogroup" aria-label={`Copy of ${name} to keep`}>
                     {g.files.map((f) => {
                       const kept = f.path === keeper;
+                      const drive = driveOf(f.path, home, disks);
                       return (
                         <label key={f.path} className={`row${kept ? ' keep' : ''}`}>
                           <input
@@ -245,7 +255,14 @@ export default function Duplicates() {
                           />
                           <div className="grow">
                             <div className="title" title={f.path}>
-                              {shortPath(parentDir(f.path), home)}
+                              {drive ? (
+                                <>
+                                  <span className="fx-drive">{drive.name}</span>
+                                  {drive.dir}
+                                </>
+                              ) : (
+                                shortPath(parentDir(f.path), home)
+                              )}
                             </div>
                             <div className="sub">
                               Modified {formatDate(f.modified)}

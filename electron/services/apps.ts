@@ -69,9 +69,88 @@ function parseInstallDate(s?: string): number | undefined {
   return Number.isFinite(t) && t > 0 ? t : undefined;
 }
 
+function expandEnv(p: string): string {
+  return p.replace(/%([^%]+)%/g, (whole, name: string) => {
+    const key = Object.keys(process.env).find((k) => k.toLowerCase() === name.toLowerCase());
+    return (key && process.env[key]) || whole;
+  });
+}
+
+async function isFile(p: string): Promise<boolean> {
+  try {
+    return (await fs.stat(p)).isFile();
+  } catch {
+    return false;
+  }
+}
+
+/** `"C:\X\x.exe",0` -> `C:\X\x.exe`; DLL icons are skipped because only their generic icon can be shown. */
+async function fromDisplayIcon(raw?: string): Promise<string | undefined> {
+  if (!raw) return undefined;
+  let p = raw.trim().replace(/,\s*-?\d+$/, '').trim();
+  const quoted = /^"([^"]+)"$/.exec(p);
+  if (quoted) p = quoted[1].trim();
+  p = expandEnv(p);
+  if (!/^[a-zA-Z]:\\/.test(p) || !/\.(exe|ico|png)$/i.test(p)) return undefined;
+  return (await isFile(p)) ? p : undefined;
+}
+
+const NOT_MAIN_EXE = /unins|uninst|setup|install|update|crash|helper|elevat|notif|squirrel|reporter|launcher_?stub|vcredist|dotnet/i;
+const GENERIC_WORDS = new Set([
+  'microsoft', 'windows', 'runtime', 'redistributable', 'tools', 'update', 'driver', 'support', 'software', 'edition',
+  'version', 'application', 'desktop', 'client', 'the', 'for', 'and', 'x64', 'x86', 'bit', 'app', 'service', 'services',
+]);
+const squash = (s: string) =>s.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+async function exesIn(dir: string): Promise<{ file: string; size: number }[]> {
+  let entries: import('node:fs').Dirent[];
+  try {
+    entries = await fs.readdir(dir, { withFileTypes: true });
+  } catch {
+    return [];
+  }
+  const out: { file: string; size: number }[] = [];
+  for (const e of entries) {
+    if (!e.isFile() || !/\.exe$/i.test(e.name) || NOT_MAIN_EXE.test(e.name)) continue;
+    const file = path.join(dir, e.name);
+    try {
+      out.push({ file, size: (await fs.stat(file)).size });
+    } catch {
+      // vanished or unreadable
+    }
+  }
+  return out;
+}
+
+/** The app's own exe in its install folder (or one level below), matched by name, largest first. */
+async function mainExe(location: string | undefined, appName: string): Promise<string | undefined> {
+  if (!location || !/^[a-zA-Z]:\\/.test(location)) return undefined;
+  const dir = path.resolve(location);
+  const top = await exesIn(dir);
+  let all = top;
+  if (path.parse(dir).root !== dir) {
+    try {
+      const subs = (await fs.readdir(dir, { withFileTypes: true })).filter((e) => e.isDirectory()).slice(0, 12);
+      for (const s of subs) all = all.concat(await exesIn(path.join(dir, s.name)));
+    } catch {
+      // top level only
+    }
+  }
+  const words = appName.split(/[\s\-_.()]+/).map(squash).filter((w) => w.length >= 3 && !/^\d+$/.test(w) && !GENERIC_WORDS.has(w));
+  const full = squash(appName);
+  const matches = all.filter(({ file }) => {
+    const base = squash(path.basename(file, path.extname(file)));
+    if (base.length < 3) return false;
+    return full.includes(base) || (full.length >= 3 && base.includes(full)) || words.some((w) => base.includes(w));
+  });
+  const pick = (list: typeof all) => list.sort((a, b) => b.size - a.size)[0]?.file;
+  if (matches.length) return pick(matches);
+  return top.length === 1 ? top[0].file : undefined;
+}
+
 async function listWindows(): Promise<InstalledApp[]> {
   winCommands.clear();
-  const byKey = new Map<string, { app: InstalledApp; command?: string; score: number }>();
+  const byKey = new Map<string, { app: InstalledApp; command?: string; displayIcon?: string; score: number }>();
   const all = await Promise.all(WIN_ROOTS.map((root) => regQuery(root, true)));
   for (const key of all.flat()) {
     const name = str(key, 'DisplayName');
@@ -97,10 +176,18 @@ async function listWindows(): Promise<InstalledApp[]> {
     const score = (app.size ? 2 : 0) + (command ? 4 : 0) + (app.publisher ? 1 : 0);
     const dedupe = `${name.toLowerCase()}|${app.version ?? ''}`;
     const prev = byKey.get(dedupe);
-    if (!prev || score > prev.score) byKey.set(dedupe, { app, command, score });
+    if (!prev || score > prev.score) byKey.set(dedupe, { app, command, displayIcon: str(key, 'DisplayIcon'), score });
   }
+  const entries = [...byKey.values()];
+  await mapLimit(entries, 8, async (e) => {
+    try {
+      e.app.iconPath = (await fromDisplayIcon(e.displayIcon)) ?? (await mainExe(e.app.path, e.app.name));
+    } catch {
+      e.app.iconPath = undefined;
+    }
+  });
   const apps: InstalledApp[] = [];
-  for (const { app, command } of byKey.values()) {
+  for (const { app, command } of entries) {
     if (app.canUninstall && command) winCommands.set(app.id, command);
     apps.push(app);
   }
@@ -265,6 +352,7 @@ async function listMac(): Promise<InstalledApp[]> {
       installed,
       lastUsed: used.get(b.path),
       path: b.path,
+      iconPath: b.path,
       canUninstall: !isApple,
     });
   }

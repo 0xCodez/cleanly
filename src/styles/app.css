@@ -239,22 +239,38 @@ symbol .a { fill: var(--ac); stroke: none; }
 
 /* ---------- glass bubbles (space map) ---------- */
 .bubbles { position: relative; width: 100%; height: 100%; }
-.bubble { position: absolute; animation: bob var(--dur, 6s) ease-in-out var(--delay, 0s) infinite; transition: width 1s var(--ease), height 1s var(--ease), left 1s var(--ease), top 1s var(--ease); }
+/* .bubble: left/top/size come from React (transitioned), transform from the physics loop */
+.bubble { position: absolute; z-index: 1; touch-action: none; user-select: none; -webkit-user-select: none; transition: width 1s var(--ease), height 1s var(--ease), left 1s var(--ease), top 1s var(--ease); }
+.bubble:hover { z-index: 2; }
+.bubble[data-grab] { z-index: 3; }
+.bubble .b-float { position: absolute; inset: 0; animation: bob var(--dur, 6s) ease-in-out var(--delay, 0s) infinite; }
+.bubble[data-grab] .b-float { animation-play-state: paused; }
 .bubble .disc {
   position: absolute; inset: 0; border-radius: 50%; overflow: hidden; isolation: isolate; border: 0; padding: 0; cursor: pointer; color: inherit;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-align: center;
   background: rgba(190, 196, 225, 0.5); box-shadow: 0 1px 2px rgba(15, 18, 24, 0.06), 0 14px 32px var(--shadow);
+  transition: transform 0.4s var(--ease), box-shadow 0.4s var(--ease);
 }
+.bubble .disc:hover { transform: scale(1.03); }
+.bubble[data-grab] .disc { cursor: grabbing; transform: scale(1.06); box-shadow: 0 1px 2px rgba(15, 18, 24, 0.06), 0 24px 48px var(--shadow); }
 .bubble .disc::before { content: ''; position: absolute; left: 50%; top: 50%; width: 150%; height: 150%; margin: -75% 0 0 -75%; z-index: -2; background: conic-gradient(from 0deg, transparent 0deg, var(--c1) 50deg, var(--c2) 95deg, transparent 140deg, transparent 360deg); opacity: 0.7; animation: spin var(--spin, 12s) linear infinite; }
 .bubble .disc::after { content: ''; position: absolute; inset: 1.5px; border-radius: 50%; z-index: -1; background: radial-gradient(circle at 30% 18%, #fff 0%, rgba(255, 255, 255, 0.96) 40%, rgba(247, 247, 255, 0.9) 100%); box-shadow: inset 0 1px 1px #fff, inset 0 -6px 16px var(--inner); }
 .bubble .b-ico { width: var(--chip); height: var(--chip); border-radius: 50%; display: grid; place-items: center; flex: none; margin-bottom: 2px; background: radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 45%), linear-gradient(135deg, var(--c1), var(--c2)); box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.6), 0 4px 12px var(--shadow); }
 .bubble .b-ico .ic { width: 55%; height: 55%; color: #fff; --fo: 0.3; --sw: 2; --ac: #fff; }
+.bubble .b-ico.img { background: radial-gradient(circle at 30% 22%, #fff, rgba(255, 255, 255, 0.82)); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.9), 0 4px 12px var(--shadow); }
+.bubble .b-ico.img img { width: 64%; height: 64%; object-fit: contain; pointer-events: none; -webkit-user-drag: none; }
 .bubble b { font-size: 12.5px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.1; max-width: 86%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bubble .sz { font-family: var(--mono); font-size: 10.5px; color: var(--ink-3); }
 .bubble.small b { font-size: 11.5px; }
 .bubble.hot .disc::before { opacity: 1; animation-duration: 4.5s; }
 .bubble .badge { position: absolute; right: -4px; top: 2px; z-index: 2; height: 22px; padding: 0 8px; border-radius: 999px; display: inline-flex; align-items: center; font-family: var(--mono); font-size: 10.5px; font-weight: 500; color: #fff; background: linear-gradient(135deg, #ffb347, #ff7aa8); box-shadow: 0 4px 12px rgba(255, 122, 168, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.5); }
 @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@media (prefers-reduced-motion: reduce) {
+  .bubble { touch-action: auto; }
+  .bubble .b-float { animation: none; }
+  .bubble .disc { transition: none; }
+  .bubble .disc:hover { transform: none; }
+}
 
 /* ---------- motion ---------- */
 .rise { animation: rise 0.7s var(--ease) both; }

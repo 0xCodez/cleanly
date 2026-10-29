@@ -1,4 +1,33 @@
-/* Shared styles for Cleanup, Space Map, Large Files and Duplicates. */
+/* Shared styles for Cleanup, Space Map, Large Files, Duplicates and the sidebar drive card. */
+
+/* ---------- sidebar: one compact row per drive ---------- */
+.disk-list { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.disk-list.scroll {
+  max-height: 128px; overflow-x: hidden; overflow-y: auto; margin-right: -10px; padding: 0 10px 14px 0; overscroll-behavior: contain;
+  scrollbar-width: thin; scrollbar-color: #d5d9e1 transparent;
+  -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - 16px), transparent); mask-image: linear-gradient(180deg, #000 calc(100% - 16px), transparent);
+}
+.drv { display: flex; flex-direction: column; gap: 7px; min-width: 0; flex: none; }
+.drv .disk-row { gap: 8px; min-width: 0; }
+.drv .disk-row span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.drv .disk-row span:last-child { flex: none; font-size: 11px; letter-spacing: -0.02em; }
+.drv .bar { height: 5px; }
+
+/* ---------- real file icons ---------- */
+.chip-ico.real { background: transparent; box-shadow: none; }
+.chip-ico.real img { width: 32px; height: 32px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(15, 18, 24, 0.12)); user-select: none; -webkit-user-drag: none; }
+.fx-side .row .chip-ico.real img { width: 26px; height: 26px; }
+.fx-drive {
+  display: inline-flex; align-items: center; height: 18px; padding: 0 7px; margin-right: 6px; border-radius: 999px; vertical-align: 1px;
+  font-family: var(--mono); font-size: 10.5px; font-weight: 600; letter-spacing: 0.02em; color: #3b47c4; background: rgba(109, 123, 255, 0.12);
+}
+
+/* ---------- space map source switch ---------- */
+.fx-source { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.fx-source .seg { max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.fx-source .seg button { flex: none; white-space: nowrap; }
+.fx-source-note { display: flex; align-items: center; gap: 8px; min-width: 0; font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fx-source-note .bar { width: 90px; flex: none; }
 
 /* ---------- header stat (big gradient number) ---------- */
 .fx-stat { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; padding-right: 4px; }

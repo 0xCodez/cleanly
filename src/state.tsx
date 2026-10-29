@@ -29,13 +29,22 @@ interface Store {
 
   system: SystemInfo | null;
   disk: DiskInfo | null;
+  /** every fixed drive, system drive first; null until the first answer */
+  disks: DiskInfo[] | null;
   settings: Settings | null;
 
   junk: JunkCategory[] | null;
+  /** map of the home folder (same as spaceMaps['']) */
   spaces: SpaceNode | null;
   /** the home-folder walk runs on its own, after the junk scan */
   spacesScanning: boolean;
   spacesError: boolean;
+  /** cached space maps by root: '' = home folder, otherwise a drive mount from disks */
+  spaceMaps: Record<string, SpaceNode>;
+  /** roots being measured right now */
+  spacesBusy: string[];
+  /** roots whose last walk failed */
+  spacesFailed: string[];
   /** total size of junk categories marked safe — what one tap of Clean frees */
   reclaimable: number;
   scanning: boolean;
@@ -49,8 +58,10 @@ interface Store {
   lastCleanAt: number | null;
 
   smartScan: () => Promise<void>;
-  scanSpaces: () => Promise<void>;
+  /** (re)measures a root; no argument = the home folder */
+  scanSpaces: (root?: string) => Promise<void>;
   cleanJunk: (ids: string[]) => Promise<CleanResult | null>;
+  /** reloads the system disk and the drive list */
   refreshDisk: () => Promise<void>;
   updateSettings: (patch: Partial<Omit<Settings, 'hasClaudeKey' | 'hasOpenAiKey'>>) => Promise<void>;
   setApiKey: (provider: AiProvider, key: string | null) => Promise<void>;
@@ -65,11 +76,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [screen, setScreen] = useState<Screen>('scan');
   const [system, setSystem] = useState<SystemInfo | null>(null);
   const [disk, setDisk] = useState<DiskInfo | null>(null);
+  const [disks, setDisks] = useState<DiskInfo[] | null>(null);
   const [settings, setSettingsState] = useState<Settings | null>(null);
   const [junk, setJunk] = useState<JunkCategory[] | null>(null);
-  const [spaces, setSpaces] = useState<SpaceNode | null>(null);
-  const [spacesScanning, setSpacesScanning] = useState(false);
-  const [spacesError, setSpacesError] = useState(false);
+  const [spaceMaps, setSpaceMaps] = useState<Record<string, SpaceNode>>({});
+  const [spacesBusy, setSpacesBusy] = useState<string[]>([]);
+  const [spacesFailed, setSpacesFailed] = useState<string[]>([]);
   const [scanning, setScanning] = useState(false);
   const [progress, setProgress] = useState<ScanProgress | null>(null);
   const [lastScanAt, setLastScanAt] = useState<number | null>(null);
@@ -79,7 +91,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [lastCleanAt, setLastCleanAt] = useState<number | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const scanRef = useRef<Promise<void> | null>(null);
-  const spacesRef = useRef<Promise<void> | null>(null);
+  const spacesRef = useRef(new Map<string, Promise<void>>());
 
   const toast = useCallback((text: string, kind: Toast['kind'] = 'ok') => {
     const id = Date.now() + Math.random();
@@ -88,32 +100,44 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const refreshDisk = useCallback(async () => {
-    try {
-      setDisk(await api.disk());
-    } catch {
-      /* keep the last value */
-    }
+    // each keeps its last value on failure
+    await Promise.all([
+      api.disk().then(setDisk, () => undefined),
+      api.disks().then(
+        (list) => setDisks(Array.isArray(list) ? list : null),
+        () => undefined,
+      ),
+    ]);
   }, []);
 
-  const scanSpaces = useCallback(async () => {
-    if (spacesRef.current) return spacesRef.current;
-    const run = (async () => {
-      setSpacesScanning(true);
-      setSpacesError(false);
-      try {
-        setSpaces(await api.scanSpaces());
-      } catch (e) {
-        setSpacesError(true);
-        toast(e instanceof Error ? e.message : 'Could not measure your folders', 'err');
-      } finally {
-        setSpacesScanning(false);
-        setProgress((p) => (p?.task === 'spaces' ? null : p));
-        spacesRef.current = null;
-      }
-    })();
-    spacesRef.current = run;
-    return run;
-  }, [toast]);
+  const scanSpaces = useCallback(
+    async (root?: string) => {
+      // tolerate being wired straight to onClick, which passes an event
+      const target = typeof root === 'string' && root ? root : undefined;
+      const key = target ?? '';
+      const inflight = spacesRef.current.get(key);
+      if (inflight) return inflight;
+      const run = (async () => {
+        setSpacesBusy((b) => (b.includes(key) ? b : [...b, key]));
+        setSpacesFailed((f) => f.filter((k) => k !== key));
+        try {
+          const tree = await api.scanSpaces(target);
+          setSpaceMaps((m) => ({ ...m, [key]: tree }));
+        } catch (e) {
+          setSpacesFailed((f) => (f.includes(key) ? f : [...f, key]));
+          const fallback = target ? `Could not measure ${target.replace(/[\\/]+$/, '')}` : 'Could not measure your folders';
+          toast(e instanceof Error && e.message ? e.message : fallback, 'err');
+        } finally {
+          spacesRef.current.delete(key);
+          setSpacesBusy((b) => b.filter((k) => k !== key));
+          if (!spacesRef.current.size) setProgress((p) => (p?.task === 'spaces' ? null : p));
+        }
+      })();
+      spacesRef.current.set(key, run);
+      return run;
+    },
+    [toast],
+  );
 
   const smartScan = useCallback(async () => {
     if (scanRef.current) return scanRef.current;
@@ -176,6 +200,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return off;
   }, [smartScan]);
 
+  const spaces = spaceMaps[''] ?? null;
+  const spacesScanning = spacesBusy.includes('');
+  const spacesError = spacesFailed.includes('');
+
   const reclaimable = useMemo(() => sum((junk ?? []).filter((c) => c.safe).map((c) => c.size)), [junk]);
 
   const value: Store = {
@@ -183,11 +211,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     go: setScreen,
     system,
     disk,
+    disks,
     settings,
     junk,
     spaces,
     spacesScanning,
     spacesError,
+    spaceMaps,
+    spacesBusy,
+    spacesFailed,
     reclaimable,
     scanning,
     progress,
@@ -206,6 +238,35 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     toast,
   };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
+}
+
+/** "C:" for Windows drive letters, the volume name elsewhere */
+export const driveName = (d: DiskInfo): string => (/^[a-z]:[\\/]?$/i.test(d.mount) ? d.mount.slice(0, 2).toUpperCase() : d.label);
+
+const slashes = (p: string) => p.replace(/\\/g, '/');
+const trimSlash = (p: string) => (p.length > 1 ? p.replace(/\/+$/, '') : p);
+
+/**
+ * Where a path lives when it is outside the home folder: the drive's short name and the
+ * parent folder relative to that drive ("/Games/Installers"). Null for anything inside home.
+ */
+export function driveOf(path: string, home: string | undefined, disks: DiskInfo[] | null): { name: string; dir: string } | null {
+  const p = slashes(path);
+  const lower = p.toLowerCase();
+  if (home) {
+    const h = trimSlash(slashes(home)).toLowerCase();
+    if (lower === h || lower.startsWith(h + '/')) return null;
+  }
+  const parent = p.slice(0, Math.max(0, p.lastIndexOf('/')));
+  const under = (mount: string) => {
+    const m = trimSlash(slashes(mount)).toLowerCase();
+    return m === '/' || lower.startsWith(m + '/');
+  };
+  const rel = (mount: string) => '/' + parent.slice(Math.min(parent.length, trimSlash(slashes(mount)).length)).replace(/^\/+/, '');
+  const hit = (disks ?? []).filter((d) => under(d.mount)).sort((a, b) => b.mount.length - a.mount.length)[0];
+  if (hit) return { name: driveName(hit), dir: rel(hit.mount) };
+  const letter = /^([a-z]:)\//i.exec(p);
+  return letter ? { name: letter[1].toUpperCase(), dir: rel(letter[1]) } : null;
 }
 
 export function useStore(): Store {

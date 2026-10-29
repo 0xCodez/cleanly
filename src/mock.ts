@@ -5,6 +5,7 @@ import type {
   DiskInfo,
   DuplicateGroup,
   FeedbackResult,
+  IconName,
   InstalledApp,
   JunkCategory,
   LargeFile,
@@ -31,6 +32,8 @@ const now = Date.now();
 const wait = (min = 300, max = 1200) => new Promise<void>((r) => setTimeout(r, min + Math.random() * (max - min)));
 const clone = <T>(v: T): T => structuredClone(v);
 const join = (...parts: string[]) => parts.join('\\');
+const abs = (p: string) => /^[a-z]:\\/i.test(p);
+const D = 'D:\\';
 const tilde = (p: string) => '~' + p.slice(HOME.length).replace(/\\/g, '/');
 
 function initialJunk(): JunkCategory[] {
@@ -113,7 +116,7 @@ function initialJunk(): JunkCategory[] {
 
 function initialLargeFiles(): LargeFile[] {
   const f = (dir: string, name: string, size: number, ageDays: number, accessedDays: number, kind: LargeFile['kind']): LargeFile => ({
-    path: join(HOME, dir, name),
+    path: abs(dir) ? join(dir, name) : join(HOME, dir, name),
     name,
     size,
     modified: now - ageDays * DAY,
@@ -135,6 +138,10 @@ function initialLargeFiles(): LargeFile[] {
     f('Documents', 'Thesis - all drafts.pdf', 410 * MB, 800, 120, 'document'),
     f('Downloads', 'vs_community_installer_cache.zip', 2.9 * GB, 365, 365, 'archive'),
     f(join('AppData', 'Local', 'Docker', 'wsl'), 'ext4.vhdx', 9.2 * GB, 14, 1, 'disk-image'),
+    f('D:\\Media\\Movies', 'Dune Part Two (2024) 2160p.mkv', 18.6 * GB, 240, 230, 'video'),
+    f('D:\\Backups', 'phone-backup-2023-11.zip', 6.2 * GB, 700, 690, 'archive'),
+    f('D:\\ISO', 'Windows Server 2022.iso', 4.9 * GB, 520, 515, 'disk-image'),
+    f('D:\\Games\\Installers', 'Cyberpunk2077_setup_v2.1.exe', 1.2 * GB, 330, 330, 'installer'),
   ];
 }
 
@@ -142,7 +149,7 @@ function initialDupes(): DuplicateGroup[] {
   const g = (hash: string, size: number, paths: [string, number][]): DuplicateGroup => ({
     hash,
     size,
-    files: paths.map(([p, age]) => ({ path: join(HOME, p), modified: now - age * DAY })),
+    files: paths.map(([p, age]) => ({ path: abs(p) ? p : join(HOME, p), modified: now - age * DAY })),
   });
   return [
     g('a3f9c1', 1.7 * GB, [
@@ -153,6 +160,7 @@ function initialDupes(): DuplicateGroup[] {
       [join('Videos', 'Wedding highlights.mp4'), 900],
       [join('Desktop', 'Wedding highlights.mp4'), 610],
       [join('Documents', 'Backups', 'Wedding highlights.mp4'), 590],
+      ['D:\\Media\\Wedding highlights.mp4', 580],
     ]),
     g('c04d88', 212 * MB, [
       [join('Downloads', 'Figma-Setup.exe'), 140],
@@ -254,18 +262,108 @@ function initialSpaces(): SpaceNode {
   };
 }
 
+/** [name, icon, size in bytes or children, kind, reclaimable] */
+type Spec = [string, IconName, number | Spec[], SpaceNode['kind']?, number?];
+
+function grow(parent: string, [name, icon, body, kind, reclaimable = 0]: Spec): SpaceNode {
+  const path = parent.endsWith('\\') ? parent + name : join(parent, name);
+  if (typeof body === 'number') return { name, path, size: body, kind: kind ?? 'folder', icon, reclaimable };
+  const children = body.map((s) => grow(path, s)).sort((a, b) => b.size - a.size);
+  const size = children.reduce((a, c) => a + c.size, 0);
+  return { name, path, kind: 'folder', icon, size, reclaimable: Math.min(size, children.reduce((a, c) => a + c.reclaimable, 0) + reclaimable), children };
+}
+
+function driveTree(mount: string, name: string, specs: Spec[]): SpaceNode {
+  const children = specs.map((s) => grow(mount, s)).sort((a, b) => b.size - a.size);
+  return {
+    name,
+    path: mount,
+    kind: 'folder',
+    icon: 'chip',
+    size: children.reduce((a, c) => a + c.size, 0),
+    reclaimable: children.reduce((a, c) => a + c.reclaimable, 0),
+    children,
+  };
+}
+
+function initialDriveD(): SpaceNode {
+  return driveTree(D, 'D:', [
+    ['Games', 'game', [
+      ['SteamLibrary', 'game', 212 * GB],
+      ['Epic Games', 'game', 64 * GB],
+      ['Installers', 'down', [
+        ['Cyberpunk2077_setup_v2.1.exe', 'file', 1.2 * GB, 'file'],
+        ['Other installers', 'down', 3.4 * GB, 'other'],
+      ]],
+    ]],
+    ['Media', 'video', [
+      ['Movies', 'video', [
+        ['Dune Part Two (2024) 2160p.mkv', 'video', 18.6 * GB, 'file'],
+        ['Other movies', 'video', 121 * GB],
+      ]],
+      ['Photo archive', 'photo', 88 * GB],
+      ['Wedding highlights.mp4', 'video', 640 * MB, 'file'],
+    ]],
+    ['Backups', 'cloud', [
+      ['System image 2024', 'layers', 96 * GB],
+      ['phone-backup-2023-11.zip', 'layers', 6.2 * GB, 'file'],
+    ]],
+    ['Projects', 'code', 18 * GB],
+    ['ISO', 'chip', [
+      ['Windows Server 2022.iso', 'chip', 4.9 * GB, 'file'],
+      ['Other images', 'chip', 7.1 * GB, 'other'],
+    ]],
+    ['$RECYCLE.BIN', 'trash', 3.1 * GB, 'folder', 3.1 * GB],
+  ]);
+}
+
+/** The whole system drive, with the live home tree nested under Users. */
+function driveC(home: SpaceNode): SpaceNode {
+  const c = driveTree('C:\\', 'C:', [
+    ['Windows', 'layers', [
+      ['System32', 'layers', 9.8 * GB],
+      ['WinSxS', 'layers', 11.4 * GB],
+      ['SoftwareDistribution', 'down', 2.1 * GB, 'folder', 2.1 * GB],
+      ['Other system files', 'layers', 4.6 * GB, 'other'],
+    ]],
+    ['Program Files', 'apps', [
+      ['NVIDIA Corporation', 'apps', 3.2 * GB],
+      ['Docker', 'apps', 2.6 * GB],
+      ['Blender Foundation', 'apps', 1.1 * GB],
+      ['Other apps', 'apps', 7.4 * GB, 'other'],
+    ]],
+    ['Program Files (x86)', 'apps', 7.6 * GB],
+    ['ProgramData', 'layers', 4.3 * GB],
+    ['pagefile.sys', 'file', 6 * GB, 'file'],
+    ['hiberfil.sys', 'file', 3.2 * GB, 'file'],
+  ]);
+  const users: SpaceNode = {
+    name: 'Users',
+    path: 'C:\\Users',
+    kind: 'folder',
+    icon: 'user',
+    size: home.size + 0.6 * GB,
+    reclaimable: home.reclaimable,
+    children: [home, { name: 'Public', path: 'C:\\Users\\Public', kind: 'folder', icon: 'folder', size: 0.6 * GB, reclaimable: 0 }],
+  };
+  c.children = [...(c.children ?? []), users].sort((a, b) => b.size - a.size);
+  c.size += users.size;
+  c.reclaimable += users.reclaimable;
+  return c;
+}
+
 function initialStartup(): StartupItem[] {
   const reg = 'Registry (current user)';
   return [
-    { id: 'discord', name: 'Discord', command: `"${HOME}\\AppData\\Local\\Discord\\Update.exe" --processStart Discord.exe`, location: reg, enabled: true, impact: 'high', canToggle: true },
-    { id: 'spotify', name: 'Spotify', command: `"${HOME}\\AppData\\Roaming\\Spotify\\Spotify.exe" --autostart --minimized`, location: reg, enabled: true, impact: 'high', canToggle: true },
-    { id: 'teams', name: 'Microsoft Teams', command: 'ms-teams.exe msteams:system-initiated', location: 'Startup apps (Store)', enabled: true, impact: 'high', canToggle: true },
-    { id: 'onedrive', name: 'OneDrive', command: `"${HOME}\\AppData\\Local\\Microsoft\\OneDrive\\OneDrive.exe" /background`, location: reg, enabled: true, impact: 'medium', canToggle: true },
-    { id: 'steam', name: 'Steam', command: '"C:\\Program Files (x86)\\Steam\\steam.exe" -silent', location: reg, enabled: false, impact: 'medium', canToggle: true },
-    { id: 'adobe-updater', name: 'Adobe Updater', command: '"C:\\Program Files (x86)\\Common Files\\Adobe\\ARM\\1.0\\AdobeARM.exe"', location: 'Registry (all users)', enabled: true, impact: 'low', canToggle: true },
-    { id: 'google-updater', name: 'Google Updater', command: `"${HOME}\\AppData\\Local\\Google\\GoogleUpdater\\updater.exe" --wake`, location: 'Task Scheduler', enabled: true, impact: 'low', canToggle: true },
-    { id: 'edge-update', name: 'Microsoft Edge Update', command: '"C:\\Program Files (x86)\\Microsoft\\EdgeUpdate\\MicrosoftEdgeUpdate.exe" /c', location: 'Task Scheduler', enabled: true, impact: 'low', canToggle: true },
-    { id: 'security-health', name: 'Windows Security notification icon', command: '%windir%\\system32\\SecurityHealthSystray.exe', location: 'Registry (all users)', enabled: true, impact: 'low', canToggle: false },
+    { id: 'discord', name: 'Discord', command: `"${HOME}\\AppData\\Local\\Discord\\Update.exe" --processStart Discord.exe`, location: reg, enabled: true, impact: 'high', canToggle: true, needsAdmin: false },
+    { id: 'spotify', name: 'Spotify', command: `"${HOME}\\AppData\\Roaming\\Spotify\\Spotify.exe" --autostart --minimized`, location: reg, enabled: true, impact: 'high', canToggle: true, needsAdmin: false },
+    { id: 'teams', name: 'Microsoft Teams', command: 'ms-teams.exe msteams:system-initiated', location: 'Startup apps (Store)', enabled: true, impact: 'high', canToggle: true, needsAdmin: false },
+    { id: 'onedrive', name: 'OneDrive', command: `"${HOME}\\AppData\\Local\\Microsoft\\OneDrive\\OneDrive.exe" /background`, location: reg, enabled: true, impact: 'medium', canToggle: true, needsAdmin: false },
+    { id: 'steam', name: 'Steam', command: '"C:\\Program Files (x86)\\Steam\\steam.exe" -silent', location: reg, enabled: false, impact: 'medium', canToggle: true, needsAdmin: false },
+    { id: 'adobe-updater', name: 'Adobe Updater', command: '"C:\\Program Files (x86)\\Common Files\\Adobe\\ARM\\1.0\\AdobeARM.exe"', location: 'Registry (all users)', enabled: true, impact: 'low', canToggle: true, needsAdmin: true },
+    { id: 'google-updater', name: 'Google Updater', command: `"${HOME}\\AppData\\Local\\Google\\GoogleUpdater\\updater.exe" --wake`, location: 'Task Scheduler', enabled: true, impact: 'low', canToggle: true, needsAdmin: false },
+    { id: 'edge-update', name: 'Microsoft Edge Update', command: '"C:\\Program Files (x86)\\Microsoft\\EdgeUpdate\\MicrosoftEdgeUpdate.exe" /c', location: 'Task Scheduler', enabled: true, impact: 'low', canToggle: true, needsAdmin: true },
+    { id: 'security-health', name: 'Windows Security notification icon', command: '%windir%\\system32\\SecurityHealthSystray.exe', location: 'Registry (all users)', enabled: true, impact: 'low', canToggle: true, needsAdmin: true },
   ];
 }
 
@@ -279,6 +377,8 @@ function initialApps(): InstalledApp[] {
     installed: now - installedDays * DAY,
     lastUsed: lastUsedDays === null ? undefined : now - lastUsedDays * DAY,
     path: `C:\\Program Files\\${name}`,
+    // the browser demo has no icons; fileIcons() returns {} and the letter avatar shows
+    iconPath: `C:\\Program Files\\${name}\\${name}.exe`,
     canUninstall,
   });
   return [
@@ -326,7 +426,7 @@ function initialSettings(): Settings {
 function removeFromTree(node: SpaceNode, path: string, bytes: number): boolean {
   const lower = path.toLowerCase();
   const self = node.path.toLowerCase();
-  if (!(lower === self || lower.startsWith(self + '\\'))) return false;
+  if (!(lower === self || lower.startsWith(self.endsWith('\\') ? self : self + '\\'))) return false;
   node.size = Math.max(0, node.size - bytes);
   node.reclaimable = Math.max(0, Math.min(node.size, node.reclaimable - bytes));
   if (node.children) {
@@ -345,11 +445,15 @@ export function createMockApi(): CleanlyApi {
   let large = initialLargeFiles();
   let dupes = initialDupes();
   const tree = initialSpaces();
+  const treeD = initialDriveD();
   let startup = initialStartup();
   let apps = initialApps();
   let settings = initialSettings();
   const total = 512 * GB;
-  let used = 381 * GB;
+  let used = 389 * GB;
+  const totalD = 1024 * GB;
+  let usedD = treeD.size + 0.6 * GB;
+  const onD = (p: string) => p.toUpperCase().startsWith(D);
 
   const system: SystemInfo = {
     platform: 'win32',
@@ -359,7 +463,8 @@ export function createMockApi(): CleanlyApi {
     homeDir: HOME,
   };
 
-  const disk = (): DiskInfo => ({ mount: 'C:\\', label: 'Disk C:', total, used, free: total - used });
+  const disk = (): DiskInfo => ({ mount: 'C:\\', label: 'Disk C:', total, used, free: total - used, system: true });
+  const diskD = (): DiskInfo => ({ mount: D, label: 'Data D:', total: totalD, used: usedD, free: totalD - usedD, system: false });
 
   /** Steps through phases with small pauses, emitting progress as it goes. */
   async function walk(task: ScanProgress['task'], phases: { phase: string; current?: string }[], totalMs: number) {
@@ -384,7 +489,7 @@ export function createMockApi(): CleanlyApi {
       }
       return 0;
     };
-    return find(tree);
+    return find(onD(path) ? treeD : tree);
   }
 
   return {
@@ -396,6 +501,18 @@ export function createMockApi(): CleanlyApi {
     async disk() {
       await wait(150, 400);
       return disk();
+    },
+
+    async disks() {
+      await wait(150, 400);
+      return [disk(), diskD()];
+    },
+
+    async fileIcons(paths) {
+      if (!Array.isArray(paths)) throw new Error('Expected a list of paths');
+      await wait(20, 60);
+      // no real icons in a browser; screens fall back to their glyphs
+      return {};
     },
 
     async scanJunk() {
@@ -450,17 +567,21 @@ export function createMockApi(): CleanlyApi {
       return result;
     },
 
-    async scanSpaces() {
+    async scanSpaces(root) {
+      if (root !== undefined && typeof root !== 'string') throw new Error('Unknown location');
+      const key = root?.replace(/[\\/]+$/, '').toUpperCase();
+      const target = key === undefined ? tree : key === 'C:' ? driveC(clone(tree)) : key === 'D:' ? treeD : null;
+      if (!target) throw new Error('That drive is not available');
       await walk(
         'spaces',
-        (tree.children ?? []).map((c) => ({ phase: `Measuring ${c.name}`, current: c.path })),
-        2600,
+        (target.children ?? []).map((c) => ({ phase: `Measuring ${c.name}`, current: c.path })),
+        key ? 3400 : 2600,
       );
-      return clone(tree);
+      return clone(target);
     },
 
     async scanLargeFiles(minBytes) {
-      await walk('large', [{ phase: 'Downloads' }, { phase: 'Videos' }, { phase: 'Documents' }, { phase: 'Pictures' }, { phase: 'Everything else' }], 1600);
+      await walk('large', [{ phase: 'Downloads' }, { phase: 'Videos' }, { phase: 'Documents' }, { phase: 'Pictures' }, { phase: 'Everything else' }, { phase: 'Drive D:', current: D }], 1800);
       return clone(large.filter((f) => f.size >= minBytes).sort((a, b) => b.size - a.size));
     },
 
@@ -482,9 +603,14 @@ export function createMockApi(): CleanlyApi {
         dupes = dupes
           .map((g) => ({ ...g, files: g.files.filter((f) => f.path !== p) }))
           .filter((g) => g.files.length > 1);
-        removeFromTree(tree, p, bytes);
+        if (onD(p)) {
+          removeFromTree(treeD, p, bytes);
+          usedD = Math.max(0, usedD - bytes);
+        } else {
+          removeFromTree(tree, p, bytes);
+          used = Math.max(0, used - bytes);
+        }
       }
-      used = Math.max(0, used - freed);
       const failed = paths.length - removed;
       return { freed, removed, failed, skipped: failed ? [`${failed} item${failed === 1 ? ' was' : 's were'} not found`] : [] };
     },
@@ -499,10 +625,11 @@ export function createMockApi(): CleanlyApi {
     },
 
     async setStartupItem(id, enabled) {
-      await wait(300, 700);
       const item = startup.find((s) => s.id === id);
       if (!item) throw new Error('That startup item no longer exists');
       if (!item.canToggle) throw new Error(`${item.name} is managed by Windows and cannot be changed here`);
+      // stands in for the administrator prompt
+      await (item.needsAdmin ? wait(900, 1400) : wait(300, 700));
       startup = startup.map((s) => (s.id === id ? { ...s, enabled } : s));
       return clone(startup);
     },

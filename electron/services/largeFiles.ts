@@ -1,7 +1,8 @@
 import os from 'node:os';
 import path from 'node:path';
 import type { LargeFile, ScanProgress } from '../../shared/types';
-import { displayPath, isInside, localAppData, walk } from './walk';
+import { dataDriveMounts, listDisks } from './disk';
+import { displayPath, isInside, localAppData, samePath, walk, type WalkFile } from './walk';
 
 type Progress = (p: ScanProgress) => void;
 type Kind = LargeFile['kind'];
@@ -32,7 +33,22 @@ const CACHE_DIRS = new Set([
   'cache', 'caches', 'code cache', 'gpucache', 'cache_data', 'cache2', 'cachestorage', 'scriptcache', 'shadercache', 'grshadercache',
 ]);
 
-/** Biggest files under the home folder, at least minBytes each. */
+const isWin = process.platform === 'win32';
+
+/** Top-level folders of a data drive that hold the OS, installed apps or volume metadata. */
+const DRIVE_SKIP_TOP = new Set(
+  (isWin
+    ? [
+        'Windows', 'Windows.old', 'Program Files', 'Program Files (x86)', 'ProgramData', 'System Volume Information', 'Recovery',
+        'Boot', 'EFI', 'PerfLogs', 'WindowsApps', 'WpSystem', 'Config.Msi', 'MSOCache', 'OneDriveTemp',
+      ]
+    : ['System', 'Library', 'private', 'usr', 'bin', 'sbin', 'cores', 'opt', 'etc', 'var', 'Backups.backupdb']
+  ).map((s) => s.toLowerCase()),
+);
+const SYSTEM_FILES = /^(pagefile\.sys|hiberfil\.sys|swapfile\.sys|dumpstack\.log(\.tmp)?)$/i;
+const TOTAL_ENTRIES = 4_000_000;
+
+/** Biggest files under the home folder and on every other fixed drive, at least minBytes each. */
 export async function scanLargeFiles(minBytes: unknown, progress: Progress): Promise<LargeFile[]> {
   const n = Number(minBytes);
   const min = Number.isFinite(n) && n >= MB ? n : 100 * MB;
@@ -55,25 +71,56 @@ export async function scanLargeFiles(minBytes: unknown, progress: Progress): Pro
     found = found.slice(0, MAX_RESULTS);
   };
   let last = 0;
-  const phase = 'Looking for large files';
-  progress({ task: 'large', phase, done: 0, total: 0 });
+  let seen = 0;
+  const homePhase = 'Looking for large files';
+  progress({ task: 'large', phase: homePhase, done: 0, total: 0 });
 
-  await walk(home, {
+  const collect = (f: WalkFile) => {
+    if (f.size < min) return;
+    found.push({ path: f.path, name: f.name, size: f.size, modified: f.mtimeMs, accessed: f.atimeMs, kind: kindOf(f.name) });
+    if (found.length > MAX_RESULTS * 10) trim();
+  };
+  const ticker = (phase: string) => (entries: number, current: string) => {
+    const now = Date.now();
+    if (now - last < 120) return;
+    last = now;
+    progress({ task: 'large', phase, done: seen + entries, total: 0, current: displayPath(current) });
+  };
+
+  const homeStats = await walk(home, {
     maxEntries: MAX_ENTRIES,
     skipDir: (p, name) =>
       skipSet.has(p.toLowerCase()) || (CACHE_DIRS.has(name.toLowerCase()) && isInside(appData, p)),
-    onFile: (f) => {
-      if (f.size < min) return;
-      found.push({ path: f.path, name: f.name, size: f.size, modified: f.mtimeMs, accessed: f.atimeMs, kind: kindOf(f.name) });
-      if (found.length > MAX_RESULTS * 10) trim();
-    },
-    onTick: (entries, current) => {
-      const now = Date.now();
-      if (now - last < 120) return;
-      last = now;
-      progress({ task: 'large', phase, done: entries, total: 0, current: displayPath(current) });
-    },
+    onFile: collect,
+    onTick: ticker(homePhase),
   });
+  seen += homeStats.files + homeStats.dirs;
+
+  let drives: { mount: string; label: string }[] = [];
+  try {
+    const mounts = await dataDriveMounts();
+    drives = (await listDisks()).filter((d) => mounts.includes(d.mount));
+  } catch {
+    // home only
+  }
+  for (const d of drives) {
+    const budget = Math.min(MAX_ENTRIES, TOTAL_ENTRIES - seen);
+    if (budget <= 0) break;
+    const phase = `Looking on ${d.label}`;
+    progress({ task: 'large', phase, done: seen, total: 0 });
+    const stats = await walk(d.mount, {
+      maxEntries: budget,
+      skipDir: (p, name, depth) =>
+        isInside(home, p) || samePath(home, p) ||
+        (depth === 1 && (DRIVE_SKIP_TOP.has(name.toLowerCase()) || name.startsWith(isWin ? '$' : '.'))),
+      onFile: (f) => {
+        if (f.depth === 1 && SYSTEM_FILES.test(f.name)) return;
+        collect(f);
+      },
+      onTick: ticker(phase),
+    });
+    seen += stats.files + stats.dirs;
+  }
 
   trim();
   progress({ task: 'large', phase: 'Done', done: found.length, total: found.length });

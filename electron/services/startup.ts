@@ -33,7 +33,7 @@ let oemDecoder: Promise<TextDecoder> | null = null;
 /** reg.exe prints in the console's OEM code page (866 on Russian Windows), not UTF-8. */
 function getOemDecoder(): Promise<TextDecoder> {
   oemDecoder ??= new Promise((resolve) => {
-    execFile('chcp.com', [], { timeout: 5000, windowsHide: true }, (_err, stdout) => {
+    execFile(path.join(systemRoot(), 'System32', 'chcp.com'), [], { timeout: 5000, windowsHide: true }, (_err, stdout) => {
       const cp = Number(/(\d{3,5})\s*$/.exec(String(stdout ?? '').trim())?.[1] ?? 0);
       const label = CODEPAGE_LABELS[cp] ?? 'windows-1252';
       try {
@@ -56,16 +56,19 @@ export interface RegKey {
   values: Map<string, RegValue>;
 }
 
+/** A 32-bit build on 64-bit Windows would otherwise read and write the redirected registry view. */
+const REG_VIEW = process.env.PROCESSOR_ARCHITEW6432 ? ['/reg:64'] : [];
+
 const VALUE_LINE = /^ {4}(.+?) {4}(REG_[A-Z0-9_]+)(?: {4}(.*))?$/;
 
 /** Runs `reg query` and parses keys with their values. Missing keys yield []. */
 export async function regQuery(key: string, recursive = false): Promise<RegKey[]> {
   if (process.platform !== 'win32') return [];
   const decoder = await getOemDecoder();
-  const args = ['query', key];
+  const args = ['query', key, ...REG_VIEW];
   if (recursive) args.push('/s');
   const raw = await new Promise<Buffer | null>((resolve) => {
-    execFile('reg.exe', args, { timeout: 30000, windowsHide: true, encoding: 'buffer', maxBuffer: 64 * 1024 * 1024 },
+    execFile(path.join(systemRoot(), 'System32', 'reg.exe'), args, { timeout: 30000, windowsHide: true, encoding: 'buffer', maxBuffer: 64 * 1024 * 1024 },
       (err, stdout) => resolve(err ? null : stdout));
   });
   if (!raw) return [];
@@ -86,7 +89,8 @@ export async function regQuery(key: string, recursive = false): Promise<RegKey[]
 /** A name decoded from the OEM code page may have lost characters; writing it back would hit the wrong value. */
 function isLossless(name: string): boolean {
   // reg.exe prints the unnamed default value as a localized "(Default)" placeholder, not a real name.
-  return !name.includes('\uFFFD') && !name.includes('?') && !/^\(.*\)$/.test(name) && name.trim() === name;
+  return !name.includes('\uFFFD') && !name.includes('?') && !/^\(.*\)$/.test(name) && name.trim() === name
+    && !/[\0-\x1f]/.test(name);
 }
 
 /* ---------- Impact heuristics ---------- */
@@ -99,7 +103,7 @@ const HEAVY = [
 ];
 const LIGHT = [
   /update/i, /updater/i, /helper/i, /crashpad/i, /notifier/i, /securityhealth/i, /\bctfmon\b/i, /\bagent\b/i,
-  /\btray\b/i,/launchd?helper/i, /keystone/i, /bluetooth/i, /audio/i, /realtek/i, /synaptics/i,
+  /\btray\b/i, /launchd?helper/i, /keystone/i, /bluetooth/i, /audio/i, /realtek/i, /synaptics/i,
 ];
 
 function impactOf(name: string, command: string): StartupItem['impact'] {
@@ -120,19 +124,21 @@ interface WinSource {
   runKey: string;
   approvedKey: string;
   location: string;
-  writable: boolean;
+  /** all-users entries live under HKLM, so changing them needs a UAC prompt */
+  elevated: boolean;
 }
 
 const WIN_SOURCES: WinSource[] = [
-  { prefix: 'hkcu-run', runKey: `HKCU\\${RUN}`, approvedKey: `HKCU\\${APPROVED}\\Run`, location: 'Registry (current user)', writable: true },
-  { prefix: 'hklm-run', runKey: `HKLM\\${RUN}`, approvedKey: `HKLM\\${APPROVED}\\Run`, location: 'Registry (all users)', writable: false },
-  { prefix: 'hklm-run32', runKey: `HKLM\\${RUN32}`, approvedKey: `HKLM\\${APPROVED}\\Run32`, location: 'Registry (all users)', writable: false },
+  { prefix: 'hkcu-run', runKey: `HKCU\\${RUN}`, approvedKey: `HKCU\\${APPROVED}\\Run`, location: 'Registry (current user)', elevated: false },
+  { prefix: 'hklm-run', runKey: `HKLM\\${RUN}`, approvedKey: `HKLM\\${APPROVED}\\Run`, location: 'Registry (all users)', elevated: true },
+  { prefix: 'hklm-run32', runKey: `HKLM\\${RUN32}`, approvedKey: `HKLM\\${APPROVED}\\Run32`, location: 'Registry (all users)', elevated: true },
 ];
 
 /** What setStartup needs to flip an entry; never derived from renderer input. */
 interface WinTarget {
   approvedKey: string;
   valueName: string;
+  elevated: boolean;
 }
 
 const winTargets = new Map<string, WinTarget>();
@@ -150,11 +156,14 @@ async function approvedStates(key: string): Promise<Map<string, boolean>> {
 }
 
 function expandEnv(p: string): string {
-  return p.replace(/%([^%]+)%/g, (whole, name: string) => process.env[name] ?? whole);
+  return p.replace(/%([^%]+)%/g, (whole, name: string) => {
+    const key = Object.keys(process.env).find((k) => k.toLowerCase() === name.toLowerCase());
+    return (key && process.env[key]) || whole;
+  });
 }
 
 async function listFolder(
-  dir: string, approvedKey: string, prefix: string, location: string, writable: boolean, items: StartupItem[],
+  dir: string, approvedKey: string, prefix: string, location: string, elevated: boolean, items: StartupItem[],
 ): Promise<void> {
   let names: string[];
   try {
@@ -177,13 +186,14 @@ async function listFolder(
     }
     const name = file.replace(/\.(lnk|url|bat|cmd|exe)$/i, '');
     const id = `win:${prefix}:${file}`;
-    const canToggle = writable && isLossless(file);
-    if (canToggle) winTargets.set(id, { approvedKey, valueName: file });
+    const canToggle = isLossless(file);
+    if (canToggle) winTargets.set(id, { approvedKey, valueName: file, elevated });
     items.push({
       id, name, command, location,
       enabled: states.get(file.toLowerCase()) ?? true,
       impact: impactOf(name, command),
       canToggle,
+      needsAdmin: elevated,
     });
   }
 }
@@ -197,8 +207,8 @@ async function listWindows(): Promise<StartupItem[]> {
       if (!v.data) continue;
       const command = expandEnv(v.data);
       const id = `win:${src.prefix}:${valueName}`;
-      const canToggle = src.writable && isLossless(valueName);
-      if (canToggle) winTargets.set(id, { approvedKey: src.approvedKey, valueName });
+      const canToggle = isLossless(valueName);
+      if (canToggle) winTargets.set(id, { approvedKey: src.approvedKey, valueName, elevated: src.elevated });
       items.push({
         id,
         name: prettyName(valueName, command),
@@ -207,6 +217,7 @@ async function listWindows(): Promise<StartupItem[]> {
         enabled: states.get(valueName.toLowerCase()) ?? true,
         impact: impactOf(valueName, command),
         canToggle,
+        needsAdmin: src.elevated,
       });
     }
   }));
@@ -214,8 +225,8 @@ async function listWindows(): Promise<StartupItem[]> {
   const appData = process.env.APPDATA ?? path.join(os.homedir(), 'AppData', 'Roaming');
   const programData = process.env.ProgramData ?? 'C:\\ProgramData';
   const folderTail = path.join('Microsoft', 'Windows', 'Start Menu', 'Programs', 'Startup');
-  await listFolder(path.join(appData, folderTail), `HKCU\\${APPROVED}\\StartupFolder`, 'folder', 'Startup folder', true, items);
-  await listFolder(path.join(programData, folderTail), `HKLM\\${APPROVED}\\StartupFolder`, 'folder-all', 'Startup folder (all users)', false, items);
+  await listFolder(path.join(appData, folderTail), `HKCU\\${APPROVED}\\StartupFolder`, 'folder', 'Startup folder', false, items);
+  await listFolder(path.join(programData, folderTail), `HKLM\\${APPROVED}\\StartupFolder`, 'folder-all', 'Startup folder (all users)', true, items);
   return items;
 }
 
@@ -231,14 +242,47 @@ function prettyName(valueName: string, command: string): string {
   return name;
 }
 
+const systemRoot = () => process.env.SystemRoot ?? process.env.windir ?? 'C:\\Windows';
+
+/** Quotes one argument so CommandLineToArgvW reads it back unchanged. */
+function winArg(a: string): string {
+  if (a && !/[\s"]/.test(a)) return a;
+  return `"${a.replace(/(\\*)"/g, '$1$1\\"').replace(/(\\+)$/, '$1$1')}"`;
+}
+
+/** PowerShell single-quoted literal; PowerShell also treats typographic single quotes as quotes. */
+const psLiteral = (s: string) => `'${s.replace(/['\u2018\u2019\u201A\u201B]/g, '$&$&')}'`;
+
+/** Runs one program elevated (UAC prompt) and waits for it. False when the user declined or it failed. */
+async function runElevated(file: string, args: string[]): Promise<boolean> {
+  const argLine = args.map(winArg).join(' ');
+  const script = [
+    "$ErrorActionPreference = 'Stop'",
+    `try { $p = Start-Process -FilePath ${psLiteral(file)} -ArgumentList ${psLiteral(argLine)} -Verb RunAs -Wait -WindowStyle Hidden -PassThru; exit $p.ExitCode }`,
+    'catch { exit 1223 }',
+  ].join('; ');
+  const powershell = path.join(systemRoot(), 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
+  const res = await run(powershell, ['-NoProfile', '-NonInteractive', '-Command', script], 180000);
+  return res.ok;
+}
+
 async function setWindows(id: string, enabled: boolean): Promise<void> {
   if (winTargets.size === 0) await listWindows();
   const target = winTargets.get(id);
   if (!target) throw new Error('This item cannot be changed from Cleanly');
   // Same 12-byte value Task Manager writes; deleting it would also mean "enabled".
   const data = (enabled ? '02' : '03') + '0'.repeat(22);
-  const res = await run('reg.exe', ['add', target.approvedKey, '/v', target.valueName, '/t', 'REG_BINARY', '/d', data, '/f']);
-  if (!res.ok) throw new Error('Windows did not allow this change');
+  const args = ['add', target.approvedKey, '/v', target.valueName, '/t', 'REG_BINARY', '/d', data, '/f', ...REG_VIEW];
+  if (target.elevated) {
+    if (!(await runElevated(path.join(systemRoot(), 'System32', 'reg.exe'), args))) {
+      throw new Error('Windows did not allow the change');
+    }
+  } else {
+    const res = await run(path.join(systemRoot(), 'System32', 'reg.exe'), args);
+    if (!res.ok) throw new Error('Windows did not allow the change');
+  }
+  const now = (await approvedStates(target.approvedKey)).get(target.valueName.toLowerCase()) ?? true;
+  if (now !== enabled) throw new Error('Windows did not allow the change');
 }
 
 /* ---------- macOS ---------- */
@@ -246,9 +290,13 @@ async function setWindows(id: string, enabled: boolean): Promise<void> {
 interface MacTarget {
   label: string;
   plist: string;
+  /** /Library/LaunchAgents: may need the admin password */
+  elevated: boolean;
 }
 
 const macTargets = new Map<string, MacTarget>();
+const SAFE_LABEL = /^[A-Za-z0-9][A-Za-z0-9._-]{0,200}$/;
+const SAFE_PLIST = /^[A-Za-z0-9][A-Za-z0-9 ._-]{0,200}\.plist$/;
 
 async function readPlist(file: string): Promise<Record<string, unknown> | null> {
   const res = await run('/usr/bin/plutil', ['-convert', 'json', '-o', '-', file], 8000);
@@ -285,7 +333,7 @@ async function disabledOverrides(): Promise<Map<string, boolean>> {
 }
 
 async function listMacDir(
-  dir: string, prefix: string, location: string, writable: boolean,
+  dir: string, prefix: string, location: string, elevated: boolean,
   loaded: Set<string>, overrides: Map<string, boolean>, items: StartupItem[],
 ): Promise<void> {
   let names: string[];
@@ -310,7 +358,9 @@ async function listMacDir(
     const override = overrides.get(label);
     const enabled = loaded.has(label) || (override !== undefined ? !override : plist.Disabled !== true);
     const id = `mac:${prefix}:${label}`;
-    if (writable) macTargets.set(id, { label, plist: full });
+    // Elevated commands are built from the label and file name, so only plain ones qualify.
+    const canToggle = !elevated || (SAFE_LABEL.test(label) && SAFE_PLIST.test(file));
+    if (canToggle) macTargets.set(id, { label, plist: full, elevated });
     items.push({
       id,
       name: macName(label, program),
@@ -318,7 +368,8 @@ async function listMacDir(
       location,
       enabled,
       impact: impactOf(label, command),
-      canToggle: writable,
+      canToggle,
+      needsAdmin: elevated,
     });
   }));
 }
@@ -334,26 +385,36 @@ async function listMac(): Promise<StartupItem[]> {
   macTargets.clear();
   const [loaded, overrides] = await Promise.all([loadedLabels(), disabledOverrides()]);
   const items: StartupItem[] = [];
-  await listMacDir(path.join(os.homedir(), 'Library', 'LaunchAgents'), 'user', 'LaunchAgents', true, loaded, overrides, items);
-  await listMacDir('/Library/LaunchAgents', 'system', 'LaunchAgents (all users)', false, loaded, overrides, items);
+  await listMacDir(path.join(os.homedir(), 'Library', 'LaunchAgents'), 'user', 'LaunchAgents', false, loaded, overrides, items);
+  await listMacDir('/Library/LaunchAgents', 'system', 'LaunchAgents (all users)', true, loaded, overrides, items);
   return items;
 }
+
+const shQuote = (s: string) => `'${s.replace(/'/g, `'\\''`)}'`;
+const appleScriptString = (s: string) => `"${s.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
 
 async function setMac(id: string, enabled: boolean): Promise<void> {
   if (macTargets.size === 0) await listMac();
   const target = macTargets.get(id);
   if (!target) throw new Error('This item cannot be changed from Cleanly');
+  // LaunchAgents (also the all-users ones) run in each user's GUI domain, not in "system".
   const domain = `gui/${uid()}`;
+  const service = `${domain}/${target.label}`;
   // enable/disable persists across logins; bootstrap/bootout applies it right now.
-  if (enabled) {
-    const res = await run('/bin/launchctl', ['enable', `${domain}/${target.label}`]);
-    if (!res.ok) throw new Error('macOS did not allow this change');
-    await run('/bin/launchctl', ['bootstrap', domain, target.plist]);
-  } else {
-    const res = await run('/bin/launchctl', ['disable', `${domain}/${target.label}`]);
-    if (!res.ok) throw new Error('macOS did not allow this change');
-    await run('/bin/launchctl', ['bootout', domain, target.plist]);
+  const persist = await run('/bin/launchctl', [enabled ? 'enable' : 'disable', service]);
+  if (persist.ok) {
+    await run('/bin/launchctl', enabled ? ['bootstrap', domain, target.plist] : ['bootout', domain, target.plist]);
+    return;
   }
+  if (!target.elevated) throw new Error('macOS did not allow this change');
+  if (!SAFE_LABEL.test(target.label) || !SAFE_PLIST.test(path.basename(target.plist))) {
+    throw new Error('This item cannot be changed from Cleanly');
+  }
+  const cmd = enabled
+    ? `/bin/launchctl enable ${shQuote(service)} && (/bin/launchctl bootstrap ${shQuote(domain)} ${shQuote(target.plist)} || true)`
+    : `/bin/launchctl disable ${shQuote(service)} && (/bin/launchctl bootout ${shQuote(domain)} ${shQuote(target.plist)} || true)`;
+  const res = await run('/usr/bin/osascript', ['-e', `do shell script ${appleScriptString(cmd)} with administrator privileges`], 180000);
+  if (!res.ok) throw new Error('macOS did not allow the change');
 }
 
 /* ---------- Public API ---------- */
@@ -370,8 +431,8 @@ export async function listStartup(): Promise<StartupItem[]> {
   return items.sort((a, b) => rank[a.impact] - rank[b.impact] || a.name.localeCompare(b.name));
 }
 
-export async function setStartup(id: string, enabled: boolean): Promise<StartupItem[]> {
-  if (typeof id !== 'string' || typeof enabled !== 'boolean') throw new Error('Invalid request');
+export async function setStartup(id: unknown, enabled: unknown): Promise<StartupItem[]> {
+  if (typeof id !== 'string' || id.length > 600 || typeof enabled !== 'boolean') throw new Error('Invalid request');
   if (process.platform === 'win32') await setWindows(id, enabled);
   else if (process.platform === 'darwin') await setMac(id, enabled);
   else throw new Error('Startup items are not supported on this system');

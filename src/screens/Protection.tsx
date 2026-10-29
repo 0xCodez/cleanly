@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useId, useState, type ReactNode } from 'react';
 import type { IconName, ProtectionStatus } from '../../shared/types';
 import { api } from '../api';
 import { Icon } from '../components/Icon';
@@ -7,13 +7,22 @@ import { timeAgo } from '../lib/format';
 import { useStore } from '../state';
 import './system.css';
 
-const R = 74;
+const SIZE = 160;
+const STROKE = 12;
+const R = (SIZE - STROKE) / 2 - 2;
 const C = 2 * Math.PI * R;
 const WEEK = 7 * 24 * 3600 * 1000;
+
+const prefersReducedMotion = () =>
+  typeof window !== 'undefined' && !!window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 function useCountUp(target: number, ms = 1200) {
   const [n, setN] = useState(0);
   useEffect(() => {
+    if (prefersReducedMotion()) {
+      setN(target);
+      return;
+    }
     let raf = 0;
     const t0 = performance.now();
     const step = (t: number) => {
@@ -27,35 +36,54 @@ function useCountUp(target: number, ms = 1200) {
   return n;
 }
 
-function ScoreRing({ score }: { score: number }) {
+type Level = 'good' | 'warn' | 'bad';
+
+function ScoreRing({ score, level }: { score: number; level: Level }) {
+  const uid = useId().replace(/[^a-zA-Z0-9_-]/g, '');
+  const grad = `sy-ring-grad-${uid}`;
+  const clamped = Math.max(0, Math.min(100, Math.round(score)));
   const [drawn, setDrawn] = useState(0);
-  const shown = useCountUp(score);
+  const [still] = useState(prefersReducedMotion);
+  const shown = useCountUp(clamped);
+
   useEffect(() => {
-    const id = requestAnimationFrame(() => setDrawn(score));
+    const id = requestAnimationFrame(() => setDrawn(clamped));
     return () => cancelAnimationFrame(id);
-  }, [score]);
+  }, [clamped]);
+
+  const c = SIZE / 2;
   return (
-    <div className="sy-ring" role="img" aria-label={`Protection score ${score} out of 100`}>
-      <svg viewBox="0 0 176 176">
+    <div className={`sy-ring is-${level}`} role="img" aria-label={`Protection score ${clamped} out of 100`}>
+      <span className="sy-ring-glow" aria-hidden="true" />
+      <svg viewBox={`0 0 ${SIZE} ${SIZE}`} width={SIZE} height={SIZE} aria-hidden="true">
         <defs>
-          <linearGradient id="sy-ring-grad" x1="0" y1="0" x2="1" y2="1">
+          <linearGradient id={grad} x1="0" y1="0" x2="1" y2="1">
             <stop offset="0" stopColor="#2b4cff" />
-            <stop offset="0.55" stopColor="#8a5cff" />
+            <stop offset="0.5" stopColor="#8a5cff" />
             <stop offset="1" stopColor="#ff5d8f" />
+            {!still && (
+              <animateTransform
+                attributeName="gradientTransform"
+                type="rotate"
+                values="0 0.5 0.5;360 0.5 0.5"
+                dur="9s"
+                repeatCount="indefinite"
+              />
+            )}
           </linearGradient>
         </defs>
-        <circle cx="88" cy="88" r={R} fill="none" stroke="#eef0f6" strokeWidth="12" />
+        <circle className="track" cx={c} cy={c} r={R} fill="none" strokeWidth={STROKE} />
         <circle
           className="arc"
-          cx="88"
-          cy="88"
+          cx={c}
+          cy={c}
           r={R}
           fill="none"
-          stroke="url(#sy-ring-grad)"
-          strokeWidth="12"
+          stroke={`url(#${grad})`}
+          strokeWidth={STROKE}
           strokeLinecap="round"
           strokeDasharray={C}
-          strokeDashoffset={C * (1 - Math.max(0, Math.min(100, drawn)) / 100)}
+          strokeDashoffset={C * (1 - drawn / 100)}
         />
       </svg>
       <div className="sy-ring-in">
@@ -105,7 +133,7 @@ export default function Protection() {
 
   if (!status) {
     return (
-      <div className="screen">
+      <div className="screen sy-screen">
         {head}
         <div className="card-w">
           {loading || !failed ? (
@@ -129,61 +157,85 @@ export default function Protection() {
   const defsFresh: Tri = status.definitionsUpdated === null ? 'unknown' : now - status.definitionsUpdated < WEEK ? 'on' : 'off';
   const scanFresh: Tri = status.lastScan === null ? 'unknown' : now - status.lastScan < 4 * WEEK ? 'on' : 'off';
   const issues = [!status.enabled, status.realtime === false, status.firewall === false, defsFresh === 'off'].filter(Boolean).length;
-  const level = issues === 0 && status.score >= 80 ? 'good' : !status.enabled || issues > 1 ? 'bad' : 'warn';
+  const level: Level = issues === 0 && status.score >= 80 ? 'good' : !status.enabled || issues > 1 ? 'bad' : 'warn';
 
-  const rows: { icon: IconName; label: string; detail: string; tag: ReactNode }[] = [
+  const facts: { label: string; state: Tri }[] = [
+    { label: status.enabled ? 'Antivirus on' : 'Antivirus off', state: status.enabled ? 'on' : 'off' },
+  ];
+  if (status.realtime !== null) facts.push({ label: `Real-time ${status.realtime ? 'on' : 'off'}`, state: tri(status.realtime) });
+  if (status.firewall !== null) facts.push({ label: `Firewall ${status.firewall ? 'on' : 'off'}`, state: tri(status.firewall) });
+  if (status.definitionsUpdated) facts.push({ label: `Updated ${timeAgo(status.definitionsUpdated, now)}`, state: defsFresh });
+
+  const rows: { icon: IconName; label: string; detail: string; state: Tri; tag: ReactNode }[] = [
     {
       icon: 'shield',
       label: 'Antivirus',
       detail: status.provider,
+      state: status.enabled ? 'on' : 'off',
       tag: triTag(status.enabled ? 'on' : 'off'),
     },
     {
       icon: 'spark',
       label: 'Real-time protection',
       detail: 'Checks files the moment they are opened or downloaded',
+      state: tri(status.realtime),
       tag: triTag(tri(status.realtime)),
     },
     {
       icon: 'globe',
       label: 'Firewall',
       detail: 'Blocks unwanted network connections',
+      state: tri(status.firewall),
       tag: triTag(tri(status.firewall)),
     },
     {
       icon: 'clock',
       label: 'Definitions updated',
       detail: status.definitionsUpdated ? timeAgo(status.definitionsUpdated, now) : 'Not reported by your system',
+      state: defsFresh,
       tag: triTag(defsFresh, ['Up to date', 'Out of date']),
     },
     {
       icon: 'scan',
       label: 'Last scan',
       detail: status.lastScan ? timeAgo(status.lastScan, now) : 'Not reported by your system',
+      state: scanFresh,
       tag: triTag(scanFresh, ['Recent', 'A while ago']),
     },
   ];
 
   return (
-    <div className="screen">
+    <div className="screen sy-screen">
       {head}
 
-      <section className="card-w sy-hero rise" style={{ animationDelay: '0.06s' }}>
-        <ScoreRing score={status.score} />
-        <div className="sy-hero-text">
-          <span className={`eyebrow${level === 'warn' ? ' sy-warn' : level === 'bad' ? ' sy-bad' : ''}`}>
-            <span className="dot" />
-            {level === 'good' ? 'You are protected' : level === 'warn' ? 'Mostly protected' : 'Needs attention'}
-          </span>
-          <h2>{status.provider}</h2>
-          <p>
-            Cleanly does not replace your antivirus. It checks that the protection built into your system is switched on and up to date, and
-            tells you plainly when something is off.
-          </p>
-          <button type="button" className="btn" onClick={() => void load()} disabled={loading}>
-            {loading ? <span className="spinner" /> : <Icon name="history" />}
-            {loading ? 'Checking' : 'Check again'}
-          </button>
+      <section className={`card-w sy-hero is-${level} rise`} style={{ animationDelay: '0.06s' }}>
+        <div className="sy-hero-in">
+          <div className="sy-hero-ring">
+            <ScoreRing score={status.score} level={level} />
+          </div>
+          <div className="sy-hero-text">
+            <span className={`eyebrow${level === 'warn' ? ' sy-warn' : level === 'bad' ? ' sy-bad' : ''}`}>
+              <span className="dot" />
+              {level === 'good' ? 'You are protected' : level === 'warn' ? 'Mostly protected' : 'Needs attention'}
+            </span>
+            <h2>{status.provider}</h2>
+            <ul className="sy-facts" aria-label="Summary">
+              {facts.map((f) => (
+                <li key={f.label} className={`is-${f.state}`}>
+                  <i />
+                  {f.label}
+                </li>
+              ))}
+            </ul>
+            <p>
+              Cleanly does not replace your antivirus. It checks that the protection built into your system is switched on and up to date,
+              and tells you plainly when something is off.
+            </p>
+            <button type="button" className="btn" onClick={() => void load()} disabled={loading}>
+              {loading ? <span className="spinner" /> : <Icon name="history" />}
+              {loading ? 'Checking' : 'Check again'}
+            </button>
+          </div>
         </div>
       </section>
 
@@ -191,17 +243,19 @@ export default function Protection() {
         <div className="sy-sec-head">
           <h2>Status</h2>
           <span className="grow" />
-          <span className="sy-count">{issues === 0 ? 'All good' : `${issues} to look at`}</span>
+          <span className={`sy-count${issues ? ' sy-count-warn' : ''}`}>{issues === 0 ? 'All good' : `${issues} to look at`}</span>
         </div>
-        <div className="list">
+        <div className="list sy-status">
           {rows.map((r) => (
-            <div key={r.label} className="row">
-              <span className="chip-ico">
+            <div key={r.label} className={`row is-${r.state}`}>
+              <span className={`chip-ico sy-st-${r.state}`}>
                 <Icon name={r.icon} />
               </span>
               <div className="grow">
                 <div className="title">{r.label}</div>
-                <div className="sub">{r.detail}</div>
+                <div className="sub" title={r.detail}>
+                  {r.detail}
+                </div>
               </div>
               {r.tag}
             </div>

@@ -21,6 +21,8 @@ export interface DiskInfo {
   total: number;
   free: number;
   used: number;
+  /** the drive the OS (and the home folder) lives on */
+  system: boolean;
 }
 
 export interface ScanProgress {
@@ -83,6 +85,8 @@ export interface StartupItem {
   enabled: boolean;
   impact: 'high' | 'medium' | 'low';
   canToggle: boolean;
+  /** toggling needs administrator rights (Windows shows a UAC prompt, macOS asks for the password) */
+  needsAdmin: boolean;
 }
 
 export interface InstalledApp {
@@ -94,6 +98,8 @@ export interface InstalledApp {
   installed?: number;
   lastUsed?: number;
   path?: string;
+  /** file to take the app's real icon from (exe, ico or .app); pass it to fileIcons() */
+  iconPath?: string;
   canUninstall: boolean;
 }
 
@@ -169,9 +175,15 @@ export interface FeedbackResult {
 export interface CleanlyApi {
   system(): Promise<SystemInfo>;
   disk(): Promise<DiskInfo>;
+  /** every fixed local drive (C:, D: …), system drive first */
+  disks(): Promise<DiskInfo[]>;
+  /** real icons for files, folders or apps as PNG data URLs, keyed by the requested path; unknown paths are left out */
+  fileIcons(paths: string[]): Promise<Record<string, string>>;
   scanJunk(): Promise<JunkCategory[]>;
   cleanJunk(ids: string[]): Promise<CleanResult>;
-  scanSpaces(): Promise<SpaceNode>;
+  /** root = undefined for the home folder, or the mount of a drive from disks() */
+  scanSpaces(root?: string): Promise<SpaceNode>;
+  /** scans the home folder plus every other fixed drive */
   scanLargeFiles(minBytes: number): Promise<LargeFile[]>;
   scanDuplicates(): Promise<DuplicateGroup[]>;
   trashPaths(paths: string[]): Promise<CleanResult>;
@@ -194,7 +206,7 @@ export interface CleanlyApi {
 
 /** Names of the request/response methods, used to wire IPC in preload and main. */
 export const API_METHODS = [
-  'system', 'disk', 'scanJunk', 'cleanJunk', 'scanSpaces', 'scanLargeFiles', 'scanDuplicates', 'trashPaths',
+  'system', 'disk', 'disks', 'fileIcons', 'scanJunk', 'cleanJunk', 'scanSpaces', 'scanLargeFiles', 'scanDuplicates', 'trashPaths',
   'revealPath', 'startupItems', 'setStartupItem', 'installedApps', 'uninstallApp', 'protection', 'getSettings',
   'setSettings', 'setApiKey', 'askAi', 'tipsProfile', 'startTip', 'sendFeedback', 'openExternal',
 ] as const satisfies readonly Exclude<keyof CleanlyApi, 'onProgress'>[];

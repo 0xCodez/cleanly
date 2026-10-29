@@ -1,5 +1,7 @@
 /* Shared styles for Speed, Apps, Protection, Assistant and Settings. Everything is prefixed with sy- */
 
+/* screens are flex columns inside a scroller: never let a card get squeezed (and clipped) */
+.sy-screen > * { flex-shrink: 0; }
 .sy-center { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 56px 20px; color: var(--ink-3); font-size: 14px; }
 .sy-sec-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
 .sy-sec-head h2 { margin: 0; font-family: var(--display); font-size: 15px; font-weight: 500; letter-spacing: -0.02em; }
@@ -33,6 +35,24 @@
 .sy-chip-low { background: linear-gradient(135deg, #9fb0c8, #6f7f99); }
 .row.sy-off .title, .row.sy-off .chip-ico { opacity: 0.55; }
 .sy-loc { font-family: var(--mono); font-size: 11px; color: var(--ink-3); white-space: nowrap; }
+.sy-groups { display: flex; flex-direction: column; gap: 16px; }
+.sy-title-line { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.sy-title-line .title { min-width: 0; }
+.sy-admin { display: inline-flex; align-items: center; gap: 4px; flex: none; height: 20px; padding: 0 8px 0 6px; border-radius: 999px; font-size: 11px; font-weight: 600; letter-spacing: 0.01em; color: #3a3fb8; background: rgba(109, 123, 255, 0.12); box-shadow: inset 0 0 0 1px rgba(109, 123, 255, 0.18); cursor: help; }
+.sy-admin .ic { width: 12px; height: 12px; --fo: 0.25; }
+.row .sub.sy-ask { margin-top: 2px; font-size: 11.5px; color: #5a5fc8; }
+.row .sub.sy-ask.on { color: var(--violet); animation: sy-breathe 1.6s ease-in-out infinite; }
+@keyframes sy-breathe { 50% { opacity: 0.55; } }
+.sy-appico { position: relative; width: 36px; height: 36px; flex: none; border-radius: 12px; display: grid; place-items: center; background: linear-gradient(180deg, #fff, #f6f7fb); border: 1px solid #eef0f3; box-shadow: inset 0 1px 1px #fff, 0 4px 10px rgba(15, 18, 24, 0.06); }
+.sy-appico img { width: 24px; height: 24px; object-fit: contain; filter: drop-shadow(0 1px 2px rgba(15, 18, 24, 0.16)); animation: sy-pop 0.35s var(--ease) both; }
+.sy-appico::after { content: ''; position: absolute; right: -3px; bottom: -3px; width: 10px; height: 10px; border-radius: 50%; border: 2px solid #fff; background: #9fb0c8; }
+.sy-appico.sy-imp-high::after { background: #e0405a; }
+.sy-appico.sy-imp-medium::after { background: #ffa45e; }
+.row.sy-off .sy-appico { opacity: 0.55; filter: grayscale(0.5); }
+.row.sy-busy { background: linear-gradient(90deg, rgba(109, 123, 255, 0.07), rgba(109, 123, 255, 0) 70%); }
+.sy-switch { display: inline-flex; flex: none; }
+.sy-pending { display: inline-grid; place-items: center; width: 44px; height: 26px; flex: none; }
+@keyframes sy-pop { from { opacity: 0; transform: scale(0.82); } }
 
 /* ---------- Apps ---------- */
 .sy-toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
@@ -40,6 +60,8 @@
 .sy-search .ic { position: absolute; left: 14px; top: 50%; margin-top: -9px; width: 18px; height: 18px; color: var(--ink-3); pointer-events: none; }
 .sy-search .input { padding-left: 42px; border-radius: 999px; height: 42px; }
 .sy-av { width: 38px; height: 38px; border-radius: 12px; flex: none; display: grid; place-items: center; color: #fff; font-family: var(--display); font-size: 15px; font-weight: 500; box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.5), 0 4px 10px rgba(15, 18, 24, 0.08); }
+.sy-av-img { background: none; box-shadow: none; }
+.sy-av-img img { width: 100%; height: 100%; object-fit: contain; border-radius: 10px; filter: drop-shadow(0 2px 4px rgba(15, 18, 24, 0.16)); animation: sy-pop 0.35s var(--ease) both; }
 .sy-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; min-width: 96px; }
 .sy-meta small { font-size: 11.5px; color: var(--ink-3); white-space: nowrap; }
 .sy-act { display: flex; align-items: center; gap: 6px; justify-content: flex-end; min-width: 108px; }
@@ -47,20 +69,42 @@
 .sy-confirm span { font-size: 12.5px; font-weight: 550; color: #a3243b; white-space: nowrap; }
 
 /* ---------- Protection ---------- */
-.sy-hero { position: relative; overflow: hidden; display: flex; align-items: center; gap: 36px; padding: 30px 36px; }
-.sy-hero::before { content: ''; position: absolute; right: -120px; top: -160px; width: 460px; height: 420px; border-radius: 50%; background: radial-gradient(closest-side, rgba(138, 92, 255, 0.16), rgba(43, 76, 255, 0.06) 60%, rgba(43, 76, 255, 0)); pointer-events: none; }
-.sy-hero::after { content: ''; position: absolute; left: 30%; bottom: -200px; width: 420px; height: 300px; border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 93, 143, 0.1), rgba(255, 93, 143, 0)); pointer-events: none; }
-.sy-hero > * { position: relative; }
-.sy-ring { position: relative; width: 176px; height: 176px; flex: none; }
-.sy-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
-.sy-ring .arc { transition: stroke-dashoffset 1.4s var(--ease); filter: drop-shadow(0 4px 10px rgba(138, 92, 255, 0.3)); }
-.sy-ring-in { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-.sy-ring-in strong { font-family: var(--display); font-size: 48px; font-weight: 500; letter-spacing: -0.05em; line-height: 1; font-variant-numeric: tabular-nums; background: linear-gradient(100deg, var(--ink) 0%, var(--blue) 55%, var(--violet) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.sy-ring-in span { font-family: var(--mono); font-size: 11px; color: var(--ink-3); margin-top: 4px; }
-.sy-hero-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
-.sy-hero-text h2 { margin: 0; font-family: var(--display); font-size: 26px; font-weight: 500; letter-spacing: -0.04em; }
-.sy-hero-text p { margin: 0; max-width: 520px; font-size: 14px; line-height: 1.6; color: var(--ink-2); }
-.sy-hero-text .btn { align-self: flex-start; margin-top: 6px; }
+.sy-hero { position: relative; overflow: hidden; overflow: clip; container-type: inline-size; min-height: 220px; background: linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.78)); }
+.sy-hero::before { content: ''; position: absolute; right: -140px; top: -180px; width: 520px; height: 460px; border-radius: 50%; background: radial-gradient(closest-side, rgba(138, 92, 255, 0.15), rgba(43, 76, 255, 0.05) 60%, rgba(43, 76, 255, 0)); pointer-events: none; }
+.sy-hero::after { content: ''; position: absolute; left: -80px; bottom: -220px; width: 480px; height: 340px; border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 93, 143, 0.1), rgba(255, 93, 143, 0)); pointer-events: none; }
+.sy-hero.is-bad::before { background: radial-gradient(closest-side, rgba(214, 51, 79, 0.13), rgba(255, 93, 143, 0.05) 60%, rgba(255, 93, 143, 0)); }
+.sy-hero-in { position: relative; z-index: 1; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 40px; min-height: 220px; padding: 30px 40px 30px 32px; }
+.sy-hero-ring { width: 200px; height: 200px; display: grid; place-items: center; }
+.sy-ring { position: relative; width: 160px; height: 160px; flex: none; }
+.sy-ring svg { position: relative; display: block; width: 160px; height: 160px; overflow: visible; transform: rotate(-90deg); }
+.sy-ring .track { stroke: rgba(226, 229, 238, 0.85); }
+.sy-ring .arc { transition: stroke-dashoffset 1.4s var(--ease); filter: drop-shadow(0 3px 8px rgba(138, 92, 255, 0.35)); }
+.sy-ring-glow { position: absolute; inset: -16px; border-radius: 50%; background: conic-gradient(from 0deg, rgba(43, 76, 255, 0.32), rgba(138, 92, 255, 0.3), rgba(255, 93, 143, 0.28), rgba(43, 76, 255, 0.32)); filter: blur(24px); opacity: 0.5; animation: sy-spin 12s linear infinite; pointer-events: none; }
+.sy-ring.is-warn .sy-ring-glow { background: conic-gradient(from 0deg, rgba(255, 181, 71, 0.35), rgba(255, 93, 143, 0.25), rgba(255, 181, 71, 0.35)); }
+.sy-ring.is-bad .sy-ring-glow { background: conic-gradient(from 0deg, rgba(214, 51, 79, 0.35), rgba(255, 93, 143, 0.28), rgba(214, 51, 79, 0.35)); }
+@keyframes sy-spin { to { transform: rotate(360deg); } }
+.sy-ring-in { position: absolute; inset: 24px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle at 50% 28%, #fff, rgba(255, 255, 255, 0.82) 70%); box-shadow: inset 0 1px 2px #fff, 0 8px 22px rgba(15, 18, 24, 0.07); }
+.sy-ring-in strong { font-family: var(--display); font-size: 38px; font-weight: 500; letter-spacing: -0.05em; line-height: 1; font-variant-numeric: tabular-nums; padding: 0 2px; background: linear-gradient(100deg, var(--ink) 0%, var(--blue) 60%, var(--violet) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.sy-ring-in span { font-family: var(--mono); font-size: 11px; letter-spacing: 0.04em; color: var(--ink-3); margin-top: 6px; }
+.sy-hero-text { min-width: 0; max-width: 620px; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+.sy-hero-text h2 { margin: 0; font-family: var(--display); font-size: 26px; font-weight: 500; letter-spacing: -0.04em; line-height: 1.2; overflow-wrap: anywhere; }
+.sy-hero-text p { margin: 2px 0 0; max-width: 60ch; font-size: 14px; line-height: 1.6; color: var(--ink-2); }
+.sy-hero-text .btn { margin-top: 6px; }
+.sy-facts { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 6px 8px; }
+.sy-facts li { display: inline-flex; align-items: center; gap: 7px; height: 26px; padding: 0 11px; border-radius: 999px; background: rgba(255, 255, 255, 0.8); border: 1px solid var(--line); font-size: 12px; font-weight: 550; color: var(--ink-2); white-space: nowrap; }
+.sy-facts i { width: 6px; height: 6px; border-radius: 50%; background: #b7bdca; }
+.sy-facts .is-on i { background: var(--mint); box-shadow: 0 0 0 3px rgba(31, 191, 143, 0.15); }
+.sy-facts .is-off i { background: var(--danger); box-shadow: 0 0 0 3px rgba(214, 51, 79, 0.14); }
+@container (max-width: 640px) {
+  .sy-hero-in { grid-template-columns: minmax(0, 1fr); justify-items: center; gap: 14px; padding: 26px 24px 30px; text-align: center; }
+  .sy-hero-text { align-items: center; }
+  .sy-facts { justify-content: center; }
+}
+.sy-status .row { padding: 13px 6px; }
+.chip-ico.sy-st-on { background: linear-gradient(135deg, #3fd6a0, #12a57a); }
+.chip-ico.sy-st-off { background: linear-gradient(135deg, #ff7a8a, #d6334f); }
+.chip-ico.sy-st-unknown { background: linear-gradient(135deg, #b9c1cf, #8a93a6); }
+.sy-count-warn { color: #9a5a00; }
 .eyebrow.sy-warn { color: #9a5a00; }
 .eyebrow.sy-warn .dot { background: var(--amber); box-shadow: 0 0 0 4px rgba(255, 181, 71, 0.2); }
 .eyebrow.sy-bad { color: var(--danger); }
@@ -156,10 +200,9 @@
 
 @media (max-width: 980px) {
   .sy-top, .sy-settings { grid-template-columns: minmax(0, 1fr); }
-  .sy-hero { flex-direction: column; align-items: flex-start; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .sy-stagger > *, .sy-msg, .sy-dots i, .sy-confirm { animation: none; }
+  .sy-stagger > *, .sy-msg, .sy-dots i, .sy-confirm, .sy-ring-glow, .sy-ask.on, .sy-appico img, .sy-av-img img { animation: none; }
   .sy-ring .arc { transition: none; }
 }
 .sy-search input::-webkit-search-cancel-button { -webkit-appearance: none; }

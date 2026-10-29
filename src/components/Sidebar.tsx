@@ -1,7 +1,8 @@
-import type { IconName } from '../../shared/types';
+import type { DiskInfo, IconName } from '../../shared/types';
 import { formatBytes } from '../lib/format';
-import { useStore, type Screen } from '../state';
+import { driveName, useStore, type Screen } from '../state';
 import { BrandMark, Icon } from './Icon';
+import '../screens/files.css';
 
 const MAIN: { id: Screen; label: string; icon: IconName }[] = [
   { id: 'scan', label: 'Smart Scan', icon: 'scan' },
@@ -18,7 +19,7 @@ const FILES: { id: Screen; label: string; icon: IconName }[] = [
 ];
 
 export function Sidebar() {
-  const { screen, go, reclaimable, disk } = useStore();
+  const { screen, go, reclaimable, disk, disks } = useStore();
 
   const item = (it: { id: Screen; label: string; icon: IconName }) => (
     <button key={it.id} type="button" className={`nav-item${screen === it.id ? ' on' : ''}`} onClick={() => go(it.id)} aria-current={screen === it.id ? 'page' : undefined}>
@@ -28,8 +29,17 @@ export function Sidebar() {
     </button>
   );
 
-  const usedPct = disk ? (disk.used / disk.total) * 100 : 0;
-  const junkPct = disk ? Math.min(100 - usedPct, (reclaimable / disk.total) * 100) : 0;
+  const drives: DiskInfo[] = disks?.length ? disks : disk ? [disk] : [];
+  const sys = drives.find((d) => d.system) ?? disk ?? drives[0] ?? null;
+  const many = drives.length > 1;
+
+  const note = !sys
+    ? 'Measuring…'
+    : reclaimable > 0
+      ? `${formatBytes(reclaimable)} can be reclaimed${many ? ` on ${driveName(sys)}` : ''}`
+      : many
+        ? `${formatBytes(drives.reduce((a, d) => a + d.free, 0))} free on ${drives.length} drives`
+        : `${formatBytes(sys.free)} free`;
 
   return (
     <nav className="nav rise" aria-label="Sections">
@@ -43,15 +53,37 @@ export function Sidebar() {
 
       <div className="nav-foot">
         <div className="disk">
-          <div className="disk-row">
-            <span>{disk?.label ?? 'Disk'}</span>
-            <span>{disk ? `${formatBytes(disk.used)} / ${formatBytes(disk.total)}` : '…'}</span>
+          <div className={`disk-list${drives.length > 3 ? ' scroll' : ''}`}>
+            {drives.length ? (
+              drives.map((d) => {
+                const usedPct = d.total > 0 ? Math.min(100, (d.used / d.total) * 100) : 0;
+                const junkPct = d.mount === sys?.mount && d.total > 0 ? Math.min(usedPct, (reclaimable / d.total) * 100) : 0;
+                return (
+                  <div key={d.mount} className="drv" title={`${d.label}: ${formatBytes(d.free)} free of ${formatBytes(d.total)}`}>
+                    <div className="disk-row">
+                      <span>{d.label}</span>
+                      <span>
+                        {formatBytes(d.used)} / {formatBytes(d.total)}
+                      </span>
+                    </div>
+                    <div className="bar">
+                      <span className="used" style={{ width: `${Math.max(0, usedPct - junkPct)}%` }} />
+                      <span className="junk" style={{ width: `${junkPct}%` }} />
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="drv">
+                <div className="disk-row">
+                  <span>Disk</span>
+                  <span>…</span>
+                </div>
+                <div className="bar" />
+              </div>
+            )}
           </div>
-          <div className="bar">
-            <span className="used" style={{ width: `${Math.max(0, usedPct - junkPct)}%` }} />
-            <span className="junk" style={{ width: `${junkPct}%` }} />
-          </div>
-          <div className="disk-note">{reclaimable > 0 ? `${formatBytes(reclaimable)} can be reclaimed` : disk ? `${formatBytes(disk.free)} free` : 'Measuring…'}</div>
+          <div className="disk-note">{note}</div>
         </div>
         <div className="nav-mini">
           <button type="button" className={`nav-item${screen === 'support' ? ' on' : ''}`} onClick={() => go('support')} title="Support Cleanly">

@@ -512,7 +512,7 @@ const RECYCLE_MEASURE = [
 function powershell(script: string, timeout: number): Promise<string> {
   return new Promise((resolve, reject) => {
     execFile(
-      'powershell.exe',
+      path.join(process.env.SystemRoot ?? process.env.windir ?? 'C:\\Windows', 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe'),
       ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', script],
       { timeout, windowsHide: true, maxBuffer: 1024 * 1024 },
       (err, stdout) => (err ? reject(err) : resolve(String(stdout))),

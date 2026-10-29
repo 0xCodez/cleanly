@@ -4,7 +4,8 @@ import { api } from '../api';
 import { Icon } from '../components/Icon';
 import { Empty, Progress, ScreenHead, Segmented } from '../components/ui';
 import { formatBytes, shortPath, splitBytes, sum, timeAgo } from '../lib/format';
-import { useStore } from '../state';
+import { useFileIcons } from '../lib/useFileIcons';
+import { driveOf, useStore } from '../state';
 import './files.css';
 
 type Filter = 'all' | 'video' | 'archive' | 'disk-image' | 'installer' | 'other';
@@ -59,7 +60,7 @@ function scan(min: number): Promise<LargeFile[]> {
 }
 
 export default function LargeFiles() {
-  const { settings, progress, system, toast, refreshDisk } = useStore();
+  const { settings, progress, system, disks, toast, refreshDisk } = useStore();
   const min = settings ? settings.largeFileMinMb * MB : null;
   const [files, setFiles] = useState<LargeFile[] | null>(cache && cache.min === min ? cache.files : null);
   const [loading, setLoading] = useState(false);
@@ -114,6 +115,9 @@ export default function LargeFiles() {
     const list = (files ?? []).filter((f) => filter === 'all' || filterOf(f) === filter);
     return list.sort(sort === 'size' ? (a, b) => b.size - a.size : (a, b) => lastUsed(a) - lastUsed(b));
   }, [files, filter, sort]);
+
+  const icons = useFileIcons(shown.map((f) => f.path));
+  const otherDrives = (disks?.length ?? 0) > 1;
 
   const chosen = (files ?? []).filter((f) => selected.has(f.path));
   const chosenSize = sum(chosen.map((f) => f.size));
@@ -174,7 +178,7 @@ export default function LargeFiles() {
     <div className="screen">
       <ScreenHead
         title="Large Files"
-        sub={`Files over ${settings ? formatBytes(settings.largeFileMinMb * MB) : '…'} that you may have forgotten. Anything you remove goes to the Trash.`}
+        sub={`Files over ${settings ? formatBytes(settings.largeFileMinMb * MB) : '…'} that you may have forgotten${otherDrives ? ', on every drive' : ''}. Anything you remove goes to the Trash.`}
       >
         {files && files.length > 0 && (
           <div className="fx-stat">
@@ -205,7 +209,7 @@ export default function LargeFiles() {
                 <Icon name="file" />
               </span>
               <h3>Looking for big files</h3>
-              <p>{prog?.phase ?? 'Checking Downloads, Desktop, Documents, Movies and more.'}</p>
+              <p>{prog?.phase ?? (otherDrives ? 'Checking your home folder and your other drives.' : 'Checking Downloads, Desktop, Documents, Movies and more.')}</p>
               <Progress value={prog && prog.total > 0 ? prog.done / prog.total : undefined} />
               {prog?.current && <div className="cur">{shortPath(prog.current, home)}</div>}
             </div>
@@ -272,18 +276,32 @@ export default function LargeFiles() {
                 {shown.map((f) => {
                   const on = selected.has(f.path);
                   const opened = f.accessed > 0 && f.accessed >= f.modified;
+                  const drive = driveOf(f.path, home, disks);
                   return (
                     <label key={f.path} className={`row${on ? ' on' : ''}`}>
                       <input type="checkbox" className="check" checked={on} disabled={trashing} onChange={() => toggle(f.path)} aria-label={f.name} />
-                      <span className={`chip-ico k-${f.kind}`}>
-                        <Icon name={KIND_ICON[f.kind]} />
-                      </span>
+                      {icons[f.path] ? (
+                        <span className="chip-ico real">
+                          <img src={icons[f.path]} alt="" draggable={false} />
+                        </span>
+                      ) : (
+                        <span className={`chip-ico k-${f.kind}`}>
+                          <Icon name={KIND_ICON[f.kind]} />
+                        </span>
+                      )}
                       <div className="grow">
                         <div className="title" title={f.name}>
                           {f.name}
                         </div>
                         <div className="sub mono" title={f.path}>
-                          {shortPath(parentDir(f.path), home)}
+                          {drive ? (
+                            <>
+                              <span className="fx-drive">{drive.name}</span>
+                              {drive.dir}
+                            </>
+                          ) : (
+                            shortPath(parentDir(f.path), home)
+                          )}
                         </div>
                       </div>
                       <span className="fx-meta">

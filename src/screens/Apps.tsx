@@ -4,6 +4,7 @@ import { api } from '../api';
 import { Icon } from '../components/Icon';
 import { Empty, ScreenHead, Segmented } from '../components/ui';
 import { formatBytes, sum, timeAgo } from '../lib/format';
+import { useFileIcons } from '../lib/useFileIcons';
 import { useStore } from '../state';
 import './system.css';
 
@@ -30,6 +31,22 @@ function avatarStyle(name: string) {
 function initial(name: string) {
   const ch = name.trim().match(/[\p{L}\p{N}]/u);
   return ch ? ch[0].toUpperCase() : '?';
+}
+
+function AppIcon({ app, src }: { app: InstalledApp; src?: string }) {
+  const [broken, setBroken] = useState(false);
+  if (src && !broken) {
+    return (
+      <span className="sy-av sy-av-img" aria-hidden="true">
+        <img src={src} alt="" draggable={false} decoding="async" onError={() => setBroken(true)} />
+      </span>
+    );
+  }
+  return (
+    <span className="sy-av" style={avatarStyle(app.name)} aria-hidden="true">
+      {initial(app.name)}
+    </span>
+  );
 }
 
 export default function Apps() {
@@ -94,10 +111,14 @@ export default function Apps() {
     }
   };
 
+  // Stable list (biggest apps first, like the default view) so searching or re-sorting never restarts icon loading.
+  const iconPaths = useMemo(() => [...(apps ?? [])].sort((a, b) => (b.size ?? -1) - (a.size ?? -1)).map((a) => a.iconPath), [apps]);
+  const icons = useFileIcons(iconPaths);
+
   const total = sum((apps ?? []).map((a) => a.size ?? 0));
 
   return (
-    <div className="screen">
+    <div className="screen sy-screen">
       <ScreenHead title="Applications" sub="Everything installed on this computer. Remove what you no longer use with the app's own uninstaller.">
         {apps && (
           <div className="sy-head-meta">
@@ -166,9 +187,7 @@ export default function Apps() {
             <div className="list">
               {shown.map((app) => (
                 <div key={app.id} className="row">
-                  <span className="sy-av" style={avatarStyle(app.name)} aria-hidden="true">
-                    {initial(app.name)}
-                  </span>
+                  <AppIcon app={app} src={app.iconPath ? icons[app.iconPath] : undefined} />
                   <div className="grow">
                     <div className="title">{app.name}</div>
                     <div className="sub">

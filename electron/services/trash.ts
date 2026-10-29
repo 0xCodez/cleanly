@@ -3,6 +3,7 @@ import { promises as fsp } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import type { CleanResult } from '../../shared/types';
+import { dataDriveMounts } from './disk';
 import { dirSize, isInside, knownFolders, mapLimit, samePath, walk } from './walk';
 
 const isWin = process.platform === 'win32';
@@ -41,15 +42,65 @@ const SECRET_DIRS = [
   path.join('AppData', 'Local', 'Microsoft', 'Credentials'),
 ];
 
+/** Top-level entries of a data drive (D:, /Volumes/Data) that belong to the OS or to app installers. */
+const DRIVE_PROTECTED_TOP = new Set(
+  (isWin
+    ? [
+        'Windows', 'Windows.old', 'Program Files', 'Program Files (x86)', 'ProgramData', 'Recovery', 'Boot', 'EFI',
+        'System Volume Information', 'Users', 'Documents and Settings', 'PerfLogs', 'Config.Msi', 'MSOCache',
+        'WindowsApps', 'WpSystem', 'XboxGames', 'OneDriveTemp', 'bootmgr', 'BOOTNXT', 'BOOTSECT.BAK', 'pagefile.sys',
+        'hiberfil.sys', 'swapfile.sys', 'DumpStack.log', 'DumpStack.log.tmp', 'desktop.ini', 'autorun.inf',
+      ]
+    : ['System', 'Library', 'Applications', 'Users', 'private', 'Backups.backupdb', 'cores', 'usr', 'bin', 'sbin', 'etc', 'var', 'opt']
+  ).map((n) => n.toLowerCase()),
+);
+
+const CLOUD_TOP = /^(OneDrive( - .+)?|Dropbox|Google Drive|My Drive|iCloud ?Drive|Creative Cloud Files|Yandex\.?Disk)$/i;
+
+function cloudRoots(): string[] {
+  const env = process.env;
+  return [env.OneDrive, env.OneDriveConsumer, env.OneDriveCommercial].filter((p): p is string => !!p && path.isAbsolute(p));
+}
+
+/** Strictly inside a data drive and outside its OS / installer folders. `mount` comes from listDisks(). */
+function isSafeDrivePath(raw: string, abs: string, mount: string): boolean {
+  if (isWin) {
+    // drive-letter paths only: no UNC / \\?\ device paths, no alternate data streams ("file:stream")
+    if (!/^[a-zA-Z]:[\\/]/.test(raw) || !/^[a-zA-Z]:\\$/.test(mount) || abs.indexOf(':', 2) !== -1) return false;
+  }
+  if (!isInside(mount, abs)) return false;
+  const parts = path.relative(mount, abs).split(path.sep);
+  const top = parts[0];
+  if (!top) return false;
+  // "$Recycle.Bin", "$WinREAgent" on Windows; ".Trashes", ".Spotlight-V100", ".fseventsd" on macOS
+  if (top.startsWith(isWin ? '$' : '.')) return false;
+  if (DRIVE_PROTECTED_TOP.has(top.toLowerCase())) return false;
+  // Windows quietly drops trailing dots and spaces, so "Windows." would name the Windows folder
+  if (isWin && parts.some((s) => /[. ]$/.test(s))) return false;
+  if (isWin) for (const sys of systemRoots()) if (samePath(abs, sys) || isInside(sys, abs)) return false;
+  // Documents, Desktop & co. are often redirected to a data drive: never trash them or a folder holding them
+  for (const k of Object.values(knownFolders())) if (samePath(abs, k) || isInside(abs, k)) return false;
+  // a sync root moved to a data drive: trashing it would delete everything in the cloud too
+  if (parts.length === 1 && CLOUD_TOP.test(top)) return false;
+  for (const c of cloudRoots()) if (samePath(abs, c) || isInside(abs, c)) return false;
+  return true;
+}
+
 /**
  * Lexical guard for anything the renderer asks to move to the Trash.
- * Allows only paths strictly inside the home folder that are not OS folders, user root folders or key stores.
+ * Allows only paths strictly inside the home folder that are not OS folders, user root folders or key stores,
+ * or (when `drives` lists them) paths on another fixed data drive outside its system folders.
  */
-export function isSafeUserPath(p: unknown, home: string = os.homedir()): p is string {
+export function isSafeUserPath(p: unknown, home: string = os.homedir(), drives: readonly string[] = []): p is string {
   if (typeof p !== 'string' || p.length === 0 || p.length > 4096 || p.includes('\0')) return false;
   if (!path.isAbsolute(p)) return false;
   const abs = path.resolve(p);
   if (path.parse(abs).root === abs) return false;
+  if (isSafeHomePath(abs, home)) return true;
+  return drives.some((m) => !isInside(home, m) && !samePath(home, m) && !isInside(m, home) && isSafeDrivePath(p, abs, m));
+}
+
+function isSafeHomePath(abs: string, home: string): boolean {
   if (samePath(abs, home) || !isInside(home, abs)) return false;
   for (const sys of systemRoots()) if (samePath(abs, sys) || isInside(sys, abs)) return false;
   if (isMac && /^\/Applications\/?$/i.test(abs)) return false;
@@ -70,18 +121,44 @@ export function isSafeUserPath(p: unknown, home: string = os.homedir()): p is st
 
 type Verdict = { kind: 'ok'; real: string } | { kind: 'blocked' } | { kind: 'gone' };
 
+interface Drives {
+  lexical: string[];
+  /** the same mounts after realpath, for the canonical re-check */
+  real: string[];
+}
+
+/** Fixed data drives from listDisks(); removable, network and unknown drives never qualify. */
+async function dataDrives(): Promise<Drives> {
+  let lexical: string[] = [];
+  try {
+    lexical = await dataDriveMounts();
+  } catch {
+    // without a drive list only the home folder qualifies
+  }
+  const real: string[] = [];
+  for (const m of lexical) {
+    try {
+      const r = await fsp.realpath(m);
+      if (samePath(r, m)) real.push(r);
+    } catch {
+      // unreadable drive: nothing on it qualifies
+    }
+  }
+  return { lexical: lexical.filter((m) => real.some((r) => samePath(r, m))), real };
+}
+
 /**
  * Same guard, re-run on the canonical path. Resolving the full path (not just the parent) also
  * expands Windows 8.3 short names and trailing dots, so "DOCUME~1" or "Documents." cannot slip past
  * the protected-folder check, and a junction in a parent folder cannot point outside home.
  */
-async function resolveSafe(p: string): Promise<Verdict> {
-  if (!isSafeUserPath(p)) return { kind: 'blocked' };
+async function resolveSafe(p: string, drives: Drives): Promise<Verdict> {
+  if (!isSafeUserPath(p, os.homedir(), drives.lexical)) return { kind: 'blocked' };
   try {
     const st = await fsp.lstat(p);
     if (st.isSymbolicLink()) return { kind: 'blocked' };
     const [realHome, real] = await Promise.all([fsp.realpath(os.homedir()), fsp.realpath(path.resolve(p))]);
-    return isSafeUserPath(real, realHome) ? { kind: 'ok', real } : { kind: 'blocked' };
+    return isSafeUserPath(real, realHome, drives.real) ? { kind: 'ok', real } : { kind: 'blocked' };
   } catch (err) {
     return (err as NodeJS.ErrnoException).code === 'ENOENT' ? { kind: 'gone' } : { kind: 'blocked' };
   }
@@ -104,9 +181,10 @@ export async function trashPaths(paths: unknown): Promise<CleanResult> {
   let locked = 0;
   let errors = 0;
 
+  const drives = unique.length > 0 ? await dataDrives() : { lexical: [], real: [] };
   const allowed: string[] = [];
   for (const p of unique) {
-    const verdict = await resolveSafe(p);
+    const verdict = await resolveSafe(p, drives);
     if (verdict.kind === 'gone') gone++;
     else if (verdict.kind === 'blocked') blocked++;
     // Trash exactly the canonical path that passed the guard; two spellings of one file collapse here.
