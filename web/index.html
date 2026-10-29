@@ -115,18 +115,46 @@ symbol .a { fill: var(--ac); stroke: none; }
 .big small { font-size: 0.42em; letter-spacing: -0.02em; font-weight: 500; }
 .hero p { margin: 18px 0 0; max-width: 360px; font-size: 15px; line-height: 1.6; color: var(--ink-2); }
 .actions { margin-top: auto; display: flex; align-items: center; gap: 24px; }
-.orb {
-  position: relative; width: 112px; height: 112px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.75);
-  background: radial-gradient(circle at 25% 20%, #ffc6ec 0%, rgba(255, 198, 236, 0) 40%), radial-gradient(circle at 80% 85%, #ffd36e 0%, rgba(255, 211, 110, 0) 40%), radial-gradient(circle at 60% 50%, var(--blue) 0%, #5a3cff 50%, var(--violet) 100%);
-  color: #fff; font-family: var(--display); font-size: 15px; font-weight: 500; letter-spacing: -0.01em; cursor: pointer;
-  box-shadow: 0 0 0 10px rgba(43, 76, 255, 0.08), 0 20px 44px rgba(90, 60, 255, 0.4);
-  transition: transform 0.25s var(--ease), box-shadow 0.25s var(--ease);
+.orb-wrap { position: relative; width: 132px; height: 132px; flex: none; }
+.orb-halos { position: absolute; inset: -26px; transition: transform 0.6s var(--ease); pointer-events: none; }
+.halo {
+  position: absolute; inset: 0; border-radius: 50%;
+  background: conic-gradient(from 0deg, var(--c1), var(--c2), var(--c3), var(--c1));
+  -webkit-mask: radial-gradient(closest-side, transparent 52%, #000 66%, #000 84%, transparent 100%); mask: radial-gradient(closest-side, transparent 52%, #000 66%, #000 84%, transparent 100%);
+  filter: blur(9px); animation: spin var(--spin, 9s) linear infinite;
+  transition: opacity 0.8s var(--ease);
 }
-.orb:hover { transform: scale(1.04); box-shadow: 0 0 0 14px rgba(43, 76, 255, 0.1), 0 24px 52px rgba(90, 60, 255, 0.48); }
-.orb:active { transform: scale(0.97); }
-.orb::after { content: ''; position: absolute; inset: -1px; border-radius: 50%; border: 1.5px solid rgba(138, 92, 255, 0.5); animation: ring 2.4s ease-out infinite; }
-.orb.done::after { animation: none; opacity: 0; }
-@keyframes ring { 0% { transform: scale(1); opacity: 0.7; } 100% { transform: scale(1.4); opacity: 0; } }
+.halo.b { inset: 6px 0 0 8px; opacity: 0.7; filter: blur(14px); animation-direction: reverse; animation-duration: calc(var(--spin, 9s) * 1.6); }
+.orb-wrap .halo { --c1: #6d7bff; --c2: #b48cff; --c3: #ff9ccf; }
+.orb-wrap .halo.b { --c1: #7fd3ff; --c2: #6d7bff; --c3: #c4a8ff; }
+.orb-wrap.done .halo { --c1: #5fe0b0; --c2: #8fd8ff; --c3: #b7f5d8; }
+.orb-wrap.done .halo.b { --c1: #8fd8ff; --c2: #5fe0b0; --c3: #d6f7ff; }
+.orb-wrap:hover .orb-halos { transform: scale(1.08); }
+.orb {
+  position: absolute; inset: 8px; border-radius: 50%; overflow: hidden; cursor: pointer; padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  background:
+    radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.35) 34%, rgba(255, 255, 255, 0) 58%),
+    radial-gradient(circle at 74% 80%, rgba(255, 140, 205, 0.45), rgba(255, 140, 205, 0) 55%),
+    linear-gradient(160deg, #f1f2ff 0%, #d2d0ff 58%, #b9bcff 100%);
+  backdrop-filter: blur(10px) saturate(160%);
+  box-shadow: inset 0 1px 2px #fff, inset -8px -12px 24px rgba(110, 100, 255, 0.25), 0 18px 40px rgba(110, 100, 255, 0.3);
+  color: #241f5c; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  transition: transform 0.25s var(--ease), box-shadow 0.4s var(--ease);
+}
+.orb::before {
+  content: ''; position: absolute; inset: 14%; border-radius: 50%;
+  background: conic-gradient(from 90deg, rgba(120, 110, 255, 0.4), rgba(255, 140, 205, 0.35), rgba(120, 200, 255, 0.35), rgba(120, 110, 255, 0.4));
+  filter: blur(12px); animation: spin 7s linear infinite reverse; pointer-events: none;
+}
+.orb::after { content: ''; position: absolute; left: 18%; top: 8%; width: 46%; height: 22%; border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0)); transform: rotate(-22deg); pointer-events: none; }
+.orb-wrap.done .orb { background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.35) 34%, rgba(255, 255, 255, 0) 58%), linear-gradient(160deg, #effff8 0%, #c9f3e2 60%, #b6e6ff 100%); color: #0f4a3a; box-shadow: inset 0 1px 2px #fff, inset -8px -12px 24px rgba(40, 180, 140, 0.22), 0 18px 40px rgba(40, 180, 140, 0.25); }
+.orb-wrap.done .orb::before { background: conic-gradient(from 90deg, rgba(95, 224, 176, 0.4), rgba(143, 216, 255, 0.35), rgba(95, 224, 176, 0.4)); }
+.orb:hover { box-shadow: inset 0 1px 2px #fff, inset -8px -12px 24px rgba(110, 100, 255, 0.3), 0 22px 50px rgba(110, 100, 255, 0.4); }
+.orb:active { transform: scale(0.96); }
+.orb b { position: relative; font-family: var(--display); font-size: 16px; font-weight: 500; letter-spacing: -0.02em; }
+.orb small { position: relative; font-family: var(--mono); font-size: 10.5px; opacity: 0.75; }
+@keyframes spin { to { transform: rotate(360deg); } }
 .act-text { display: flex; flex-direction: column; gap: 8px; }
 .act-text a { font-size: 15px; font-weight: 550; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
 .act-text span { font-family: var(--mono); font-size: 12px; color: var(--ink-3); }
@@ -137,25 +165,33 @@ symbol .a { fill: var(--ac); stroke: none; }
 .map-head b { font-family: var(--display); font-size: 14px; font-weight: 500; letter-spacing: -0.01em; }
 .map-head a { font-size: 13px; font-weight: 550; text-decoration: none; }
 .bubble {
-  position: absolute; border-radius: 50%;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-align: center;
-  background: radial-gradient(circle at 32% 24%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.55) 28%, var(--t2) 100%);
-  border: 1.5px solid var(--t1);
-  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.9), inset 0 -10px 24px var(--t3), 0 14px 34px var(--t3), 0 0 46px var(--t3);
-  backdrop-filter: blur(6px);
+  position: absolute;
   animation: bob var(--dur, 6s) ease-in-out var(--delay, 0s) infinite;
   transition: width 1s var(--ease), height 1s var(--ease), left 1s var(--ease), top 1s var(--ease);
 }
-.bubble::before { content: ''; position: absolute; left: 16%; top: 9%; width: 42%; height: 24%; border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0)); transform: rotate(-24deg); pointer-events: none; }
+.bubble .halo { inset: -17%; --spin: 14s; filter: blur(10px); opacity: 0.55; -webkit-mask: radial-gradient(closest-side, transparent 58%, #000 72%, #000 86%, transparent 100%); mask: radial-gradient(closest-side, transparent 58%, #000 72%, #000 86%, transparent 100%); }
+.bubble .halo.b { inset: -12% -8% -20% -24%; filter: blur(16px); opacity: 0.4; }
+.bubble.hot .halo { --spin: 6s; }
+.bubble.hot .halo.b { animation: spin 9s linear infinite reverse, glowpulse 2.2s ease-in-out infinite; }
+@keyframes glowpulse { 0%, 100% { opacity: 0.35; } 50% { opacity: 0.85; } }
+.bubble .disc {
+  position: absolute; inset: 0; border-radius: 50%; overflow: hidden;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  background:
+    radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.4) 36%, rgba(255, 255, 255, 0) 62%),
+    radial-gradient(circle at 72% 80%, var(--tint2), rgba(255, 255, 255, 0) 60%),
+    linear-gradient(160deg, rgba(255, 255, 255, 0.62), var(--tint) 100%);
+  backdrop-filter: blur(10px) saturate(160%);
+  box-shadow: inset 0 1px 2px #fff, inset -6px -10px 22px var(--tint), 0 10px 28px var(--shadow);
+}
 .bubble .ic { position: relative; width: var(--icon, 24px); height: var(--icon, 24px); color: var(--ink); --fo: 0.22; --sw: 1.6; --ac: var(--ink); }
 .bubble b { position: relative; font-size: 12.5px; font-weight: 600; letter-spacing: -0.01em; color: #1d1f2b; line-height: 1.1; }
-.bubble span { position: relative; font-family: var(--mono); font-size: 10.5px; color: var(--ink-3); }
+.bubble .disc span { position: relative; font-family: var(--mono); font-size: 10.5px; color: var(--ink-3); }
 .bubble.small b { font-size: 12px; }
-.bubble.hot::after { content: ''; position: absolute; inset: -7px; border-radius: 50%; border: 2px solid rgba(255, 170, 60, 0.85); box-shadow: 0 0 18px rgba(255, 170, 60, 0.55); animation: hotpulse 2.2s ease-in-out infinite; }
 @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
-@keyframes hotpulse { 0%, 100% { opacity: 0.55; transform: scale(1); } 50% { opacity: 1; transform: scale(1.04); } }
 .map-foot { position: absolute; left: 24px; right: 24px; bottom: 18px; display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-3); }
-.map-foot i { width: 12px; height: 12px; border-radius: 50%; border: 2px solid rgba(255, 170, 60, 0.9); box-shadow: 0 0 8px rgba(255, 170, 60, 0.6); }
+.map-foot i { width: 14px; height: 14px; border-radius: 50%; background: conic-gradient(#ffb347, #ff7aa8, #ffd36e, #ffb347); -webkit-mask: radial-gradient(closest-side, transparent 45%, #000 60%); mask: radial-gradient(closest-side, transparent 45%, #000 60%); filter: blur(0.6px); }
 
 /* live cards */
 .cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; flex: 1; }
@@ -222,7 +258,7 @@ symbol .a { fill: var(--ac); stroke: none; }
 /* entrance */
 .rise { animation: rise 0.8s var(--ease) both; }
 @keyframes rise { from { opacity: 0; transform: translateY(14px); filter: blur(6px); } to { opacity: 1; transform: none; filter: blur(0); } }
-@media (prefers-reduced-motion: reduce) { .rise, .orb::after, .bubble, .bubble.hot::after, .lc .glow, .ember, .slider .fill::after, .parts i, .lc .shine { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .rise, .bubble, .halo, .orb::before, .lc .glow, .ember, .slider .fill::after, .parts i, .lc .shine { animation: none; } }
 </style>
 </head>
 <body>
@@ -386,7 +422,10 @@ symbol .a { fill: var(--ac); stroke: none; }
             <div class="big"><span id="bigNum">0.0</span> <small>GB</small></div>
             <p>System junk, browser caches and forgotten downloads. Everything goes to Trash first — undo in one click.</p>
             <div class="actions">
-              <button type="button" class="orb" id="orb">Clean</button>
+              <div class="orb-wrap" id="orbWrap">
+                <div class="orb-halos" aria-hidden="true"><span class="halo"></span><span class="halo b"></span></div>
+                <button type="button" class="orb" id="orb"><b id="orbLabel">Clean</b><small id="orbSub">31.7 GB</small></button>
+              </div>
               <div class="act-text">
                 <a href="#">Review what gets removed <svg class="ic" style="width: 16px; height: 16px"><use href="#i-arrow"/></svg></a>
                 <span>1,284 files · ~20 s · ↵ to clean</span>
@@ -398,7 +437,7 @@ symbol .a { fill: var(--ac); stroke: none; }
         <section class="map card-w rise" style="animation-delay: 0.16s" aria-label="Space map">
           <div class="map-head"><b>Space map</b><a href="#">Open ›</a></div>
           <div id="bubbles"></div>
-          <div class="map-foot"><i></i><span id="mapNote">Glowing ring — folders with stuff to clean</span></div>
+          <div class="map-foot"><i></i><span id="mapNote">Warm halo — folders with stuff to clean</span></div>
         </section>
 
       </div>
@@ -490,26 +529,30 @@ symbol .a { fill: var(--ac); stroke: none; }
   }
 
   var bubbles = [
-    { name: 'Users', size: '142 GB', x: 104, y: 84, d: 196, icon: 'i-user', t: '106, 92, 255', ink: '#4b3fd6' },
-    { name: 'Games', size: '96 GB', x: 296, y: 168, d: 132, icon: 'i-game', t: '43, 140, 255', ink: '#1f62c8' },
-    { name: 'Apps', size: '58 GB', x: 36, y: 268, d: 112, icon: 'i-apps', t: '154, 92, 255', ink: '#6a3bd6' },
-    { name: 'Downloads', size: '18.7 GB', x: 168, y: 306, d: 100, icon: 'i-down', t: '255, 154, 61', ink: '#c2610f', hot: true },
-    { name: 'Windows', size: '31 GB', x: 290, y: 320, d: 88, icon: 'i-chip', t: '150, 140, 190', ink: '#575079' },
-    { name: '+12', size: '9 GB', x: 30, y: 120, d: 60, t: '160, 160, 185', ink: '#575079', small: true }
+    { name: 'Users', size: '142 GB', x: 104, y: 84, d: 196, icon: 'i-user', t: '120, 110, 255', t2: '255, 150, 210', h: ['#6d7bff', '#b48cff', '#ff9ccf'], ink: '#4b3fd6' },
+    { name: 'Games', size: '96 GB', x: 296, y: 168, d: 132, icon: 'i-game', t: '80, 160, 255', t2: '120, 230, 255', h: ['#4f9bff', '#7fd3ff', '#8a7bff'], ink: '#1f62c8' },
+    { name: 'Apps', size: '58 GB', x: 36, y: 268, d: 112, icon: 'i-apps', t: '160, 110, 255', t2: '255, 140, 205', h: ['#a77bff', '#ff9ccf', '#7f8bff'], ink: '#6a3bd6' },
+    { name: 'Downloads', size: '18.7 GB', x: 168, y: 306, d: 100, icon: 'i-down', t: '255, 170, 90', t2: '255, 130, 170', h: ['#ffb347', '#ff7aa8', '#ffd36e'], ink: '#c2610f', hot: true },
+    { name: 'Windows', size: '31 GB', x: 290, y: 320, d: 88, icon: 'i-chip', t: '160, 165, 210', t2: '200, 190, 255', h: ['#a9b0d8', '#c9b8ff', '#9fc4ff'], ink: '#575079' },
+    { name: '+12', size: '9 GB', x: 30, y: 120, d: 60, t: '170, 170, 200', t2: '210, 200, 255', h: ['#b8bce0', '#d6c8ff', '#b8d4ff'], ink: '#575079', small: true }
   ];
   var wrap = document.getElementById('bubbles');
   bubbles.forEach(function (b, i) {
     var el = document.createElement('div');
     el.className = 'bubble' + (b.small ? ' small' : '');
-    el.style.setProperty('--t1', 'rgba(' + b.t + ', 0.55)');
-    el.style.setProperty('--t2', 'rgba(' + b.t + ', 0.3)');
-    el.style.setProperty('--t3', 'rgba(' + b.t + ', 0.22)');
+    el.style.setProperty('--tint', 'rgba(' + b.t + ', 0.42)');
+    el.style.setProperty('--tint2', 'rgba(' + b.t2 + ', 0.4)');
+    el.style.setProperty('--shadow', 'rgba(' + b.t + ', 0.22)');
+    el.style.setProperty('--c1', b.h[0]);
+    el.style.setProperty('--c2', b.h[1]);
+    el.style.setProperty('--c3', b.h[2]);
     el.style.setProperty('--ink', b.ink);
-    el.style.setProperty('--icon', Math.round(Math.max(18, Math.min(34, b.d * 0.16))) + 'px');
+    el.style.setProperty('--icon', Math.round(Math.max(18, Math.min(32, b.d * 0.15))) + 'px');
     el.style.setProperty('--dur', (5.5 + (i % 3) * 0.8) + 's');
     el.style.setProperty('--delay', (-i * 0.7) + 's');
-    el.innerHTML = (b.icon ? '<svg class="ic" aria-hidden="true"><use href="#' + b.icon + '"/></svg>' : '') +
-      '<b>' + b.name + '</b><span class="sz">' + b.size + '</span>';
+    el.innerHTML = '<span class="halo" aria-hidden="true"></span><span class="halo b" aria-hidden="true"></span>' +
+      '<div class="disc">' + (b.icon ? '<svg class="ic" aria-hidden="true"><use href="#' + b.icon + '"/></svg>' : '') +
+      '<b>' + b.name + '</b><span class="sz">' + b.size + '</span></div>';
     wrap.appendChild(el);
     b.el = el; b.sz = el.querySelector('.sz');
   });
@@ -545,13 +588,14 @@ symbol .a { fill: var(--ac); stroke: none; }
     state.cleaned = on;
     state.target = on ? 0 : 31.7;
     state.boost = 1;
-    document.getElementById('orb').textContent = on ? 'Rescan' : 'Clean';
-    document.getElementById('orb').classList.toggle('done', on);
+    document.getElementById('orbLabel').textContent = on ? 'Rescan' : 'Clean';
+    document.getElementById('orbSub').textContent = on ? 'all clear' : '31.7 GB';
+    document.getElementById('orbWrap').classList.toggle('done', on);
     document.getElementById('eyebrow').textContent = on ? 'ALL CLEAR · JUST NOW' : 'SCAN COMPLETE · 14:32';
     document.getElementById('heroTitle').textContent = on ? 'Left to clean' : 'Ready to reclaim';
     document.getElementById('diskJunk').style.width = on ? '0%' : '6%';
     document.getElementById('diskNote').textContent = on ? 'You freed 31.7 GB' : '31.7 GB can be reclaimed';
-    document.getElementById('mapNote').textContent = on ? 'No folders left to clean' : 'Glowing ring — folders with stuff to clean';
+    document.getElementById('mapNote').textContent = on ? 'No folders left to clean' : 'Warm halo — folders with stuff to clean';
     document.getElementById('navCount').style.display = on ? 'none' : '';
     document.getElementById('cleanNum').textContent = on ? '0' : '9.7';
     document.getElementById('cleanSub').textContent = on ? 'Caches & trash removed' : 'Caches · temp files · trash';
