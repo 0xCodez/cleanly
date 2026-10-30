@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <title>Glint · Orbit</title>
@@ -28,21 +28,21 @@ button{font-family:inherit}
 <span style="width: 28px; height: 28px; border-radius: 50%; background: conic-gradient(#ff7a59, #ffc15e, #ff7a59); display: flex; align-items: center; justify-content: center"><span style="width: 12px; height: 12px; border-radius: 50%; background: #0f1630"></span></span>
 Glint
 </div>
-<nav aria-label="Разделы" style="display: flex; gap: 4px; margin-left: 24px; padding: 4px; border-radius: 999px; background: #182148">
-<a href="#" style="height: 40px; padding: 0 18px; border-radius: 999px; display: flex; align-items: center; text-decoration: none; font-size: 14px; font-weight: 600; background: #ffffff; color: #0f1630">Главная</a>
-<a href="#" style="height: 40px; padding: 0 18px; border-radius: 999px; display: flex; align-items: center; text-decoration: none; font-size: 14px; font-weight: 500; color: #c3cae6">Очистка</a>
-<a href="#" style="height: 40px; padding: 0 18px; border-radius: 999px; display: flex; align-items: center; text-decoration: none; font-size: 14px; font-weight: 500; color: #c3cae6">Диск</a>
-<a href="#" style="height: 40px; padding: 0 18px; border-radius: 999px; display: flex; align-items: center; text-decoration: none; font-size: 14px; font-weight: 500; color: #c3cae6">Приложения</a>
-<a href="#" style="height: 40px; padding: 0 18px; border-radius: 999px; display: flex; align-items: center; text-decoration: none; font-size: 14px; font-weight: 500; color: #c3cae6">Скорость</a>
+<nav aria-label="Sections" style="display: flex; gap: 4px; margin-left: 24px; padding: 4px; border-radius: 999px; background: #182148">
+<a href="#" style="height: 40px; padding: 0 18px; border-radius: 999px; display: flex; align-items: center; text-decoration: none; font-size: 14px; font-weight: 600; background: #ffffff; color: #0f1630">Home</a>
+<a href="#" style="height: 40px; padding: 0 18px; border-radius: 999px; display: flex; align-items: center; text-decoration: none; font-size: 14px; font-weight: 500; color: #c3cae6">Cleanup</a>
+<a href="#" style="height: 40px; padding: 0 18px; border-radius: 999px; display: flex; align-items: center; text-decoration: none; font-size: 14px; font-weight: 500; color: #c3cae6">Disk</a>
+<a href="#" style="height: 40px; padding: 0 18px; border-radius: 999px; display: flex; align-items: center; text-decoration: none; font-size: 14px; font-weight: 500; color: #c3cae6">Applications</a>
+<a href="#" style="height: 40px; padding: 0 18px; border-radius: 999px; display: flex; align-items: center; text-decoration: none; font-size: 14px; font-weight: 500; color: #c3cae6">Speed</a>
 </nav>
 <div style="flex: 1"></div>
-<button type="button" aria-label="Настройки" style="width: 44px; height: 44px; border-radius: 50%; border: 0; background: #182148; color: #c3cae6; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z M19 12l2-1-1-3-2 .2-1.2-1.2.2-2-3-1-1 2h-2l-1-2-3 1 .2 2L5.8 7.2 4 7 3 10l2 1v2l-2 1 1 3 2-.2 1.2 1.2-.2 2 3 1 1-2h2l1 2 3-1-.2-2 1.2-1.2 2 .2 1-3-2-1z"></path></svg></button>
+<button type="button" aria-label="Settings" style="width: 44px; height: 44px; border-radius: 50%; border: 0; background: #182148; color: #c3cae6; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z M19 12l2-1-1-3-2 .2-1.2-1.2.2-2-3-1-1 2h-2l-1-2-3 1 .2 2L5.8 7.2 4 7 3 10l2 1v2l-2 1 1 3 2-.2 1.2 1.2-.2 2 3 1 1-2h2l1 2 3-1-.2-2 1.2-1.2 2 .2 1-3-2-1z"></path></svg></button>
 </header>
 
 <div style="flex: 1; display: grid; grid-template-columns: 360px minmax(0, 1fr) 320px; gap: 24px; padding: 8px 28px 28px; box-sizing: border-box; min-height: 0">
 
-<section aria-label="Советы" style="display: flex; flex-direction: column; gap: 14px">
-<h2 style="margin: 8px 0 4px; font-size: 22px; font-weight: 700; line-height: 1.3">Привет! Вот что<br>стоит сделать сегодня</h2>
+<section aria-label="Tips" style="display: flex; flex-direction: column; gap: 14px">
+<h2 style="margin: 8px 0 4px; font-size: 22px; font-weight: 700; line-height: 1.3">Hi! Here is what<br>to do today</h2>
 <sc-for list="{{tips}}" as="tip" hint-placeholder-count="3">
 <article style="border-radius: 22px; padding: 18px; background: {{tip.bg}}; border: 1px solid #263063; display: flex; flex-direction: column; gap: 12px">
 <div style="display: flex; gap: 14px; align-items: flex-start">
@@ -53,21 +53,21 @@ Glint
 </span>
 </div>
 <sc-if value="{{tip.done}}" hint-placeholder-val="{{false}}">
-<span style="height: 40px; display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: #7ee2b0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg>Готово · {{tip.doneText}}</span>
+<span style="height: 40px; display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: #7ee2b0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg>Done · {{tip.doneText}}</span>
 </sc-if>
 <sc-if value="{{tip.todo}}" hint-placeholder-val="{{true}}">
 <div style="display: flex; gap: 10px">
 <button type="button" onClick="{{tip.act}}" style="height: 40px; padding: 0 18px; border-radius: 999px; border: 0; background: #ff7a59; color: #1a0f0a; font-size: 14px; font-weight: 700; cursor: pointer">{{tip.cta}}</button>
-<button type="button" style="height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid #333e78; background: transparent; color: #c3cae6; font-size: 14px; font-weight: 600; cursor: pointer">Подробнее</button>
+<button type="button" style="height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid #333e78; background: transparent; color: #c3cae6; font-size: 14px; font-weight: 600; cursor: pointer">Details</button>
 </div>
 </sc-if>
 </article>
 </sc-for>
 </section>
 
-<section aria-label="Состояние компьютера" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px">
+<section aria-label="PC status" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px">
 <div style="position: relative; width: 380px; height: 380px">
-<svg width="380" height="380" viewBox="0 0 380 380" role="img" aria-label="Кольца: снаружи заполненность диска, внутри индекс здоровья">
+<svg width="380" height="380" viewBox="0 0 380 380" role="img" aria-label="Rings: disk usage outside, health score inside">
 <g transform="rotate(-90 190 190)" fill="none" stroke-linecap="round">
 <circle cx="190" cy="190" r="168" stroke="#1b2552" stroke-width="18"></circle>
 <circle cx="190" cy="190" r="168" stroke="#ff7a59" stroke-width="18" stroke-dasharray="285 1056" stroke-dashoffset="0"></circle>
@@ -80,39 +80,39 @@ Glint
 </g>
 </svg>
 <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px">
-<span style="font-size: 13px; font-weight: 600; color: #b8c0dc; letter-spacing: 0.08em; text-transform: uppercase">Здоровье ПК</span>
+<span style="font-size: 13px; font-weight: 600; color: #b8c0dc; letter-spacing: 0.08em; text-transform: uppercase">PC Health</span>
 <span style="font-size: 84px; font-weight: 800; line-height: 1; letter-spacing: -0.04em">{{score}}</span>
 <span style="font-size: 15px; font-weight: 600; color: #7ee2b0">{{scoreLabel}}</span>
 </div>
 </div>
 <div style="display: flex; gap: 18px; font-size: 12px; color: #b8c0dc; flex-wrap: wrap; justify-content: center; max-width: 440px">
-<span style="display: flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; border-radius: 50%; background: #ff7a59"></span>Файлы</span>
-<span style="display: flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; border-radius: 50%; background: #ffa25e"></span>Игры</span>
-<span style="display: flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; border-radius: 50%; background: #ffc15e"></span>Программы</span>
-<span style="display: flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; border-radius: 50%; background: #ffe0a8"></span>Система</span>
-<span style="display: flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; border-radius: 50%; background: #8f7bff"></span>Мусор {{junkText}}</span>
+<span style="display: flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; border-radius: 50%; background: #ff7a59"></span>Files</span>
+<span style="display: flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; border-radius: 50%; background: #ffa25e"></span>Games</span>
+<span style="display: flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; border-radius: 50%; background: #ffc15e"></span>Programs</span>
+<span style="display: flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; border-radius: 50%; background: #ffe0a8"></span>System</span>
+<span style="display: flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; border-radius: 50%; background: #8f7bff"></span>Junk {{junkText}}</span>
 </div>
-<button type="button" onClick="{{fixAll}}" style="height: 56px; padding: 0 32px; border-radius: 999px; border: 0; background: linear-gradient(90deg, #ff7a59, #ffc15e); color: #1a0f0a; font-size: 17px; font-weight: 800; cursor: pointer; box-shadow: 0 14px 40px rgba(255, 122, 89, 0.35)">Привести в порядок</button>
+<button type="button" onClick="{{fixAll}}" style="height: 56px; padding: 0 32px; border-radius: 999px; border: 0; background: linear-gradient(90deg, #ff7a59, #ffc15e); color: #1a0f0a; font-size: 17px; font-weight: 800; cursor: pointer; box-shadow: 0 14px 40px rgba(255, 122, 89, 0.35)">Tidy it all up</button>
 </section>
 
-<section aria-label="Автопилот и история" style="display: flex; flex-direction: column; gap: 16px">
+<section aria-label="Autopilot and history" style="display: flex; flex-direction: column; gap: 16px">
 <article style="border-radius: 22px; padding: 20px; background: #182148; border: 1px solid #263063; display: flex; flex-direction: column; gap: 14px">
 <div style="display: flex; align-items: center; justify-content: space-between">
-<span style="font-size: 16px; font-weight: 700">Автопилот</span>
-<button type="button" role="switch" aria-checked="{{autoOn}}" aria-label="Автопилот" onClick="{{toggleAuto}}" style="width: 52px; height: 30px; border-radius: 999px; border: 0; padding: 3px; background: {{autoTrack}}; display: flex; justify-content: {{autoAlign}}; cursor: pointer"><span style="width: 24px; height: 24px; border-radius: 50%; background: #ffffff"></span></button>
+<span style="font-size: 16px; font-weight: 700">Autopilot</span>
+<button type="button" role="switch" aria-checked="{{autoOn}}" aria-label="Autopilot" onClick="{{toggleAuto}}" style="width: 52px; height: 30px; border-radius: 999px; border: 0; padding: 3px; background: {{autoTrack}}; display: flex; justify-content: {{autoAlign}}; cursor: pointer"><span style="width: 24px; height: 24px; border-radius: 50%; background: #ffffff"></span></button>
 </div>
 <span style="font-size: 13px; line-height: 1.5; color: #b8c0dc">{{autoText}}</span>
 </article>
 <article style="border-radius: 22px; padding: 20px; background: #182148; border: 1px solid #263063; display: flex; flex-direction: column; gap: 14px; flex: 1">
-<span style="font-size: 16px; font-weight: 700">Освобождено за месяц</span>
-<span style="font-size: 40px; font-weight: 800; letter-spacing: -0.03em">46 ГБ</span>
+<span style="font-size: 16px; font-weight: 700">Freed this month</span>
+<span style="font-size: 40px; font-weight: 800; letter-spacing: -0.03em">46 GB</span>
 <div style="display: flex; align-items: flex-end; gap: 10px; height: 110px">
 <span style="flex: 1; height: 38%; border-radius: 8px; background: #263063"></span>
 <span style="flex: 1; height: 62%; border-radius: 8px; background: #263063"></span>
 <span style="flex: 1; height: 28%; border-radius: 8px; background: #263063"></span>
 <span style="flex: 1; height: 100%; border-radius: 8px; background: #ff7a59"></span>
 </div>
-<div style="display: flex; justify-content: space-between; font-size: 12px; color: #b8c0dc"><span>1 нед</span><span>2 нед</span><span>3 нед</span><span>Эта</span></div>
+<div style="display: flex; justify-content: space-between; font-size: 12px; color: #b8c0dc"><span>Wk 1</span><span>Wk 2</span><span>Wk 3</span><span>This wk</span></div>
 </article>
 </section>
 
@@ -129,9 +129,9 @@ class Component extends DCLogic {
     var self = this;
     var done = this.state.done;
     var data = [
-      { id: 'junk', gain: 10, title: 'Убрать 9,7 ГБ мусора', text: 'Временные файлы, кэш браузеров и корзина. Всё можно вернуть 30 дней.', cta: 'Убрать', doneText: '9,7 ГБ свободно', d: 'M3 6h18 M8 6V4h8v2 M6 6l1 14h10l1-14', iconBg: '#ffc15e' },
-      { id: 'startup', gain: 9, title: '3 тяжёлые программы при старте', text: 'Отключим их автозапуск — Windows будет загружаться на ~12 с быстрее.', cta: 'Отключить', doneText: 'старт быстрее', d: 'M13 2L4 14h7l-1 8 9-12h-7z', iconBg: '#ff9a7a' },
-      { id: 'downloads', gain: 6, title: '18,7 ГБ старых загрузок', text: 'Файлы, которые вы не открывали больше 3 месяцев. Решите сами, что оставить.', cta: 'Разобрать', doneText: 'разобрано', d: 'M12 3v12 M7 10l5 5 5-5 M4 20h16', iconBg: '#b6a8ff' }
+      { id: 'junk', gain: 10, title: 'Clear 9.7 GB of junk', text: 'Temp files, browser cache and Recycle Bin. Restorable for 30 days.', cta: 'Clear', doneText: '9.7 GB freed', d: 'M3 6h18 M8 6V4h8v2 M6 6l1 14h10l1-14', iconBg: '#ffc15e' },
+      { id: 'startup', gain: 9, title: '3 heavy apps at startup', text: 'Turn off their autostart and Windows boots ~12 s faster.', cta: 'Disable', doneText: 'faster startup', d: 'M13 2L4 14h7l-1 8 9-12h-7z', iconBg: '#ff9a7a' },
+      { id: 'downloads', gain: 6, title: '18.7 GB of old downloads', text: 'Files you have not opened in over 3 months. You decide what to keep.', cta: 'Review', doneText: 'reviewed', d: 'M12 3v12 M7 10l5 5 5-5 M4 20h16', iconBg: '#b6a8ff' }
     ];
     var score = 72;
     data.forEach(function (t) { if (done[t.id]) { score += t.gain; } });
@@ -153,15 +153,15 @@ class Component extends DCLogic {
         };
       }),
       score: score,
-      scoreLabel: score >= 95 ? 'Отлично' : score >= 85 ? 'Очень хорошо' : 'Хорошо, но можно лучше',
+      scoreLabel: score >= 95 ? 'Excellent' : score >= 85 ? 'Very good' : 'Good, but could be better',
       scoreDash: (804.2 * score / 100).toFixed(1) + ' 805',
       junkDash: done.junk ? '0 1056' : '52 1056',
-      junkText: junkLeft ? '9,7 ГБ' : '0 ГБ',
+      junkText: junkLeft ? '9.7 GB' : '0 GB',
       fixAll: function () { mark(['junk', 'startup', 'downloads']); },
       autoOn: auto ? 'true' : 'false',
       autoTrack: auto ? '#7ee2b0' : '#333e78',
       autoAlign: auto ? 'flex-end' : 'flex-start',
-      autoText: auto ? 'Каждое воскресенье в 20:00 тихо чистим мусор и присылаем короткий отчёт.' : 'Выключен. Включите — и Glint сам будет убирать мусор раз в неделю.',
+      autoText: auto ? 'Every Sunday at 8:00 PM we quietly clear junk and send a short report.' : 'Off. Turn it on and Glint will clear junk once a week on its own.',
       toggleAuto: function () { self.setState({ auto: !self.state.auto }); }
     };
   }

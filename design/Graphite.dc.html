@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <title>Glint · Graphite</title>
@@ -29,7 +29,7 @@ button,input{font-family:inherit}
 
 <div style="display: flex; flex: 1; min-height: 0">
 
-<nav aria-label="Разделы" style="width: 212px; padding: 14px 10px; box-sizing: border-box; display: flex; flex-direction: column; gap: 2px; border-right: 1px solid #e2e2de">
+<nav aria-label="Sections" style="width: 212px; padding: 14px 10px; box-sizing: border-box; display: flex; flex-direction: column; gap: 2px; border-right: 1px solid #e2e2de">
 <sc-for list="{{nav}}" as="item" hint-placeholder-count="9">
 <a href="#" style="display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 12px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: {{item.weight}}; color: #161616; background: {{item.bg}}; position: relative">
 <span style="position: absolute; left: 0; top: 12px; width: 3px; height: 16px; border-radius: 2px; background: {{item.bar}}"></span>
@@ -42,20 +42,20 @@ button,input{font-family:inherit}
 <main style="flex: 1; min-width: 0; padding: 24px 28px; box-sizing: border-box; display: flex; flex-direction: column; gap: 18px">
 
 <div style="display: flex; align-items: center; gap: 12px">
-<h1 style="margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.02em">Карта диска</h1>
-<span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #55554f">C:\ · NVMe · 512 ГБ</span>
+<h1 style="margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.02em">Space Map</h1>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #55554f">C:\ · NVMe · 512 GB</span>
 <div style="flex: 1"></div>
 <label style="display: flex; align-items: center; gap: 8px; width: 300px; height: 38px; padding: 0 12px; box-sizing: border-box; border-radius: 8px; background: #ffffff; border: 1px solid #dcdcd7; color: #55554f">
 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14z M20 20l-4-4"></path></svg>
-<input type="search" placeholder="Найти файл или папку" aria-label="Поиск" style="border: 0; outline: 0; background: transparent; font-size: 14px; flex: 1; color: #161616">
+<input type="search" placeholder="Find a file or folder" aria-label="Search" style="border: 0; outline: 0; background: transparent; font-size: 14px; flex: 1; color: #161616">
 </label>
-<button type="button" style="height: 38px; padding: 0 16px; border-radius: 8px; border: 1px solid #dcdcd7; background: #ffffff; font-size: 14px; font-weight: 600; color: #161616; cursor: pointer">Проверить снова</button>
+<button type="button" style="height: 38px; padding: 0 16px; border-radius: 8px; border: 1px solid #dcdcd7; background: #ffffff; font-size: 14px; font-weight: 600; color: #161616; cursor: pointer">Scan again</button>
 </div>
 
-<section aria-label="Заполненность диска" style="background: #ffffff; border: 1px solid #e2e2de; border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 12px">
+<section aria-label="Disk usage" style="background: #ffffff; border: 1px solid #e2e2de; border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 12px">
 <div style="display: flex; align-items: baseline; gap: 10px">
-<span style="font-size: 20px; font-weight: 700; font-family: 'JetBrains Mono', monospace">381,4 ГБ</span>
-<span style="font-size: 14px; color: #55554f">занято из 512 ГБ · свободно 130,6 ГБ</span>
+<span style="font-size: 20px; font-weight: 700; font-family: 'JetBrains Mono', monospace">381.4 GB</span>
+<span style="font-size: 14px; color: #55554f">used of 512 GB · 130.6 GB free</span>
 </div>
 <div style="display: flex; height: 14px; border-radius: 4px; overflow: hidden; gap: 2px">
 <span style="width: 27.7%; background: #161616"></span>
@@ -66,64 +66,64 @@ button,input{font-family:inherit}
 <span style="flex: 1; background: #ebebe6"></span>
 </div>
 <div style="display: flex; gap: 22px; font-size: 13px; color: #3c3c38; flex-wrap: wrap">
-<span style="display: flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; border-radius: 2px; background: #161616"></span>Пользователи 142 ГБ</span>
-<span style="display: flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; border-radius: 2px; background: #4a4a46"></span>Игры 96 ГБ</span>
-<span style="display: flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; border-radius: 2px; background: #7c7c76"></span>Программы 58 ГБ</span>
-<span style="display: flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; border-radius: 2px; background: #a9a9a2"></span>Windows 31 ГБ</span>
-<span style="display: flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; border-radius: 2px; background: #d6ff3d; outline: 1px solid #9fc214"></span>Можно удалить 31,7 ГБ</span>
+<span style="display: flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; border-radius: 2px; background: #161616"></span>Users 142 GB</span>
+<span style="display: flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; border-radius: 2px; background: #4a4a46"></span>Games 96 GB</span>
+<span style="display: flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; border-radius: 2px; background: #7c7c76"></span>Programs 58 GB</span>
+<span style="display: flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; border-radius: 2px; background: #a9a9a2"></span>Windows 31 GB</span>
+<span style="display: flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; border-radius: 2px; background: #d6ff3d; outline: 1px solid #9fc214"></span>Removable 31.7 GB</span>
 </div>
 </section>
 
 <div style="display: flex; gap: 18px; flex: 1; min-height: 0">
 
-<section aria-label="Карта папок" style="flex: 1; min-width: 0; background: #ffffff; border: 1px solid #e2e2de; border-radius: 12px; padding: 16px; box-sizing: border-box; display: flex; flex-direction: column; gap: 12px">
+<section aria-label="Folder map" style="flex: 1; min-width: 0; background: #ffffff; border: 1px solid #e2e2de; border-radius: 12px; padding: 16px; box-sizing: border-box; display: flex; flex-direction: column; gap: 12px">
 <div style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: #55554f; font-family: 'JetBrains Mono', monospace">
 <a href="#" style="text-decoration: none">C:</a><span>/</span><a href="#" style="text-decoration: none">Users</a><span>/</span><span style="color: #161616">lev</span>
 </div>
 <div style="position: relative; flex: 1">
 <div style="position: absolute; left: 0; top: 0; width: 44%; height: 100%; padding: 2px; box-sizing: border-box">
 <div style="height: 100%; border-radius: 6px; background: #161616; color: #ffffff; padding: 14px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between">
-<span style="font-size: 15px; font-weight: 600">Видео</span>
-<span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #c9c9c3">58,2 ГБ</span>
+<span style="font-size: 15px; font-weight: 600">Videos</span>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #c9c9c3">58.2 GB</span>
 </div>
 </div>
 <div style="position: absolute; left: 44%; top: 0; width: 32%; height: 58%; padding: 2px; box-sizing: border-box">
 <div style="height: 100%; border-radius: 6px; background: #3a3a37; color: #ffffff; padding: 14px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between">
-<span style="font-size: 15px; font-weight: 600">Проекты</span>
-<span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #d4d4ce">31,4 ГБ</span>
+<span style="font-size: 15px; font-weight: 600">Projects</span>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #d4d4ce">31.4 GB</span>
 </div>
 </div>
 <div style="position: absolute; left: 76%; top: 0; width: 24%; height: 58%; padding: 2px; box-sizing: border-box">
 <div style="height: 100%; border-radius: 6px; background: #d6ff3d; color: #161616; padding: 14px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; box-shadow: inset 0 0 0 2px #161616">
-<span style="font-size: 15px; font-weight: 700">Загрузки</span>
-<span style="font-family: 'JetBrains Mono', monospace; font-size: 13px">18,7 ГБ · старые</span>
+<span style="font-size: 15px; font-weight: 700">Downloads</span>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 13px">18.7 GB · old</span>
 </div>
 </div>
 <div style="position: absolute; left: 44%; top: 58%; width: 22%; height: 42%; padding: 2px; box-sizing: border-box">
 <div style="height: 100%; border-radius: 6px; background: #6b6b66; color: #ffffff; padding: 14px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between">
-<span style="font-size: 14px; font-weight: 600">Фото</span>
-<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #ececE6">17,9 ГБ</span>
+<span style="font-size: 14px; font-weight: 600">Photos</span>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #ececE6">17.9 GB</span>
 </div>
 </div>
 <div style="position: absolute; left: 66%; top: 58%; width: 18%; height: 42%; padding: 2px; box-sizing: border-box">
 <div style="height: 100%; border-radius: 6px; background: #9a9a93; color: #161616; padding: 14px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between">
 <span style="font-size: 14px; font-weight: 600">AppData</span>
-<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px">11,2 ГБ</span>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px">11.2 GB</span>
 </div>
 </div>
 <div style="position: absolute; left: 84%; top: 58%; width: 16%; height: 42%; padding: 2px; box-sizing: border-box">
 <div style="height: 100%; border-radius: 6px; background: #e4e4df; color: #161616; padding: 14px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between">
-<span style="font-size: 14px; font-weight: 600">Ещё 23</span>
-<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px">4,6 ГБ</span>
+<span style="font-size: 14px; font-weight: 600">23 more</span>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px">4.6 GB</span>
 </div>
 </div>
 </div>
 </section>
 
-<section aria-label="Найдено к удалению" style="width: 440px; background: #ffffff; border: 1px solid #e2e2de; border-radius: 12px; box-sizing: border-box; display: flex; flex-direction: column">
+<section aria-label="Found for removal" style="width: 440px; background: #ffffff; border: 1px solid #e2e2de; border-radius: 12px; box-sizing: border-box; display: flex; flex-direction: column">
 <div style="display: flex; align-items: baseline; justify-content: space-between; padding: 16px 18px 10px">
-<h2 style="margin: 0; font-size: 16px; font-weight: 700">Можно удалить</h2>
-<span style="font-size: 13px; color: #55554f">Выбрано {{count}} из 7</span>
+<h2 style="margin: 0; font-size: 16px; font-weight: 700">Safe to remove</h2>
+<span style="font-size: 13px; color: #55554f">{{count}} of 7 selected</span>
 </div>
 <div style="flex: 1; display: flex; flex-direction: column">
 <sc-for list="{{rows}}" as="row" hint-placeholder-count="7">
@@ -138,8 +138,8 @@ button,input{font-family:inherit}
 </sc-for>
 </div>
 <div style="padding: 14px 18px 18px; border-top: 1px solid #e2e2de; display: flex; align-items: center; gap: 12px">
-<span style="flex: 1; font-size: 12px; color: #55554f; line-height: 1.4">Файлы уйдут в корзину.<br>Отменить можно 30 дней.</span>
-<button type="button" style="height: 44px; padding: 0 20px; border-radius: 8px; border: 0; background: #161616; color: #d6ff3d; font-size: 15px; font-weight: 700; cursor: pointer">Удалить {{totalText}} ГБ</button>
+<span style="flex: 1; font-size: 12px; color: #55554f; line-height: 1.4">Files go to the Recycle Bin.<br>You can undo for 30 days.</span>
+<button type="button" style="height: 44px; padding: 0 20px; border-radius: 8px; border: 0; background: #161616; color: #d6ff3d; font-size: 15px; font-weight: 700; cursor: pointer">Delete {{totalText}} GB</button>
 </div>
 </section>
 
@@ -157,15 +157,15 @@ class Component extends DCLogic {
   renderVals() {
     var self = this;
     var off = this.state.off;
-    var fmt = function (n) { return n.toFixed(1).replace('.', ','); };
+    var fmt = function (n) { return n.toFixed(1); };
     var data = [
-      { id: 'temp', name: 'Временные файлы', path: 'C:\\Windows\\Temp, %TEMP%', size: 4.2 },
-      { id: 'browsers', name: 'Кэш браузеров', path: 'Chrome · Edge · Firefox', size: 3.4 },
-      { id: 'updates', name: 'Кэш обновлений', path: 'SoftwareDistribution\\Download', size: 2.1 },
-      { id: 'trash', name: 'Корзина', path: '214 объектов', size: 1.1 },
-      { id: 'downloads', name: 'Старые загрузки', path: 'Не открывались > 90 дней', size: 18.7 },
-      { id: 'dupes', name: 'Дубликаты', path: '312 копий в Документах и Фото', size: 1.6 },
-      { id: 'logs', name: 'Логи и дампы', path: 'CrashDumps, *.log', size: 0.6 }
+      { id: 'temp', name: 'Temporary files', path: 'C:\\Windows\\Temp, %TEMP%', size: 4.2 },
+      { id: 'browsers', name: 'Browser cache', path: 'Chrome · Edge · Firefox', size: 3.4 },
+      { id: 'updates', name: 'Update cache', path: 'SoftwareDistribution\\Download', size: 2.1 },
+      { id: 'trash', name: 'Recycle Bin', path: '214 items', size: 1.1 },
+      { id: 'downloads', name: 'Old downloads', path: 'Not opened in 90+ days', size: 18.7 },
+      { id: 'dupes', name: 'Duplicates', path: '312 copies in Documents and Photos', size: 1.6 },
+      { id: 'logs', name: 'Logs and dumps', path: 'CrashDumps, *.log', size: 0.6 }
     ];
     var total = 0;
     var count = 0;
@@ -175,7 +175,7 @@ class Component extends DCLogic {
       return {
         name: r.name,
         path: r.path,
-        sizeText: fmt(r.size) + ' ГБ',
+        sizeText: fmt(r.size) + ' GB',
         on: on,
         toggle: function () {
           var next = Object.assign({}, self.state.off);
@@ -185,15 +185,15 @@ class Component extends DCLogic {
       };
     });
     var items = [
-      { label: 'Обзор', d: 'M3 12l9-8 9 8 M5 10v10h14V10' },
-      { label: 'Очистка', d: 'M3 6h18 M8 6V4h8v2 M6 6l1 14h10l1-14 M10 10v6 M14 10v6' },
-      { label: 'Карта диска', d: 'M12 3a9 9 0 1 0 9 9h-9z M14 3.3A9 9 0 0 1 20.7 10H14z' },
-      { label: 'Большие файлы', d: 'M6 2h8l4 4v16H6z M14 2v4h4' },
-      { label: 'Дубликаты', d: 'M8 8h12v12H8z M16 8V4H4v12h4' },
-      { label: 'Автозагрузка', d: 'M12 2v10 M6.3 6.3a8 8 0 1 0 11.4 0' },
-      { label: 'Приложения', d: 'M4 4h6v6H4z M14 4h6v6h-6z M4 14h6v6H4z M14 14h6v6h-6z' },
-      { label: 'Конфиденциальность', d: 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z' },
-      { label: 'История', d: 'M12 7v5l3 3 M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z' }
+      { label: 'Overview', d: 'M3 12l9-8 9 8 M5 10v10h14V10' },
+      { label: 'Cleanup', d: 'M3 6h18 M8 6V4h8v2 M6 6l1 14h10l1-14 M10 10v6 M14 10v6' },
+      { label: 'Space Map', d: 'M12 3a9 9 0 1 0 9 9h-9z M14 3.3A9 9 0 0 1 20.7 10H14z' },
+      { label: 'Large Files', d: 'M6 2h8l4 4v16H6z M14 2v4h4' },
+      { label: 'Duplicates', d: 'M8 8h12v12H8z M16 8V4H4v12h4' },
+      { label: 'Startup', d: 'M12 2v10 M6.3 6.3a8 8 0 1 0 11.4 0' },
+      { label: 'Applications', d: 'M4 4h6v6H4z M14 4h6v6h-6z M4 14h6v6H4z M14 14h6v6h-6z' },
+      { label: 'Privacy', d: 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z' },
+      { label: 'History', d: 'M12 7v5l3 3 M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z' }
     ];
     return {
       rows: rows,
