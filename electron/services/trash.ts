@@ -24,7 +24,11 @@ function systemRoots(): string[] {
       path.join(drive, 'Recovery'),
     ];
   }
-  return ['/System', '/Library', '/Applications', '/usr', '/bin', '/sbin', '/etc', '/var', '/private', '/opt', '/cores', '/dev', '/Volumes'];
+  if (isMac) return ['/System', '/Library', '/Applications', '/usr', '/bin', '/sbin', '/etc', '/var', '/private', '/opt', '/cores', '/dev', '/Volumes'];
+  // Fedora Atomic keeps homes in /var/home: a root that holds the home folder cannot be off limits as a whole.
+  const home = os.homedir();
+  return ['/usr', '/bin', '/sbin', '/lib', '/lib32', '/lib64', '/etc', '/var', '/opt', '/dev', '/proc', '/sys', '/run', '/boot', '/efi', '/root', '/srv', '/snap', '/nix']
+    .filter((r) => !(home === r || home.startsWith(`${r}/`)));
 }
 
 /** Top-level user folders that must never be trashed as a whole. */
@@ -32,11 +36,14 @@ const PROTECTED_TOP = [
   'Desktop', 'Documents', 'Downloads', 'Pictures', 'Videos', 'Movies', 'Music', 'AppData', 'Library', 'Applications',
   'OneDrive', 'iCloud Drive', 'Public', 'Favorites', 'Contacts', 'Links', 'Saved Games', 'Searches', '3D Objects',
   'iCloudDrive', 'Dropbox', 'Google Drive', 'Creative Cloud Files', '.Trash', '.local', '.config',
+  // Linux: Flatpak and Snap app data, the cache root, browser profiles, the Templates folder
+  '.var', 'snap', '.cache', '.mozilla', 'Templates',
 ];
 
 /** Places inside home that hold keys and credentials: nothing in or under them is ever touched. */
 const SECRET_DIRS = [
   '.ssh', '.gnupg', path.join('Library', 'Keychains'),
+  path.join('.local', 'share', 'keyrings'), path.join('.local', 'share', 'kwalletd'), '.password-store', '.pki',
   path.join('AppData', 'Roaming', 'Microsoft', 'Protect'),
   path.join('AppData', 'Roaming', 'Microsoft', 'Credentials'),
   path.join('AppData', 'Local', 'Microsoft', 'Credentials'),
@@ -51,7 +58,7 @@ const DRIVE_PROTECTED_TOP = new Set(
         'WindowsApps', 'WpSystem', 'XboxGames', 'OneDriveTemp', 'bootmgr', 'BOOTNXT', 'BOOTSECT.BAK', 'pagefile.sys',
         'hiberfil.sys', 'swapfile.sys', 'DumpStack.log', 'DumpStack.log.tmp', 'desktop.ini', 'autorun.inf',
       ]
-    : ['System', 'Library', 'Applications', 'Users', 'private', 'Backups.backupdb', 'cores', 'usr', 'bin', 'sbin', 'etc', 'var', 'opt']
+    : ['System', 'Library', 'Applications', 'Users', 'private', 'Backups.backupdb', 'cores', 'usr', 'bin', 'sbin', 'etc', 'var', 'opt', 'lost+found', 'home', 'timeshift']
   ).map((n) => n.toLowerCase()),
 );
 
@@ -109,8 +116,8 @@ function isSafeHomePath(abs: string, home: string): boolean {
   const parts = rel.split(path.sep);
   if (parts.length === 1 && PROTECTED_TOP.some((n) => n.toLowerCase() === parts[0].toLowerCase())) return false;
   if (parts.length === 1 && /^OneDrive( - .+)?$/i.test(parts[0])) return false;
-  // AppData\Local, AppData\Roaming, Library/Application Support and friends
-  if (parts.length === 2 && /^(AppData|Library)$/i.test(parts[0])) return false;
+  // AppData\Local, AppData\Roaming, Library/Application Support and friends; ~/.local/share, ~/.var/app
+  if (parts.length === 2 && /^(AppData|Library|\.local|\.var)$/i.test(parts[0])) return false;
   for (const s of SECRET_DIRS) {
     const sp = path.join(home, s);
     if (samePath(abs, sp) || isInside(sp, abs)) return false;

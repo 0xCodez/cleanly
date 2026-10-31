@@ -104,7 +104,9 @@ export interface InstalledApp {
 }
 
 export interface ProtectionStatus {
-  provider: string;              // "Microsoft Defender", "XProtect + Gatekeeper"
+  provider: string;              // "Microsoft Defender", "XProtect + Gatekeeper", "SELinux + firewalld"
+  /** 'hardening' (Linux): no classic antivirus; enabled/realtime describe kernel access control, definitions the last system update */
+  kind?: 'antivirus' | 'hardening';
   enabled: boolean;
   realtime: boolean | null;
   firewall: boolean | null;

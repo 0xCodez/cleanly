@@ -59,6 +59,29 @@ dmg:
     - { x: 390, y: 190, type: link, path: /Applications }
 
 linux:
-  icon: build/icon.png
-  target: [AppImage]
+  # one PNG per hicolor size (npm run icons); a lone 1024px icon is ignored by the theme
+  icon: build/icons
+  executableName: cleanly
   category: Utility
+  synopsis: A stylish, safe PC cleaner
+  description: Cleanly finds caches, old downloads, large files and duplicates, and shows what starts with your computer.
+  maintainer: Cleanly <contact@beyond-media.ai>
+  vendor: Cleanly
+  # Wayland matches the window to cleanly.desktop through the app id Electron takes from desktopName
+  syncDesktopName: true
+  desktop:
+    entry:
+      Keywords: cleaner;disk;cache;junk;space;
+  target:
+    - target: AppImage
+      arch: [x64]
+    - target: deb
+      arch: [x64]
+    - target: rpm
+      arch: [x64]
+appImage:
+  artifactName: ${productName}-linux-${arch}.${ext}
+deb:
+  artifactName: ${productName}-linux-${arch}.${ext}
+rpm:
+  artifactName: ${productName}-linux-${arch}.${ext}

@@ -224,6 +224,95 @@ async function macStatus(): Promise<ProtectionStatus> {
   };
 }
 
+/* ---------- Linux ---------- */
+
+const readText = (p: string) => fs.readFile(p, 'utf8').then((t) => t.trim(), () => null);
+const mtime = (p: string) => fs.stat(p).then((s) => s.mtimeMs, () => null);
+const SYSTEMCTL = ['/usr/bin/systemctl', '/bin/systemctl'];
+
+async function unitActive(unit: string): Promise<boolean | null> {
+  for (const bin of SYSTEMCTL) {
+    const res = await run(bin, ['is-active', unit], 5000);
+    const state = res.stdout.trim();
+    if (state) return state === 'active';
+  }
+  return null;
+}
+
+async function newest(paths: string[]): Promise<number | null> {
+  const times = (await Promise.all(paths.map(mtime))).filter((t): t is number => t !== null);
+  return times.length ? Math.max(...times) : null;
+}
+
+const present = (p: string) => fs.access(p).then(() => true, () => false);
+
+/** Kernel access control: SELinux or AppArmor. */
+async function securityModule(): Promise<{ name: string; enforcing: boolean } | null> {
+  const selinux = await readText('/sys/fs/selinux/enforce');
+  if (selinux !== null) return { name: 'SELinux', enforcing: selinux === '1' };
+  const apparmor = await readText('/sys/module/apparmor/parameters/enabled');
+  if (apparmor !== null) return { name: 'AppArmor', enforcing: apparmor.toUpperCase().startsWith('Y') };
+  return null;
+}
+
+async function linuxFirewall(): Promise<{ name: string; on: boolean } | null> {
+  if (await present('/usr/sbin/firewalld') || await present('/usr/bin/firewall-cmd')) {
+    return { name: 'firewalld', on: (await unitActive('firewalld')) === true };
+  }
+  if (await present('/usr/sbin/ufw')) {
+    const conf = (await readText('/etc/ufw/ufw.conf')) ?? '';
+    const enabled = /^\s*ENABLED\s*=\s*yes/im.test(conf);
+    return { name: 'ufw', on: enabled && (await unitActive('ufw')) !== false };
+  }
+  if ((await unitActive('nftables')) === true) return { name: 'nftables', on: true };
+  return null;
+}
+
+async function clamav(): Promise<{ updated: number | null; daemon: boolean } | null> {
+  if (!(await present('/usr/bin/clamscan')) && !(await present('/usr/sbin/clamd'))) return null;
+  const db = ['/var/lib/clamav', '/var/clamav'].flatMap((d) => ['daily.cld', 'daily.cvd', 'main.cvd', 'main.cld'].map((f) => path.join(d, f)));
+  const [updated, a, b, c] = await Promise.all([newest(db), unitActive('clamav-daemon'), unitActive('clamd@scan'), unitActive('clamonacc')]);
+  return { updated, daemon: a === true || b === true || c === true };
+}
+
+/** Last time the package database changed: a good sign of when updates were last installed. */
+const PACKAGE_DBS = [
+  '/var/lib/dnf/history.sqlite', '/usr/lib/sysimage/libdnf5/transaction_history.sqlite', '/usr/lib/sysimage/rpm/rpmdb.sqlite',
+  '/var/lib/rpm/rpmdb.sqlite', '/var/lib/rpm/Packages', '/var/lib/dpkg/status', '/var/lib/pacman/local', '/var/lib/zypp/AutoInstalled',
+  '/ostree/deploy',
+];
+
+async function linuxStatus(): Promise<ProtectionStatus> {
+  const [mac, fw, av, updated] = await Promise.all([securityModule(), linuxFirewall(), clamav(), newest(PACKAGE_DBS)]);
+  const notes: string[] = [];
+
+  if (mac) notes.push(`${mac.name} is ${mac.enforcing ? 'enforcing' : 'not enforcing'}`);
+  else notes.push('No SELinux or AppArmor found');
+  if (fw) notes.push(fw.on ? `Firewall (${fw.name}) is on` : `Firewall (${fw.name}) is off`);
+  else notes.push('Could not find a firewall');
+  if (updated !== null) notes.push(`System packages updated ${age(updated)}`);
+  if (av) notes.push(av.updated !== null ? `ClamAV definitions updated ${age(av.updated)}` : 'ClamAV is installed');
+
+  const parts = [mac?.enforcing ? mac.name : null, fw?.on ? fw.name : null, av ? 'ClamAV' : null].filter(Boolean);
+  const score = Math.round(
+    (mac ? (mac.enforcing ? 35 : 10) : 0)
+    + (fw?.on ? 30 : 0)
+    + freshness(updated, 7, 30, 25)
+    + (av ? 10 : 0),
+  );
+  return {
+    provider: parts.length ? parts.join(' + ') : 'Linux',
+    kind: 'hardening',
+    enabled: Boolean(mac?.enforcing || av),
+    realtime: mac ? mac.enforcing : null,
+    firewall: fw ? fw.on : null,
+    definitionsUpdated: updated,
+    lastScan: null,
+    score: clamp(score),
+    notes,
+  };
+}
+
 function clamp(n: number): number {
   return Math.max(0, Math.min(100, n));
 }
@@ -232,6 +321,7 @@ export async function getProtection(): Promise<ProtectionStatus> {
   try {
     if (process.platform === 'win32') return await windowsStatus();
     if (process.platform === 'darwin') return await macStatus();
+    return await linuxStatus();
   } catch {
     // Fall through to the unknown status below.
   }

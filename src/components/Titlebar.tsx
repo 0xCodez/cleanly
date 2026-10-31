@@ -1,10 +1,11 @@
 import { isDemo } from '../api';
 import { useStore } from '../state';
 
-/** Draggable window strip. Leaves room for macOS traffic lights or the Windows caption buttons. */
+/** Draggable window strip. Leaves room for macOS traffic lights or the Windows / Linux caption buttons. */
 export function Titlebar() {
   const { system, scanning, cleaning, progress } = useStore();
-  const platform = system?.platform === 'darwin' ? 'mac' : system?.platform === 'win32' ? 'win' : '';
+  // Linux draws the same title bar overlay as Windows, so it needs the same room on the right.
+  const platform = system?.platform === 'darwin' ? 'mac' : system ? 'win' : '';
   const busy = scanning || cleaning;
 
   return (

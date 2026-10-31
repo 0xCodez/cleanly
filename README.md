@@ -1,6 +1,6 @@
 # Cleanly
 
-**Your computer, lighter.** A free, beautiful and honest disk cleaner for **Windows** and **macOS**.
+**Your computer, lighter.** A free, beautiful and honest disk cleaner for **Windows**, **macOS** and **Linux**.
 
 Cleanly finds caches, temp files and forgotten downloads, shows where your space went, and clears it safely — no subscription, no ads, no scare tactics.
 
@@ -11,6 +11,7 @@ Cleanly finds caches, temp files and forgotten downloads, shows where your space
 | Windows 10/11 (x64) | [Installer](https://github.com/0xCodez/cleanly/releases/latest/download/Cleanly-setup.exe) · [Portable](https://github.com/0xCodez/cleanly/releases/latest/download/Cleanly-portable.exe) |
 | macOS — Apple Silicon | [Cleanly-mac-arm64.dmg](https://github.com/0xCodez/cleanly/releases/latest/download/Cleanly-mac-arm64.dmg) |
 | macOS — Intel | [Cleanly-mac-x64.dmg](https://github.com/0xCodez/cleanly/releases/latest/download/Cleanly-mac-x64.dmg) |
+| Linux (x64) | [AppImage](https://github.com/0xCodez/cleanly/releases/latest/download/Cleanly-linux-x86_64.AppImage) · [.deb](https://github.com/0xCodez/cleanly/releases/latest/download/Cleanly-linux-amd64.deb) · [.rpm](https://github.com/0xCodez/cleanly/releases/latest/download/Cleanly-linux-x86_64.rpm) |
 
 ## Features
 
@@ -18,9 +19,9 @@ Cleanly finds caches, temp files and forgotten downloads, shows where your space
 - **Cleanup** — temp files, browser caches (every profile of Chrome, Edge, Brave, Firefox, Safari…), app caches, crash reports, update leftovers, developer caches, Trash / Recycle Bin and old downloads. Every group is labelled *Safe*, *Review* or *Permanent*.
 - **Space Map** — your folders as glass bubbles sized by how much space they take. Drill into any folder, switch between your home folder and every drive (C:, D:, external volumes). Grab a bubble and throw it — they bump into each other.
 - **Large Files & Duplicates** — find the biggest files on all your drives and exact duplicate copies, with real file icons.
-- **Speed** — see which apps start with your computer and switch them off. System-wide items ask for permission, exactly like Task Manager.
-- **Applications** — every installed app with its real icon, size and last use; uninstall with the app's own uninstaller (Windows) or move it to the Trash (macOS).
-- **Protection** — a quick check that the security built into your system (Microsoft Defender and firewall, or Gatekeeper, XProtect and SIP) is switched on and up to date. Cleanly does not replace your antivirus.
+- **Speed** — see which apps start with your computer and switch them off. System-wide items ask for permission, exactly like Task Manager. On Linux, XDG autostart entries are switched off with a per-user override; desktop-session parts (panel, polkit agent, keyring) are never offered.
+- **Applications** — every installed app with its real icon, size and last use; uninstall with the app's own uninstaller (Windows), move it to the Trash (macOS), or remove Flatpaks, Snaps and AppImages (Linux; distro packages are listed but left to your software center).
+- **Protection** — a quick check that the security built into your system (Microsoft Defender and firewall; Gatekeeper, XProtect and SIP; or SELinux/AppArmor, firewalld/ufw and system updates) is switched on and up to date. Cleanly does not replace your antivirus.
 - **Assistant** — ask Claude or ChatGPT *"what can I safely delete?"* using your own API key.
 
 ## Safety model
@@ -49,6 +50,7 @@ The builds are not signed with paid Microsoft / Apple certificates yet, so your 
   ```bash
   xattr -cr /Applications/Cleanly.app
   ```
+- **Linux:** `chmod +x Cleanly-linux-x86_64.AppImage` and run it (needs FUSE 2, `libfuse2`), or install the `.deb` / `.rpm`. Saving an AI key needs an unlocked keyring (GNOME Keyring or KWallet).
 
 ## Build from source
 
@@ -60,7 +62,10 @@ npm run dev        # run the app with hot reload
 npm run demo       # UI only, in the browser at http://localhost:5174, with demo data (your disk is not touched)
 npm run dist:win   # Windows installer + portable exe (x64)
 npm run dist:mac   # macOS .dmg + .zip for arm64 and x64 (runs on a Mac only)
+npm run dist:linux # Linux AppImage + .deb + .rpm (x64)
 ```
+
+For the Linux `.deb` and `.rpm` targets, electron-builder's bundled fpm needs `libcrypt.so.1` and the rpm target needs `rpmbuild` (Fedora: `sudo dnf install libxcrypt-compat rpm-build`; Debian/Ubuntu: `sudo apt install rpm`). `npx electron-builder --linux AppImage` builds the AppImage alone.
 
 Builds land in `release/`. The app icon lives in `build/icon.svg`; run `npm run icons` after changing it.
 

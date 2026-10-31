@@ -1,5 +1,6 @@
 import './boot';
 import { app, BrowserWindow, ipcMain, nativeTheme, shell } from 'electron';
+import { readFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -32,12 +33,26 @@ let win: BrowserWindow | null = null;
 
 const progress = (p: ScanProgress) => win?.webContents.send(PROGRESS_CHANNEL, p);
 
+/** "Fedora Linux 44 (Workstation Edition)" from os-release; os.version() on Linux is only the kernel build string. */
+function linuxVersion(): string {
+  try {
+    const text = readFileSync('/etc/os-release', 'utf8');
+    const m = /^PRETTY_NAME=(?:"([^"]*)"|(.*))$/m.exec(text);
+    const name = (m?.[1] ?? m?.[2] ?? '').trim();
+    if (name) return `${name} (kernel ${os.release()})`;
+  } catch {
+    // no os-release
+  }
+  return `Linux ${os.release()}`;
+}
+
 function systemInfo(): SystemInfo {
   const platform = process.platform === 'darwin' || process.platform === 'win32' ? process.platform : 'linux';
   return {
     platform,
     arch: process.arch,
-    osVersion: typeof os.version === 'function' ? `${os.version()} (${os.release()})` : os.release(),
+    osVersion:
+      platform === 'linux' ? linuxVersion() : typeof os.version === 'function' ? `${os.version()} (${os.release()})` : os.release(),
     appVersion: app.getVersion(),
     homeDir: os.homedir(),
   };

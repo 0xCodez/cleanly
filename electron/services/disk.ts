@@ -167,13 +167,136 @@ async function macVolumes(): Promise<Volume[]> {
   return vols;
 }
 
+/* ---------- Linux ---------- */
+
+export interface MountEntry {
+  mount: string;
+  /** "/dev/nvme0n1p3", "tmpfs", "portal" … */
+  source: string;
+  fsType: string;
+  readOnly: boolean;
+}
+
+const unescapeMount = (s: string) => s.replace(/\\([0-7]{3})/g, (_m, o: string) => String.fromCharCode(parseInt(o, 8)));
+
+/** Every mount of this process's namespace, from /proc/self/mountinfo (Linux only). */
+export async function mountTable(): Promise<MountEntry[]> {
+  if (isWin || isMac) return [];
+  let text: string;
+  try {
+    text = await fsp.readFile('/proc/self/mountinfo', 'utf8');
+  } catch {
+    return [];
+  }
+  const out: MountEntry[] = [];
+  for (const line of text.split('\n')) {
+    const sep = line.indexOf(' - ');
+    if (sep < 0) continue;
+    const pre = line.slice(0, sep).split(' ');
+    const post = line.slice(sep + 3).split(' ');
+    if (pre.length < 6 || post.length < 2) continue;
+    out.push({
+      mount: unescapeMount(pre[4]),
+      source: unescapeMount(post[1]),
+      fsType: post[0],
+      readOnly: pre[5].split(',').includes('ro'),
+    });
+  }
+  return out;
+}
+
+/** The mount holding `p`: the longest mount point that is `p` or above it. */
+export function mountFor(p: string, table: MountEntry[]): MountEntry | undefined {
+  let best: MountEntry | undefined;
+  for (const m of table) {
+    const above = m.mount === '/' || p === m.mount || p.startsWith(`${m.mount}/`);
+    if (above && (!best || m.mount.length >= best.mount.length)) best = m;
+  }
+  return best;
+}
+
+/**
+ * Mount points strictly below `root` that hold a different file system than `root` itself:
+ * /proc, tmpfs, network shares, other disks. Btrfs subvolumes of the same device count as the same file system.
+ */
+export async function foreignMounts(root: string): Promise<Set<string>> {
+  const table = await mountTable();
+  const own = mountFor(root, table)?.source;
+  const out = new Set<string>();
+  const prefix = root.endsWith('/') ? root : `${root}/`;
+  for (const m of table) if (m.mount.startsWith(prefix) && m.source !== own) out.add(m.mount);
+  return out;
+}
+
+const LINUX_DISK_FS = /^(ext[234]|xfs|btrfs|f2fs|bcachefs|zfs|jfs|reiserfs|ntfs3?|fuseblk|exfat|vfat|hfsplus)$/;
+/** Where the OS keeps its own pieces: never offered as a drive. */
+const LINUX_SYSTEM_MOUNT = /^\/(boot|efi|proc|sys|dev|tmp|var|usr|opt|snap|nix|gnu|etc|root|srv|run(?!\/media\/))(\/|$)/;
+
+async function osName(): Promise<string> {
+  try {
+    const text = await fsp.readFile('/etc/os-release', 'utf8');
+    const m = /^NAME=(?:"([^"]*)"|(.*))$/m.exec(text);
+    // "Fedora Linux" -> "Fedora", "Debian GNU/Linux" -> "Debian": short enough for the sidebar
+    const name = (m?.[1] ?? m?.[2] ?? '').trim().replace(/\s+(GNU\/)?Linux$/i, '');
+    if (name) return name;
+  } catch {
+    // no os-release
+  }
+  return 'System';
+}
+
+async function diskLabels(): Promise<Map<string, string>> {
+  const labels = new Map<string, string>();
+  const dir = '/dev/disk/by-label';
+  let names: string[];
+  try {
+    names = await fsp.readdir(dir);
+  } catch {
+    return labels;
+  }
+  for (const n of names) {
+    try {
+      const dev = await fsp.realpath(path.join(dir, n));
+      labels.set(dev, n.replace(/\\x([0-9a-f]{2})/gi, (_m, h: string) => String.fromCharCode(parseInt(h, 16))));
+    } catch {
+      // stale link
+    }
+  }
+  return labels;
+}
+
+async function linuxVolumes(): Promise<Volume[]> {
+  const [table, labels, rootName] = await Promise.all([mountTable(), diskLabels(), osName()]);
+  const bySource = new Map<string, MountEntry>();
+  for (const m of table) {
+    if (!m.source.startsWith('/dev/') || m.source.startsWith('/dev/loop') || !LINUX_DISK_FS.test(m.fsType)) continue;
+    if (m.readOnly || (m.mount !== '/' && LINUX_SYSTEM_MOUNT.test(m.mount))) continue;
+    // One entry per device: btrfs mounts the same disk at /, /home …; the shortest mount point represents it.
+    const prev = bySource.get(m.source);
+    if (!prev || m.mount.length < prev.mount.length) bySource.set(m.source, m);
+  }
+  const vols: Volume[] = [{ mount: '/', label: rootName, system: true }];
+  for (const m of bySource.values()) {
+    if (m.mount === '/') continue;
+    let real = m.source;
+    try {
+      real = await fsp.realpath(m.source);
+    } catch {
+      // keep the name from the table
+    }
+    const label = labels.get(real) ?? (m.mount === '/home' ? 'Home' : path.basename(m.mount) || m.mount);
+    vols.push({ mount: m.mount, label, system: false });
+  }
+  return vols;
+}
+
 let inventory: { at: number; vols: Promise<Volume[]> } | null = null;
 const INVENTORY_TTL = 30_000;
 
 function volumes(): Promise<Volume[]> {
   const now = Date.now();
   if (inventory && now - inventory.at < INVENTORY_TTL) return inventory.vols;
-  const probe = isWin ? windowsVolumes() : isMac ? macVolumes() : Promise.resolve<Volume[]>([{ mount: '/', label: '/', system: true }]);
+  const probe = isWin ? windowsVolumes() : isMac ? macVolumes() : linuxVolumes();
   const vols = probe.catch((): Volume[] => {
     // do not cache a failure
     if (inventory?.vols === vols) inventory = null;
@@ -210,16 +333,19 @@ export async function listDisks(): Promise<DiskInfo[]> {
 
 /** Mounts of fixed drives other than the system one (and other than the one home lives on). */
 export async function dataDriveMounts(): Promise<string[]> {
-  const homeRoot = path.parse(os.homedir()).root;
+  const home = os.homedir();
+  const homeRoot = path.parse(home).root;
   return (await listDisks())
-    .filter((d) => !d.system && !(isWin && sameMount(d.mount, homeRoot)) && d.mount !== '/')
+    // a separate /home partition is not a data drive: the home folder is scanned on its own
+    .filter((d) => !d.system && !(isWin && sameMount(d.mount, homeRoot)) && d.mount !== '/' && !(!isWin && (home === d.mount || home.startsWith(`${d.mount}/`))))
     .map((d) => d.mount);
 }
 
 /** The system drive. */
 export async function getDisk(): Promise<DiskInfo> {
   const mount = systemMount();
-  const s = await fsp.statfs(isWin ? mount : os.homedir());
+  // macOS: the home folder lives on the Data volume; elsewhere "/" itself (a separate /home is its own disk)
+  const s = await fsp.statfs(isMac ? os.homedir() : mount);
   const total = Number(s.blocks) * Number(s.bsize);
   const free = Number(s.bavail) * Number(s.bsize);
   let label = mount;
@@ -227,5 +353,6 @@ export async function getDisk(): Promise<DiskInfo> {
     const known = (await volumes().catch((): Volume[] => [])).find((v) => sameMount(v.mount, mount));
     label = known?.label ?? `Disk ${mount.charAt(0)}:`;
   } else if (isMac) label = 'Macintosh HD';
+  else label = (await volumes().catch((): Volume[] => [])).find((v) => v.system)?.label ?? mount;
   return { mount, label, total, free, used: Math.max(0, total - free), system: true };
 }

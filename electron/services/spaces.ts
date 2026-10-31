@@ -3,7 +3,7 @@ import { promises as fsp } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import type { DiskInfo, IconName, ScanProgress, SpaceNode } from '../../shared/types';
-import { getDisk, listDisks, sameMount } from './disk';
+import { foreignMounts, getDisk, listDisks, mountFor, mountTable, sameMount } from './disk';
 import { DAY_MS, displayPath, isInside, knownFolders, samePath, walk } from './walk';
 
 type Progress = (p: ScanProgress) => void;
@@ -31,14 +31,19 @@ const SYSTEM_TOP = new Set(
         'WindowsApps', 'WpSystem', 'Config.Msi', 'MSOCache', 'OneDriveTemp', '$SysReset', '$WinREAgent', '$Windows.~BT',
         '$Windows.~WS', '$GetCurrent', 'inetpub', 'Intel', 'AMD', 'NVIDIA',
       ]
-    : ['System', 'Library', 'private', 'usr', 'bin', 'sbin', 'cores', 'opt', 'etc', 'var', 'tmp']
+    : isMac
+      ? ['System', 'Library', 'private', 'usr', 'bin', 'sbin', 'cores', 'opt', 'etc', 'var', 'tmp']
+      : ['usr', 'bin', 'sbin', 'lib', 'lib32', 'lib64', 'libx32', 'etc', 'var', 'opt', 'boot', 'efi', 'root', 'srv', 'tmp', 'nix', 'snap', 'flatpak']
   ).map((n) => n.toLowerCase()),
 );
 /** Never walked: recycle bins, volume metadata and (on macOS) mirrors of other volumes. */
 const SKIP_TOP = new Set(
   (isWin
     ? ['$Recycle.Bin', 'System Volume Information', 'Documents and Settings']
-    : ['.Trashes', '.Spotlight-V100', '.fseventsd', '.DocumentRevisions-V100', '.TemporaryItems', '.vol', '.MobileBackups', 'Volumes', 'dev', 'home', 'net', 'Network']
+    : isMac
+      ? ['.Trashes', '.Spotlight-V100', '.fseventsd', '.DocumentRevisions-V100', '.TemporaryItems', '.vol', '.MobileBackups', 'Volumes', 'dev', 'home', 'net', 'Network']
+      : // kernel views and btrfs/timeshift snapshots (which would count every file again)
+        ['proc', 'sys', 'dev', 'run', 'lost+found', '.snapshots', 'timeshift', 'timeshift-btrfs']
   ).map((n) => n.toLowerCase()),
 );
 const SYSTEM_FILES = /^(pagefile\.sys|hiberfil\.sys|swapfile\.sys|dumpstack\.log(\.tmp)?|bootmgr|bootnxt|bootsect\.bak)$/i;
@@ -104,6 +109,8 @@ class Scan {
   private last = 0;
   readonly cutoff = Date.now() - OLD_MS;
   readonly known = knownFolders();
+  /** Linux mount points of other file systems inside the scanned area; never walked. */
+  foreign = new Set<string>();
 
   constructor(private readonly progress: Progress) {}
 
@@ -141,7 +148,7 @@ async function measure(scan: Scan, dir: string, opts: MeasureOpts): Promise<Spac
 
   const stats = await walk(dir, {
     maxEntries: scan.budget,
-    skipDir: (p) => (!!opts.exclude && samePath(p, opts.exclude)) || !!opts.skip?.(p),
+    skipDir: (p) => scan.foreign.has(p) || (!!opts.exclude && samePath(p, opts.exclude)) || !!opts.skip?.(p),
     onDir: (p, depth) => {
       if (depth === 1) buckets.set(path.basename(p), { size: 0, reclaimable: 0, isDir: true });
     },
@@ -295,7 +302,14 @@ async function scanHome(scan: Scan): Promise<SpaceNode> {
 async function scanDrive(scan: Scan, disk: DiskInfo): Promise<SpaceNode> {
   const mount = disk.mount;
   const home = os.homedir();
-  const hasHome = isInside(mount, home);
+  // Linux: other file systems mounted below this drive (/proc, tmpfs, other disks, network shares) are not part of it.
+  const foreign = !isWin && !isMac ? await foreignMounts(mount) : new Set<string>();
+  const onThisDrive = async (p: string) => {
+    if (isWin || isMac) return true;
+    const table = await mountTable();
+    return mountFor(p, table)?.source === mountFor(mount, table)?.source;
+  };
+  const hasHome = isInside(mount, home) && (await onThisDrive(home));
   const top = await readTop(mount, true);
   const homeTop = hasHome ? await readTop(home, false) : null;
   scan.total = top.folders.length + (homeTop?.folders.length ?? 0);
@@ -316,9 +330,11 @@ async function scanDrive(scan: Scan, disk: DiskInfo): Promise<SpaceNode> {
   const ordered = [...top.folders].sort((a, b) => Number(isSystemName(a)) - Number(isSystemName(b)));
   // macOS mirrors the Data volume under /System/Volumes; counting it again would double everything
   const macSkip = isMac && disk.system ? (p: string) => samePath(p, '/System/Volumes') : undefined;
+  for (const f of foreign) scan.foreign.add(f);
 
   for (const name of ordered) {
     const dir = path.join(mount, name);
+    if (foreign.has(dir)) continue;
     const system = isSystemName(name);
     const holdsHome = hasHome && isInside(dir, home);
     const node = await measure(scan, dir, {
@@ -366,6 +382,7 @@ async function scanDrive(scan: Scan, disk: DiskInfo): Promise<SpaceNode> {
 /** Breaks down the home folder (root undefined) or a whole fixed drive by size, two levels deep. */
 export async function scanSpaces(progress: Progress, root?: unknown): Promise<SpaceNode> {
   const scan = new Scan(progress);
+  if (!isWin && !isMac) scan.foreign = await foreignMounts(os.homedir());
   if (root === undefined || root === null) return scanHome(scan);
   if (typeof root !== 'string' || root.length === 0 || root.length > 260 || root.includes('\0')) {
     throw new Error('That drive is not available');
