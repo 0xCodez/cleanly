@@ -51,26 +51,26 @@ const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'obj
 
 /** Returns only the valid fields of an untrusted patch. Throws on a field that is present but invalid. */
 function validatePatch(patch: unknown): Partial<StoredSettings> {
-  if (!isRecord(patch)) throw new Error('Settings update must be an object.');
+  if (!isRecord(patch)) throw new Error('设置更新必须是对象。');
   const out: Partial<StoredSettings> = {};
   for (const [key, value] of Object.entries(patch)) {
     switch (key) {
       case 'aiProvider':
-        if (!PROVIDERS.includes(value as AiProvider)) throw new Error('Unknown assistant provider.');
+        if (!PROVIDERS.includes(value as AiProvider)) throw new Error('未知的助手服务提供商。');
         out.aiProvider = value as AiProvider;
         break;
       case 'background':
-        if (!BACKGROUNDS.includes(value as Background)) throw new Error('Unknown background style.');
+        if (!BACKGROUNDS.includes(value as Background)) throw new Error('未知的背景样式。');
         out.background = value as Background;
         break;
       case 'largeFileMinMb':
         if (typeof value !== 'number' || !Number.isFinite(value) || value < MIN_LARGE_MB || value > MAX_LARGE_MB) {
-          throw new Error(`Large file size must be between ${MIN_LARGE_MB} MB and ${MAX_LARGE_MB} MB.`);
+          throw new Error(`大文件阈值必须在 ${MIN_LARGE_MB} MB 到 ${MAX_LARGE_MB} MB 之间。`);
         }
         out.largeFileMinMb = Math.round(value);
         break;
       case 'confirmBeforeClean':
-        if (typeof value !== 'boolean') throw new Error('Confirm before clean must be on or off.');
+        if (typeof value !== 'boolean') throw new Error('“清理前确认”必须为开启或关闭。');
         out.confirmBeforeClean = value;
         break;
       default:
@@ -141,14 +141,14 @@ export async function setSettings(patch: Partial<StoredSettings>): Promise<Setti
 function checkKey(provider: AiProvider, key: string): string {
   const trimmed = key.trim();
   if (trimmed.length < 20 || trimmed.length > 512 || /\s/.test(trimmed)) {
-    throw new Error(`That does not look like a valid ${provider === 'claude' ? 'Claude' : 'OpenAI'} API key.`);
+    throw new Error(`这不像是有效的 ${provider === 'claude' ? 'Claude' : 'OpenAI'} API 密钥。`);
   }
   return trimmed;
 }
 
 export async function setApiKey(provider: AiProvider, key: string | null): Promise<Settings> {
-  if (!PROVIDERS.includes(provider)) throw new Error('Unknown assistant provider.');
-  if (key !== null && typeof key !== 'string') throw new Error('API key must be text.');
+  if (!PROVIDERS.includes(provider)) throw new Error('未知的助手服务提供商。');
+  if (key !== null && typeof key !== 'string') throw new Error('API 密钥必须是文本。');
   const keys = { ...(await loadKeys()) };
 
   if (key === null || key.trim() === '') {
@@ -156,7 +156,7 @@ export async function setApiKey(provider: AiProvider, key: string | null): Promi
   } else {
     const clean = checkKey(provider, key);
     if (!encryptionReady()) {
-      throw new Error('Secure storage is not available on this system, so the key was not saved.');
+      throw new Error('此系统没有可用的安全存储，因此密钥未保存。');
     }
     keys[provider] = safeStorage.encryptString(clean).toString('base64');
   }
@@ -171,11 +171,11 @@ export async function getApiKey(provider: AiProvider): Promise<string | null> {
   const stored = (await loadKeys())[provider];
   if (!stored) return null;
   if (!safeStorage.isEncryptionAvailable()) {
-    throw new Error('Secure storage is not available right now, so the saved API key cannot be read.');
+    throw new Error('安全存储当前不可用，因此无法读取已保存的 API 密钥。');
   }
   try {
     return safeStorage.decryptString(Buffer.from(stored, 'base64'));
   } catch {
-    throw new Error('The saved API key could not be unlocked. Please add it again in Settings.');
+    throw new Error('已保存的 API 密钥无法解锁。请在设置中重新添加。');
   }
 }

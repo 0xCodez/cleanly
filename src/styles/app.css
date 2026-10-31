@@ -11,9 +11,9 @@
   --amber: #ffb547;
   --mint: #1fbf8f;
   --danger: #d6334f;
-  --display: 'Unbounded Variable', system-ui, sans-serif;
-  --ui: 'Onest Variable', system-ui, sans-serif;
-  --mono: 'JetBrains Mono Variable', ui-monospace, monospace;
+  --display: 'Unbounded Variable', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', system-ui, sans-serif;
+  --ui: 'Onest Variable', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', system-ui, sans-serif;
+  --mono: 'JetBrains Mono Variable', 'PingFang SC', 'Microsoft YaHei', ui-monospace, monospace;
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
   --radius: 28px;
 }

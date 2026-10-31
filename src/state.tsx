@@ -125,7 +125,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           setSpaceMaps((m) => ({ ...m, [key]: tree }));
         } catch (e) {
           setSpacesFailed((f) => (f.includes(key) ? f : [...f, key]));
-          const fallback = target ? `Could not measure ${target.replace(/[\\/]+$/, '')}` : 'Could not measure your folders';
+          const fallback = target ? `无法测量 ${target.replace(/[\\/]+$/, '')}` : '无法测量你的文件夹';
           toast(e instanceof Error && e.message ? e.message : fallback, 'err');
         } finally {
           spacesRef.current.delete(key);
@@ -150,7 +150,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         // the space map walks the whole home folder; let it finish in the background
         void scanSpaces();
       } catch (e) {
-        toast(e instanceof Error ? e.message : 'Scan failed', 'err');
+        toast(e instanceof Error ? e.message : '扫描失败', 'err');
       } finally {
         setScanning(false);
         setProgress((p) => (p?.task === 'junk' ? null : p));
@@ -174,7 +174,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         await refreshDisk();
         return result;
       } catch (e) {
-        toast(e instanceof Error ? e.message : 'Cleaning failed', 'err');
+        toast(e instanceof Error ? e.message : '清理失败', 'err');
         return null;
       } finally {
         setCleaning(false);

@@ -34,7 +34,7 @@ export default function SpaceMap() {
   const [focus, setFocus] = useState<string | null>(null);
 
   const sources = useMemo<Source[]>(
-    () => [{ key: HOME_SRC, label: 'Home' }, ...(disks ?? []).map((d) => ({ key: d.mount, label: driveName(d), disk: d }))],
+    () => [{ key: HOME_SRC, label: '主文件夹' }, ...(disks ?? []).map((d) => ({ key: d.mount, label: driveName(d), disk: d }))],
     [disks],
   );
   // a drive that went away falls back to home
@@ -72,7 +72,7 @@ export default function SpaceMap() {
       badge: c.reclaimable >= HINT_MIN ? `−${formatBytes(c.reclaimable)}` : undefined,
     }));
     const rest = kids.slice(MAX_BUBBLES);
-    if (rest.length) top.push({ id: REST_ID, name: `${rest.length} more`, size: rest.reduce((s, c) => s + c.size, 0), icon: 'more' });
+    if (rest.length) top.push({ id: REST_ID, name: `${rest.length} 更多`, size: rest.reduce((s, c) => s + c.size, 0), icon: 'more' });
     return top;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kids, iconSig]);
@@ -110,7 +110,7 @@ export default function SpaceMap() {
   };
 
   const reveal = (path: string) => {
-    api.revealPath(path).catch((e: unknown) => toast(e instanceof Error ? e.message : 'Could not open that folder', 'err'));
+    api.revealPath(path).catch((e: unknown) => toast(e instanceof Error ? e.message : '无法打开该文件夹', 'err'));
   };
 
   useEffect(() => {
@@ -120,15 +120,15 @@ export default function SpaceMap() {
 
   const loading = busy || (!root && scanning);
   const total = splitBytes(current?.size ?? 0);
-  const rootLabel = source.disk ? source.label : tree?.name || 'Home';
-  const where = source.disk ? `drive ${source.label}` : 'your home folder';
+  const rootLabel = source.disk ? source.label : tree?.name || '主文件夹';
+  const where = source.disk ? `驱动器 ${source.label}` : '你的主文件夹';
 
   return (
     <div className="screen">
-      <ScreenHead title="Space Map" sub="See what fills your disk. Bigger bubble, more space. Tap one to look inside, or give it a push.">
+      <ScreenHead title="空间地图" sub="查看磁盘空间占用。气泡越大，占用越多。点按可查看内部，或推它一下。">
         {current && (
           <div className="fx-stat">
-            <span>{trail.length ? 'This folder' : `Mapped · ${source.label}`}</span>
+            <span>{trail.length ? '当前文件夹' : `已映射 · ${source.label}`}</span>
             <div className="fx-big">
               {total.value}
               <small>{total.unit}</small>
@@ -137,13 +137,13 @@ export default function SpaceMap() {
         )}
         <button type="button" className="btn small" onClick={() => void rescan()} disabled={busy}>
           {busy ? <span className="spinner" /> : <Icon name="scan" />}
-          {busy ? 'Mapping' : 'Rescan'}
+          {busy ? '正在映射' : '重新扫描'}
         </button>
       </ScreenHead>
 
       {sources.length > 1 && (
         <div className="fx-source rise" style={{ animationDelay: '0.03s' }}>
-          <Segmented<string> label="What to map" value={source.key} onChange={pick} options={sources.map((s) => ({ value: s.key, label: s.label }))} />
+          <Segmented<string> label="要映射的内容" value={source.key} onChange={pick} options={sources.map((s) => ({ value: s.key, label: s.label }))} />
           <SourceNote source={source} home={home} />
         </div>
       )}
@@ -155,21 +155,21 @@ export default function SpaceMap() {
               <span className="orb">
                 <Icon name="bubbles" />
               </span>
-              <h3>{source.disk ? `Measuring ${source.label}` : 'Measuring your folders'}</h3>
-              <p>{prog?.phase ?? (source.disk ? `Walking through every folder on ${where}. A full drive can take a few minutes.` : 'Walking through your home folder. Big drives take a minute.')}</p>
+              <h3>{source.disk ? `正在测量 ${source.label}` : '正在测量你的文件夹'}</h3>
+              <p>{prog?.phase ?? (source.disk ? `正在遍历${where}上的每个文件夹。完整驱动器可能需要几分钟。` : '正在遍历你的主文件夹。大容量驱动器需要一分钟左右。')}</p>
               <Progress value={prog && prog.total > 0 ? prog.done / prog.total : undefined} />
               {prog?.current && <div className="cur">{shortPath(prog.current, home)}</div>}
             </div>
           ) : failed ? (
-            <Empty icon="warning" title={`Couldn't map ${source.disk ? source.label : 'your folders'}`} text="Something got in the way. Give it another try.">
+            <Empty icon="warning" title={`无法映射${source.disk ? source.label : '你的文件夹'}`} text="遇到了一些问题，请再试一次。">
               <button type="button" className="btn primary" onClick={() => void rescan()}>
-                Try again
+                再试一次
               </button>
             </Empty>
           ) : (
-            <Empty icon="bubbles" title="No map yet" text={`Measure ${where} to see where the space goes.`}>
+            <Empty icon="bubbles" title="尚未生成地图" text={`测量${where}，查看空间占用情况。`}>
               <button type="button" className="btn primary" onClick={() => void rescan()}>
-                <Icon name="scan" /> {source.disk ? `Map ${source.label}` : 'Map my disk'}
+                <Icon name="scan" /> {source.disk ? `映射 ${source.label}` : '映射我的磁盘'}
               </button>
             </Empty>
           )}
@@ -178,9 +178,9 @@ export default function SpaceMap() {
 
       {tree && current && (
         <div className="fx-map">
-          <section className="card-w fx-stage rise" style={{ animationDelay: '0.06s' }} aria-label="Space map">
+          <section className="card-w fx-stage rise" style={{ animationDelay: '0.06s' }} aria-label="空间地图">
             <div className="fx-stage-head">
-              <nav className="fx-crumbs" aria-label="Folder path">
+              <nav className="fx-crumbs" aria-label="文件夹路径">
                 {[tree, ...trail].map((n, i, all) => (
                   <span key={i} style={{ display: 'contents' }}>
                     {i > 0 && <span className="sep">/</span>}
@@ -200,35 +200,35 @@ export default function SpaceMap() {
               <span className="grow" />
               {trail.length > 0 && (
                 <button type="button" className="btn small ghost" onClick={() => setTrail(trail.slice(0, -1))}>
-                  <Icon name="arrow" style={{ transform: 'rotate(180deg)' }} /> Up
+                  <Icon name="arrow" style={{ transform: 'rotate(180deg)' }} /> 上一级
                 </button>
               )}
             </div>
             {bubbles.length ? (
               <Bubbles items={bubbles} onSelect={onBubble} selectedId={focus ?? undefined} />
             ) : (
-              <Empty icon="folder" title="Nothing big in here" text="This folder is empty or only holds tiny files." />
+              <Empty icon="folder" title="这里没有大文件" text="此文件夹为空，或仅包含小文件。" />
             )}
             <div className="fx-stage-foot">
               <i />
-              <span>Badge: something here can be cleaned</span>
+              <span>角标：此处有可清理内容</span>
               <span className="grow" />
               {busy && (
                 <>
                   <span className="spinner" style={{ width: 14, height: 14 }} />
-                  <span>Updating</span>
+                  <span>正在更新</span>
                 </>
               )}
             </div>
           </section>
 
-          <aside className="card-w fx-side rise" style={{ animationDelay: '0.12s' }} aria-label="Folder contents">
+          <aside className="card-w fx-side rise" style={{ animationDelay: '0.12s' }} aria-label="文件夹内容">
             <div className="fx-side-head">
               <div className="grow">
                 <h2>{current === tree ? rootLabel : current.name}</h2>
                 <p title={current.path}>{shortPath(current.path, home)}</p>
               </div>
-              <button type="button" className="icon-btn" title="Show in folder" aria-label="Show in folder" onClick={() => reveal(current.path)}>
+              <button type="button" className="icon-btn" title="在文件夹中显示" aria-label="在文件夹中显示" onClick={() => reveal(current.path)}>
                 <Icon name="reveal" />
               </button>
             </div>
@@ -236,15 +236,15 @@ export default function SpaceMap() {
               <div className="fx-hint">
                 <Icon name="spark" />
                 <span className="grow">
-                  About <b>{formatBytes(current.reclaimable)}</b> here looks reclaimable: caches and old downloads.
+                  此处约有 <b>{formatBytes(current.reclaimable)}</b> 可释放：缓存和旧下载文件。
                 </span>
                 <button type="button" className="btn small" onClick={() => go('cleanup')}>
-                  Review
+                  查看
                 </button>
               </div>
             )}
             {kids.length === 0 ? (
-              <Empty icon="folder" title="Empty folder" />
+              <Empty icon="folder" title="空文件夹" />
             ) : (
               <div className="list fx-list">
                 {kids.slice(0, 80).map((c) => {
@@ -278,7 +278,7 @@ export default function SpaceMap() {
                       <div className="grow">
                         <div className="title">{c.name}</div>
                         {c.reclaimable >= HINT_MIN ? (
-                          <div className="sub">{formatBytes(c.reclaimable)} can go</div>
+                          <div className="sub">{formatBytes(c.reclaimable)} 可清理</div>
                         ) : (
                           <div className="fx-share">
                             <i style={{ width: `${share}%` }} />
@@ -289,8 +289,8 @@ export default function SpaceMap() {
                       <button
                         type="button"
                         className="icon-btn"
-                        title="Show in folder"
-                        aria-label={`Show ${c.name} in folder`}
+                        title="在文件夹中显示"
+                        aria-label={`在文件夹中显示 ${c.name}`}
                         onClick={(e) => {
                           e.stopPropagation();
                           reveal(c.path);
@@ -301,7 +301,7 @@ export default function SpaceMap() {
                     </div>
                   );
                 })}
-                {kids.length > 80 && <div className="row sub muted">and {kids.length - 80} smaller items</div>}
+                {kids.length > 80 && <div className="row sub muted">还有 {kids.length - 80} 个更小的项目</div>}
               </div>
             )}
           </aside>
@@ -313,14 +313,14 @@ export default function SpaceMap() {
 
 function SourceNote({ source, home }: { source: Source; home?: string }) {
   const d = source.disk;
-  if (!d) return <span className="fx-source-note">{home ? `Your home folder · ${shortPath(home)}` : 'Your home folder'}</span>;
+  if (!d) return <span className="fx-source-note">{home ? `你的主文件夹 · ${shortPath(home)}` : '你的主文件夹'}</span>;
   const pct = d.total > 0 ? Math.min(100, (d.used / d.total) * 100) : 0;
   return (
-    <span className="fx-source-note" title={`${d.label}: ${formatBytes(d.free)} free`}>
+    <span className="fx-source-note" title={`${d.label}：剩余 ${formatBytes(d.free)}`}>
       <span className="bar" aria-hidden="true">
         <span className="used" style={{ width: `${pct}%` }} />
       </span>
-      {formatBytes(d.used)} of {formatBytes(d.total)} used{d.system ? ' · system drive' : ''}
+      已用 {formatBytes(d.used)}，共 {formatBytes(d.total)}{d.system ? ' · 系统驱动器' : ''}
     </span>
   );
 }

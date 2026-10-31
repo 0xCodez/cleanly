@@ -76,7 +76,7 @@ export default function Duplicates() {
         setLimit(PAGE);
       } catch (e) {
         setFailed(true);
-        toast(e instanceof Error ? e.message : 'Could not compare files', 'err');
+        toast(e instanceof Error ? e.message : '无法比较文件', 'err');
       } finally {
         setLoading(false);
       }
@@ -106,7 +106,7 @@ export default function Duplicates() {
     });
 
   const reveal = (path: string) => {
-    api.revealPath(path).catch((e: unknown) => toast(e instanceof Error ? e.message : 'Could not show that file', 'err'));
+    api.revealPath(path).catch((e: unknown) => toast(e instanceof Error ? e.message : '无法显示该文件', 'err'));
   };
 
   const trash = async () => {
@@ -116,8 +116,8 @@ export default function Duplicates() {
     try {
       const result = await api.trashPaths(paths);
       const moved = result.removed;
-      const note = result.failed > 0 ? ` · ${result.failed} could not be moved` : '';
-      toast(`Moved ${moved} ${moved === 1 ? 'copy' : 'copies'} (${formatBytes(result.freed)}) to Trash${note}`, result.failed && !moved ? 'err' : 'ok');
+      const note = result.failed > 0 ? ` · ${result.failed} 个无法移动` : '';
+      toast(`已将 ${moved} 个副本（${formatBytes(result.freed)}）移到回收站${note}`, result.failed && !moved ? 'err' : 'ok');
       if (result.failed > 0) {
         await load(true);
       } else {
@@ -130,7 +130,7 @@ export default function Duplicates() {
       }
       void refreshDisk();
     } catch (e) {
-      toast(e instanceof Error ? e.message : 'Could not move copies to Trash', 'err');
+      toast(e instanceof Error ? e.message : '无法将副本移到回收站', 'err');
     } finally {
       setTrashing(false);
     }
@@ -144,10 +144,10 @@ export default function Duplicates() {
 
   return (
     <div className="screen">
-      <ScreenHead title="Duplicates" sub="Identical files, matched by content, not by name. We keep the newest copy and move the rest to the Trash.">
+      <ScreenHead title="重复文件" sub="按内容而非名称匹配的完全相同文件。我们保留最新的一份副本，其余移到回收站。">
         {groups && groups.length > 0 && (
           <div className="fx-stat">
-            <span>Wasted</span>
+            <span>浪费空间</span>
             <div className="fx-big">
               {total.value}
               <small>{total.unit}</small>
@@ -156,16 +156,16 @@ export default function Duplicates() {
         )}
         <button type="button" className="btn small" onClick={() => void load(true)} disabled={loading || trashing}>
           {loading ? <span className="spinner" /> : <Icon name="scan" />}
-          {loading ? 'Comparing' : 'Rescan'}
+          {loading ? '正在比较' : '重新扫描'}
         </button>
       </ScreenHead>
 
       {!groups && (
         <section className="card-w rise">
           {failed ? (
-            <Empty icon="warning" title="Comparison didn't finish" text="Something got in the way. Give it another try.">
+            <Empty icon="warning" title="比较未完成" text="遇到了一些阻碍。请再试一次。">
               <button type="button" className="btn primary" onClick={() => void load(true)}>
-                Try again
+                重试
               </button>
             </Empty>
           ) : (
@@ -173,8 +173,8 @@ export default function Duplicates() {
               <span className="orb">
                 <Icon name="dupes" />
               </span>
-              <h3>Comparing your files</h3>
-              <p>{prog?.phase ? `${prog.phase}. ` : ''}We check contents byte by byte, so this can take a minute or two. Feel free to look around meanwhile.</p>
+              <h3>正在比较你的文件</h3>
+              <p>{prog?.phase ? `${prog.phase}. ` : ''}我们会逐字节检查内容，因此可能需要一两分钟。期间你可以随意浏览其他页面。</p>
               <Progress value={prog && prog.total > 0 ? prog.done / prog.total : undefined} />
               {prog?.current && <div className="cur">{shortPath(prog.current, home)}</div>}
             </div>
@@ -184,7 +184,7 @@ export default function Duplicates() {
 
       {groups && groups.length === 0 && (
         <section className="card-w rise">
-          <Empty icon="check" title="No duplicates" text="Every file here is one of a kind. Nice and tidy." />
+          <Empty icon="check" title="没有重复文件" text="这里的每个文件都是独一无二的。非常整洁。" />
         </section>
       )}
 
@@ -194,7 +194,7 @@ export default function Duplicates() {
             <section className="card-w">
               <div className="fx-strip">
                 <span className="spinner" />
-                <span>{prog?.phase ?? 'Comparing again'}</span>
+                <span>{prog?.phase ?? '正在再次比较'}</span>
                 <Progress value={prog && prog.total > 0 ? prog.done / prog.total : undefined} />
               </div>
             </section>
@@ -214,7 +214,7 @@ export default function Duplicates() {
                       checked={!off}
                       disabled={trashing}
                       onChange={() => toggleGroup(g.hash)}
-                      aria-label={`Include ${name}`}
+                      aria-label={`包含 ${name}`}
                     />
                     {icons[g.files[0].path] ? (
                       <span className="chip-ico real">
@@ -230,15 +230,15 @@ export default function Duplicates() {
                         {name}
                       </div>
                       <div className="sub">
-                        {g.files.length} copies · {formatBytes(g.size)} each
+                        {g.files.length} 个副本 · 每个 {formatBytes(g.size)}
                       </div>
                     </div>
                     <div className="fx-wasted">
                       <b>{formatBytes(wasted(g))}</b>
-                      <span>wasted</span>
+                      <span>浪费</span>
                     </div>
                   </div>
-                  <div className="list fx-copies" role="radiogroup" aria-label={`Copy of ${name} to keep`}>
+                  <div className="list fx-copies" role="radiogroup" aria-label={`要保留的 ${name} 副本`}>
                     {g.files.map((f) => {
                       const kept = f.path === keeper;
                       const drive = driveOf(f.path, home, disks);
@@ -251,7 +251,7 @@ export default function Duplicates() {
                             checked={kept}
                             disabled={trashing}
                             onChange={() => setKeep((k) => ({ ...k, [g.hash]: f.path }))}
-                            aria-label="Keep this one"
+                            aria-label="保留这一份"
                           />
                           <div className="grow">
                             <div className="title" title={f.path}>
@@ -265,16 +265,16 @@ export default function Duplicates() {
                               )}
                             </div>
                             <div className="sub">
-                              Modified {formatDate(f.modified)}
-                              {f.path === newest && ' · newest'}
+                              修改于 {formatDate(f.modified)}
+                              {f.path === newest && ' · 最新'}
                             </div>
                           </div>
-                          <span className={`fx-fate ${kept ? 'keep' : 'trash'}`}>{kept ? 'Keep' : off ? 'Leave' : 'To Trash'}</span>
+                          <span className={`fx-fate ${kept ? 'keep' : 'trash'}`}>{kept ? '保留' : off ? '跳过' : '移到回收站'}</span>
                           <button
                             type="button"
                             className="icon-btn"
-                            title="Show in folder"
-                            aria-label="Show in folder"
+                            title="在文件夹中显示"
+                            aria-label="在文件夹中显示"
                             onClick={(e) => {
                               e.preventDefault();
                               reveal(f.path);
@@ -291,28 +291,28 @@ export default function Duplicates() {
             })}
             {groups.length > limit && (
               <button type="button" className="btn fx-more" onClick={() => setLimit((l) => l + PAGE)}>
-                Show {Math.min(PAGE, groups.length - limit)} more of {groups.length - limit}
+                再显示 {Math.min(PAGE, groups.length - limit)} 组，共剩余 {groups.length - limit} 组
               </button>
             )}
           </div>
 
           {n > 0 &&
             (confirming ? (
-              <div className="fx-dock" role="alertdialog" aria-label="Confirm move to Trash">
+              <div className="fx-dock" role="alertdialog" aria-label="确认移到回收站">
                 <span className="chip-ico">
                   <Icon name="trash" />
                 </span>
                 <div className="grow">
                   <div className="fx-dock-q">
-                    Move {n} {n === 1 ? 'copy' : 'copies'} ({formatBytes(trashSize)}) to Trash?
+                    将 {n} 个副本（{formatBytes(trashSize)}）移到回收站？
                   </div>
-                  <div className="fx-dock-note">One copy of each file stays where it is. You can restore the rest from the Trash.</div>
+                  <div className="fx-dock-note">每个文件会保留一份副本在原处。其余副本可从回收站恢复。</div>
                 </div>
                 <button type="button" className="btn ghost" onClick={() => setConfirming(false)}>
-                  Cancel
+                  取消
                 </button>
                 <button type="button" className="btn primary" onClick={() => void trash()} autoFocus>
-                  Move to Trash
+                  移到回收站
                 </button>
               </div>
             ) : (
@@ -320,10 +320,10 @@ export default function Duplicates() {
                 <div className="grow">
                   <div className="fx-dock-num">
                     {sel.value}
-                    <small>{sel.unit} selected</small>
+                    <small>{sel.unit} 已选</small>
                   </div>
                   <div className="fx-dock-sub">
-                    {groups.length - skip.size} of {groups.length} groups · keeping one copy of each
+                    {groups.length - skip.size} / {groups.length} 组 · 每组保留一份副本
                   </div>
                 </div>
                 <button
@@ -333,7 +333,7 @@ export default function Duplicates() {
                   onClick={() => (settings?.confirmBeforeClean === false ? void trash() : setConfirming(true))}
                 >
                   {trashing ? <span className="spinner" style={{ borderColor: 'rgba(255,255,255,0.35)', borderTopColor: '#fff' }} /> : <Icon name="trash" />}
-                  {trashing ? 'Moving' : `Move ${n} ${n === 1 ? 'copy' : 'copies'} to Trash`}
+                  {trashing ? '正在移动' : `将 ${n} 个副本移到回收站`}
                 </button>
               </div>
             ))}

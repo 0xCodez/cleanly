@@ -29,16 +29,16 @@ async function request(url: string, init?: RequestInit): Promise<unknown> {
     res = await fetch(url, { ...init, signal: AbortSignal.timeout(TIMEOUT_MS) });
   } catch (err) {
     const name = err instanceof Error ? err.name : '';
-    if (name === 'TimeoutError' || name === 'AbortError') throw new Error('The tips service took too long to answer. Please try again.');
-    throw new Error('Could not reach the tips service. Check your internet connection.');
+    if (name === 'TimeoutError' || name === 'AbortError') throw new Error('打赏服务响应超时。请重试。');
+    throw new Error('无法连接打赏服务。请检查网络连接。');
   }
   const body: unknown = await res.json().catch(() => null);
-  if (!res.ok) throw new Error(serverMessage(body) ?? `The tips service returned an error (${res.status}).`);
+  if (!res.ok) throw new Error(serverMessage(body) ?? `打赏服务返回了错误（${res.status}）。`);
   return body;
 }
 
 function toProfile(body: unknown): TipsProfile {
-  if (!isRecord(body) || !isRecord(body.creator)) throw new Error('The tips service sent an unexpected answer.');
+  if (!isRecord(body) || !isRecord(body.creator)) throw new Error('打赏服务返回了意外的响应。');
   const c = body.creator;
   const min = Math.max(0, num(c.min, 1));
   const max = Math.max(min, num(c.max, 500));
@@ -77,14 +77,14 @@ function cleanText(v: unknown, max: number): string {
 }
 
 export async function createTipCheckout(req: TipRequest): Promise<{ url: string }> {
-  if (!isRecord(req)) throw new Error('Invalid tip.');
+  if (!isRecord(req)) throw new Error('打赏信息无效。');
   const amount = req.amount;
-  if (typeof amount !== 'number' || !Number.isFinite(amount)) throw new Error('Please choose an amount.');
+  if (typeof amount !== 'number' || !Number.isFinite(amount)) throw new Error('请选择金额。');
 
   const profile = cached?.profile ?? (await getTipsProfile());
   if (amount < profile.min || amount > profile.max) {
     const cur = profile.currency.toUpperCase();
-    throw new Error(`Please choose an amount between ${profile.min} and ${profile.max} ${cur}.`);
+    throw new Error(`请选择 ${profile.min} 到 ${profile.max} ${cur} 之间的金额。`);
   }
 
   const body = await request(TIPS_API, {
@@ -101,11 +101,11 @@ export async function createTipCheckout(req: TipRequest): Promise<{ url: string 
   });
 
   const url = isRecord(body) ? body.url : null;
-  if (typeof url !== 'string') throw new Error('The tips service did not return a checkout link.');
+  if (typeof url !== 'string') throw new Error('打赏服务未返回结账链接。');
   try {
     if (new URL(url).protocol !== 'https:') throw new Error();
   } catch {
-    throw new Error('The tips service returned an invalid checkout link.');
+    throw new Error('打赏服务返回了无效的结账链接。');
   }
   return { url };
 }

@@ -12,12 +12,12 @@ type Filter = 'all' | 'video' | 'archive' | 'disk-image' | 'installer' | 'other'
 type Sort = 'size' | 'oldest';
 
 const FILTERS: { id: Filter; label: string }[] = [
-  { id: 'all', label: 'All' },
-  { id: 'video', label: 'Videos' },
-  { id: 'archive', label: 'Archives' },
-  { id: 'disk-image', label: 'Disk images' },
-  { id: 'installer', label: 'Installers' },
-  { id: 'other', label: 'Other' },
+  { id: 'all', label: '全部' },
+  { id: 'video', label: '视频' },
+  { id: 'archive', label: '压缩包' },
+  { id: 'disk-image', label: '磁盘镜像' },
+  { id: 'installer', label: '安装包' },
+  { id: 'other', label: '其他' },
 ];
 
 const KIND_ICON: Record<LargeFile['kind'], IconName> = {
@@ -90,7 +90,7 @@ export default function LargeFiles() {
         setSelected(new Set());
       } catch (e) {
         setFailed(true);
-        toast(e instanceof Error ? e.message : 'Could not look for large files', 'err');
+        toast(e instanceof Error ? e.message : '无法查找大文件', 'err');
       } finally {
         setLoading(false);
       }
@@ -143,7 +143,7 @@ export default function LargeFiles() {
     });
 
   const reveal = (path: string) => {
-    api.revealPath(path).catch((e: unknown) => toast(e instanceof Error ? e.message : 'Could not show that file', 'err'));
+    api.revealPath(path).catch((e: unknown) => toast(e instanceof Error ? e.message : '无法显示该文件', 'err'));
   };
 
   const trash = async () => {
@@ -153,8 +153,8 @@ export default function LargeFiles() {
     try {
       const result = await api.trashPaths(paths);
       const moved = result.removed;
-      const note = result.failed > 0 ? ` · ${result.failed} could not be moved` : '';
-      toast(`Moved ${moved} ${moved === 1 ? 'file' : 'files'} (${formatBytes(result.freed)}) to Trash${note}`, result.failed && !moved ? 'err' : 'ok');
+      const note = result.failed > 0 ? ` · ${result.failed} 个无法移动` : '';
+      toast(`已将 ${moved} 个文件（${formatBytes(result.freed)}）移到回收站${note}`, result.failed && !moved ? 'err' : 'ok');
       if (result.failed > 0) {
         await load(true);
       } else {
@@ -166,7 +166,7 @@ export default function LargeFiles() {
       }
       void refreshDisk();
     } catch (e) {
-      toast(e instanceof Error ? e.message : 'Could not move files to Trash', 'err');
+      toast(e instanceof Error ? e.message : '无法将文件移到回收站', 'err');
     } finally {
       setTrashing(false);
     }
@@ -177,12 +177,12 @@ export default function LargeFiles() {
   return (
     <div className="screen">
       <ScreenHead
-        title="Large Files"
-        sub={`Files over ${settings ? formatBytes(settings.largeFileMinMb * MB) : '…'} that you may have forgotten${otherDrives ? ', on every drive' : ''}. Anything you remove goes to the Trash.`}
+        title="大文件"
+        sub={`超过 ${settings ? formatBytes(settings.largeFileMinMb * MB) : '…'} 且你可能已遗忘的文件${otherDrives ? '，分布在所有驱动器上' : ''}。删除的内容都会进入回收站。`}
       >
         {files && files.length > 0 && (
           <div className="fx-stat">
-            <span>{files.length} files</span>
+            <span>{files.length} 个文件</span>
             <div className="fx-big">
               {total.value}
               <small>{total.unit}</small>
@@ -191,16 +191,16 @@ export default function LargeFiles() {
         )}
         <button type="button" className="btn small" onClick={() => void load(true)} disabled={loading || trashing || min === null}>
           {loading ? <span className="spinner" /> : <Icon name="scan" />}
-          {loading ? 'Searching' : 'Rescan'}
+          {loading ? '正在搜索' : '重新扫描'}
         </button>
       </ScreenHead>
 
       {!files && (
         <section className="card-w rise">
           {failed ? (
-            <Empty icon="warning" title="Search didn't finish" text="Something got in the way. Give it another try.">
+            <Empty icon="warning" title="搜索未完成" text="遇到了一些阻碍。请再试一次。">
               <button type="button" className="btn primary" onClick={() => void load(true)}>
-                Try again
+                重试
               </button>
             </Empty>
           ) : (
@@ -208,8 +208,8 @@ export default function LargeFiles() {
               <span className="orb">
                 <Icon name="file" />
               </span>
-              <h3>Looking for big files</h3>
-              <p>{prog?.phase ?? (otherDrives ? 'Checking your home folder and your other drives.' : 'Checking Downloads, Desktop, Documents, Movies and more.')}</p>
+              <h3>正在查找大文件</h3>
+              <p>{prog?.phase ?? (otherDrives ? '正在检查你的主文件夹和其他驱动器。' : '正在检查下载、桌面、文档、影片等文件夹。')}</p>
               <Progress value={prog && prog.total > 0 ? prog.done / prog.total : undefined} />
               {prog?.current && <div className="cur">{shortPath(prog.current, home)}</div>}
             </div>
@@ -219,7 +219,7 @@ export default function LargeFiles() {
 
       {files && files.length === 0 && (
         <section className="card-w rise">
-          <Empty icon="check" title="No large files" text="Nothing above your size limit. You can lower it in Settings." />
+          <Empty icon="check" title="没有大文件" text="没有超过大小上限的文件。你可以在设置中降低该上限。" />
         </section>
       )}
 
@@ -241,12 +241,12 @@ export default function LargeFiles() {
             ))}
             <span className="grow" />
             <Segmented<Sort>
-              label="Sort files"
+              label="排序文件"
               value={sort}
               onChange={setSort}
               options={[
-                { value: 'size', label: 'Size' },
-                { value: 'oldest', label: 'Oldest' },
+                { value: 'size', label: '大小' },
+                { value: 'oldest', label: '最早' },
               ]}
             />
           </div>
@@ -255,7 +255,7 @@ export default function LargeFiles() {
             {loading && (
               <div className="fx-strip">
                 <span className="spinner" />
-                <span>{prog?.phase ?? 'Searching again'}</span>
+                <span>{prog?.phase ?? '正在再次搜索'}</span>
                 <Progress value={prog && prog.total > 0 ? prog.done / prog.total : undefined} />
               </div>
             )}
@@ -266,11 +266,11 @@ export default function LargeFiles() {
               </span>
               <span className="grow" />
               <button type="button" className="fx-link" onClick={toggleShown} disabled={!shown.length || trashing}>
-                {shownAllOn ? 'Select none' : 'Select all'}
+                {shownAllOn ? '取消全选' : '全选'}
               </button>
             </div>
             {shown.length === 0 ? (
-              <Empty icon="search" title="Nothing in this group" />
+              <Empty icon="search" title="该分组下没有内容" />
             ) : (
               <div className="list fx-list">
                 {shown.map((f) => {
@@ -305,14 +305,14 @@ export default function LargeFiles() {
                         </div>
                       </div>
                       <span className="fx-meta">
-                        {opened ? 'last opened' : 'changed'} {timeAgo(lastUsed(f))}
+                        {opened ? '上次打开' : '修改于'} {timeAgo(lastUsed(f))}
                       </span>
                       <span className="size">{formatBytes(f.size)}</span>
                       <button
                         type="button"
                         className="icon-btn"
-                        title="Show in folder"
-                        aria-label={`Show ${f.name} in folder`}
+                        title="在文件夹中显示"
+                        aria-label={`在文件夹中显示 ${f.name}`}
                         onClick={(e) => {
                           e.preventDefault();
                           reveal(f.path);
@@ -329,21 +329,21 @@ export default function LargeFiles() {
 
           {chosen.length > 0 &&
             (confirming ? (
-              <div className="fx-dock" role="alertdialog" aria-label="Confirm move to Trash">
+              <div className="fx-dock" role="alertdialog" aria-label="确认移到回收站">
                 <span className="chip-ico">
                   <Icon name="trash" />
                 </span>
                 <div className="grow">
                   <div className="fx-dock-q">
-                    Move {chosen.length} {chosen.length === 1 ? 'file' : 'files'} ({formatBytes(chosenSize)}) to Trash?
+                    将 {chosen.length} 个文件（{formatBytes(chosenSize)}）移到回收站？
                   </div>
-                  <div className="fx-dock-note">You can restore them from the Trash until you empty it.</div>
+                  <div className="fx-dock-note">在清空回收站之前，你可以从回收站恢复它们。</div>
                 </div>
                 <button type="button" className="btn ghost" onClick={() => setConfirming(false)}>
-                  Cancel
+                  取消
                 </button>
                 <button type="button" className="btn primary" onClick={() => void trash()} autoFocus>
-                  Move to Trash
+                  移到回收站
                 </button>
               </div>
             ) : (
@@ -351,14 +351,14 @@ export default function LargeFiles() {
                 <div className="grow">
                   <div className="fx-dock-num">
                     {splitBytes(chosenSize).value}
-                    <small>{splitBytes(chosenSize).unit} selected</small>
+                    <small>{splitBytes(chosenSize).unit} 已选</small>
                   </div>
                   <div className="fx-dock-sub">
-                    {chosen.length} {chosen.length === 1 ? 'file' : 'files'} · goes to Trash, restorable
+                    {chosen.length} 个文件 · 将移到回收站，可恢复
                   </div>
                 </div>
                 <button type="button" className="btn ghost" onClick={() => setSelected(new Set())} disabled={trashing}>
-                  Clear
+                  清除选择
                 </button>
                 <button
                   type="button"
@@ -367,7 +367,7 @@ export default function LargeFiles() {
                   onClick={() => (settings?.confirmBeforeClean === false ? void trash() : setConfirming(true))}
                 >
                   {trashing ? <span className="spinner" style={{ borderColor: 'rgba(255,255,255,0.35)', borderTopColor: '#fff' }} /> : <Icon name="trash" />}
-                  {trashing ? 'Moving' : 'Move to Trash'}
+                  {trashing ? '正在移动' : '移到回收站'}
                 </button>
               </div>
             ))}

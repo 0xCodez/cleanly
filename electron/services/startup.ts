@@ -131,9 +131,9 @@ interface WinSource {
 }
 
 const WIN_SOURCES: WinSource[] = [
-  { prefix: 'hkcu-run', runKey: `HKCU\\${RUN}`, approvedKey: `HKCU\\${APPROVED}\\Run`, location: 'Registry (current user)', elevated: false },
-  { prefix: 'hklm-run', runKey: `HKLM\\${RUN}`, approvedKey: `HKLM\\${APPROVED}\\Run`, location: 'Registry (all users)', elevated: true },
-  { prefix: 'hklm-run32', runKey: `HKLM\\${RUN32}`, approvedKey: `HKLM\\${APPROVED}\\Run32`, location: 'Registry (all users)', elevated: true },
+  { prefix: 'hkcu-run', runKey: `HKCU\\${RUN}`, approvedKey: `HKCU\\${APPROVED}\\Run`, location: '注册表（当前用户）', elevated: false },
+  { prefix: 'hklm-run', runKey: `HKLM\\${RUN}`, approvedKey: `HKLM\\${APPROVED}\\Run`, location: '注册表（所有用户）', elevated: true },
+  { prefix: 'hklm-run32', runKey: `HKLM\\${RUN32}`, approvedKey: `HKLM\\${APPROVED}\\Run32`, location: '注册表（所有用户）', elevated: true },
 ];
 
 /** What setStartup needs to flip an entry; never derived from renderer input. */
@@ -227,8 +227,8 @@ async function listWindows(): Promise<StartupItem[]> {
   const appData = process.env.APPDATA ?? path.join(os.homedir(), 'AppData', 'Roaming');
   const programData = process.env.ProgramData ?? 'C:\\ProgramData';
   const folderTail = path.join('Microsoft', 'Windows', 'Start Menu', 'Programs', 'Startup');
-  await listFolder(path.join(appData, folderTail), `HKCU\\${APPROVED}\\StartupFolder`, 'folder', 'Startup folder', false, items);
-  await listFolder(path.join(programData, folderTail), `HKLM\\${APPROVED}\\StartupFolder`, 'folder-all', 'Startup folder (all users)', true, items);
+  await listFolder(path.join(appData, folderTail), `HKCU\\${APPROVED}\\StartupFolder`, 'folder', '启动文件夹', false, items);
+  await listFolder(path.join(programData, folderTail), `HKLM\\${APPROVED}\\StartupFolder`, 'folder-all', '启动文件夹（所有用户）', true, items);
   return items;
 }
 
@@ -280,7 +280,7 @@ async function runElevated(file: string, args: string[]): Promise<'done' | 'canc
 async function setWindows(id: string, enabled: boolean): Promise<void> {
   if (winTargets.size === 0) await listWindows();
   const target = winTargets.get(id);
-  if (!target) throw new Error('This item cannot be changed from Cleanly');
+  if (!target) throw new Error('此项目无法通过 Cleanly 修改');
   // Same 12-byte value Task Manager writes; deleting it would also mean "enabled".
   const data = (enabled ? '02' : '03') + '0'.repeat(22);
   const args = ['add', target.approvedKey, '/v', target.valueName, '/t', 'REG_BINARY', '/d', data, '/f', ...REG_VIEW];
@@ -293,10 +293,10 @@ async function setWindows(id: string, enabled: boolean): Promise<void> {
   // the registry is the source of truth: whatever the exit codes said, check what is actually stored now
   const now = (await approvedStates(target.approvedKey)).get(target.valueName.toLowerCase()) ?? true;
   if (now === enabled) return;
-  if (outcome === 'cancelled') throw new Error('Permission was not given in the Windows prompt, so nothing changed');
+  if (outcome === 'cancelled') throw new Error('未在 Windows 提示中授予权限，因此未做任何更改');
   throw new Error(target.elevated
-    ? 'Windows did not allow the change. Try again and choose Yes in the permission prompt.'
-    : 'Windows did not allow the change');
+    ? 'Windows 未允许此更改。请重试并在权限提示中选择“是”。'
+    : 'Windows 未允许此更改');
 }
 
 /* ---------- macOS ---------- */
@@ -400,7 +400,7 @@ async function listMac(): Promise<StartupItem[]> {
   const [loaded, overrides] = await Promise.all([loadedLabels(), disabledOverrides()]);
   const items: StartupItem[] = [];
   await listMacDir(path.join(os.homedir(), 'Library', 'LaunchAgents'), 'user', 'LaunchAgents', false, loaded, overrides, items);
-  await listMacDir('/Library/LaunchAgents', 'system', 'LaunchAgents (all users)', true, loaded, overrides, items);
+  await listMacDir('/Library/LaunchAgents', 'system', 'LaunchAgents（所有用户）', true, loaded, overrides, items);
   return items;
 }
 
@@ -410,7 +410,7 @@ const appleScriptString = (s: string) => `"${s.replace(/\\/g, '\\\\').replace(/"
 async function setMac(id: string, enabled: boolean): Promise<void> {
   if (macTargets.size === 0) await listMac();
   const target = macTargets.get(id);
-  if (!target) throw new Error('This item cannot be changed from Cleanly');
+  if (!target) throw new Error('此项目无法通过 Cleanly 修改');
   // LaunchAgents (also the all-users ones) run in each user's GUI domain, not in "system".
   const domain = `gui/${uid()}`;
   const service = `${domain}/${target.label}`;
@@ -420,15 +420,15 @@ async function setMac(id: string, enabled: boolean): Promise<void> {
     await run('/bin/launchctl', enabled ? ['bootstrap', domain, target.plist] : ['bootout', domain, target.plist]);
     return;
   }
-  if (!target.elevated) throw new Error('macOS did not allow this change');
+  if (!target.elevated) throw new Error('macOS 未允许此更改');
   if (!SAFE_LABEL.test(target.label) || !SAFE_PLIST.test(path.basename(target.plist))) {
-    throw new Error('This item cannot be changed from Cleanly');
+    throw new Error('此项目无法通过 Cleanly 修改');
   }
   const cmd = enabled
     ? `/bin/launchctl enable ${shQuote(service)} && (/bin/launchctl bootstrap ${shQuote(domain)} ${shQuote(target.plist)} || true)`
     : `/bin/launchctl disable ${shQuote(service)} && (/bin/launchctl bootout ${shQuote(domain)} ${shQuote(target.plist)} || true)`;
   const res = await run('/usr/bin/osascript', ['-e', `do shell script ${appleScriptString(cmd)} with administrator privileges`], 180000);
-  if (!res.ok) throw new Error('macOS did not allow the change');
+  if (!res.ok) throw new Error('macOS 未允许此更改');
 }
 
 /* ---------- Public API ---------- */
@@ -446,9 +446,9 @@ export async function listStartup(): Promise<StartupItem[]> {
 }
 
 export async function setStartup(id: unknown, enabled: unknown): Promise<StartupItem[]> {
-  if (typeof id !== 'string' || id.length > 600 || typeof enabled !== 'boolean') throw new Error('Invalid request');
+  if (typeof id !== 'string' || id.length > 600 || typeof enabled !== 'boolean') throw new Error('请求无效');
   if (process.platform === 'win32') await setWindows(id, enabled);
   else if (process.platform === 'darwin') await setMac(id, enabled);
-  else throw new Error('Startup items are not supported on this system');
+  else throw new Error('此系统不支持管理启动项');
   return listStartup();
 }

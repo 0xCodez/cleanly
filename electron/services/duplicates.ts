@@ -230,9 +230,9 @@ function groupBy<K>(entries: Entry[], keys: (K | null)[]): [K, Entry[]][] {
 
 export async function scanDuplicates(progress: Progress): Promise<DuplicateGroup[]> {
   const send = throttle(progress);
-  send({ task: 'dupes', phase: 'Looking for files', done: 0, total: 0 });
+  send({ task: 'dupes', phase: '正在查找文件', done: 0, total: 0 });
   const files = await walk(scanRoots(), (seen, dir) =>
-    send({ task: 'dupes', phase: 'Looking for files', done: seen, total: 0, current: dir }));
+    send({ task: 'dupes', phase: '正在查找文件', done: seen, total: 0, current: dir }));
 
   // Only files sharing an exact size can be duplicates.
   const bySize = groupBy(files, files.map((f) => f.size));
@@ -242,7 +242,7 @@ export async function scanDuplicates(progress: Progress): Promise<DuplicateGroup
   const partialTotal = sizeCandidates.length;
   const partialKeys = await mapLimit(sizeCandidates, 6, async (e) => {
     const h = await partialHash(e);
-    send({ task: 'dupes', phase: 'Comparing files', done: ++done, total: partialTotal, current: e.path });
+    send({ task: 'dupes', phase: '正在比较文件', done: ++done, total: partialTotal, current: e.path });
     return h === null ? null : `${e.size}:${h}`;
   });
   const partialGroups = groupBy(sizeCandidates, partialKeys);
@@ -251,7 +251,7 @@ export async function scanDuplicates(progress: Progress): Promise<DuplicateGroup
   done = 0;
   const fullKeys = await mapLimit(fullCandidates, 4, async (e) => {
     const h = await fullHash(e);
-    send({ task: 'dupes', phase: 'Checking contents', done: ++done, total: fullCandidates.length, current: e.path });
+    send({ task: 'dupes', phase: '正在校验内容', done: ++done, total: fullCandidates.length, current: e.path });
     return h;
   });
 
@@ -262,6 +262,6 @@ export async function scanDuplicates(progress: Progress): Promise<DuplicateGroup
     files: g.map((f) => ({ path: f.path, modified: f.modified })).sort((a, b) => b.modified - a.modified),
   }));
   groups.sort((a, b) => b.size * (b.files.length - 1) - a.size * (a.files.length - 1));
-  progress({ task: 'dupes', phase: 'Done', done: groups.length, total: groups.length });
+  progress({ task: 'dupes', phase: '完成', done: groups.length, total: groups.length });
   return groups.slice(0, MAX_GROUPS);
 }

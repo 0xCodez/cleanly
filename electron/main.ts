@@ -70,11 +70,11 @@ function isAppUrl(url: string): boolean {
 
 /** Local absolute paths only. A UNC path (\\host\share) would make Explorer contact that host. */
 function revealablePath(p: unknown): string {
-  if (typeof p !== 'string' || p.length === 0 || p.length > 4096 || p.includes('\0')) throw new Error('That item cannot be shown');
+  if (typeof p !== 'string' || p.length === 0 || p.length > 4096 || p.includes('\0')) throw new Error('无法显示该项目');
   let abs = p;
   if (abs === '~' || abs.startsWith('~/') || abs.startsWith('~\\')) abs = path.join(os.homedir(), abs.slice(1));
-  if (/^[\\/]{2}/.test(abs) || !path.isAbsolute(abs)) throw new Error('That item cannot be shown');
-  if (process.platform === 'win32' && !/^[a-zA-Z]:[\\/]/.test(abs)) throw new Error('That item cannot be shown');
+  if (/^[\\/]{2}/.test(abs) || !path.isAbsolute(abs)) throw new Error('无法显示该项目');
+  if (process.platform === 'win32' && !/^[a-zA-Z]:[\\/]/.test(abs)) throw new Error('无法显示该项目');
   return path.resolve(abs);
 }
 

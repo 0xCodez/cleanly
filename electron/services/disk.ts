@@ -56,7 +56,7 @@ const GENERIC_NAMES = /^(new volume|local disk|новый том|локальн�
 
 function windowsLabel(letter: string, volumeName: string): string {
   const name = volumeName.trim();
-  if (!name || GENERIC_NAMES.test(name)) return `Disk ${letter}:`;
+  if (!name || GENERIC_NAMES.test(name)) return `磁盘 ${letter}:`;
   return `${name} (${letter}:)`;
 }
 
@@ -109,7 +109,7 @@ async function windowsVolumes(): Promise<Volume[]> {
       if (!(await sizes(mount))) continue;
       const type = await run(sys32('fsutil.exe'), ['fsinfo', 'drivetype', `${letter}:`], 5000);
       const fixed = type !== null ? /fixed/i.test(type) : sameMount(mount, sys);
-      if (fixed) vols.push({ mount, label: `Disk ${letter}:`, system: sameMount(mount, sys) });
+      if (fixed) vols.push({ mount, label: `磁盘 ${letter}:`, system: sameMount(mount, sys) });
     }
   }
 
@@ -123,7 +123,7 @@ async function windowsVolumes(): Promise<Volume[]> {
     }
     real.push(v);
   }
-  if (!real.some((v) => v.system)) real.push({ mount: sys, label: `Disk ${sys.charAt(0)}:`, system: true });
+  if (!real.some((v) => v.system)) real.push({ mount: sys, label: `磁盘 ${sys.charAt(0)}:`, system: true });
   return real;
 }
 
@@ -178,7 +178,7 @@ function volumes(): Promise<Volume[]> {
     // do not cache a failure
     if (inventory?.vols === vols) inventory = null;
     const mount = systemMount();
-    return [{ mount, label: isWin ? `Disk ${mount.charAt(0)}:` : isMac ? 'Macintosh HD' : '/', system: true }];
+    return [{ mount, label: isWin ? `磁盘 ${mount.charAt(0)}:` : isMac ? 'Macintosh HD' : '/', system: true }];
   });
   inventory = { at: now, vols };
   return vols;
@@ -225,7 +225,7 @@ export async function getDisk(): Promise<DiskInfo> {
   let label = mount;
   if (isWin) {
     const known = (await volumes().catch((): Volume[] => [])).find((v) => sameMount(v.mount, mount));
-    label = known?.label ?? `Disk ${mount.charAt(0)}:`;
+    label = known?.label ?? `磁盘 ${mount.charAt(0)}:`;
   } else if (isMac) label = 'Macintosh HD';
   return { mount, label, total, free, used: Math.max(0, total - free), system: true };
 }

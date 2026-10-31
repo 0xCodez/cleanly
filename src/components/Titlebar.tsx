@@ -9,12 +9,12 @@ export function Titlebar() {
 
   return (
     <div className={`titlebar ${platform}`}>
-      {isDemo && <span className="tag">Demo data</span>}
+      {isDemo && <span className="tag">演示数据</span>}
       <div className="grow" />
       {busy && (
         <span className="hint">
           <span className="spinner" />
-          {progress?.phase ?? (cleaning ? 'Cleaning…' : 'Scanning…')}
+          {progress?.phase ?? (cleaning ? '正在清理…' : '正在扫描…')}
         </span>
       )}
     </div>
