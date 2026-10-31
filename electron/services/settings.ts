@@ -156,7 +156,11 @@ export async function setApiKey(provider: AiProvider, key: string | null): Promi
   } else {
     const clean = checkKey(provider, key);
     if (!encryptionReady()) {
-      throw new Error('Secure storage is not available on this system, so the key was not saved.');
+      throw new Error(
+        process.platform === 'linux'
+          ? 'No unlocked keyring was found (GNOME Keyring or KWallet), so the key was not saved.'
+          : 'Secure storage is not available on this system, so the key was not saved.',
+      );
     }
     keys[provider] = safeStorage.encryptString(clean).toString('base64');
   }

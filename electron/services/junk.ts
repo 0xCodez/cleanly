@@ -356,16 +356,97 @@ function macDefs(): Def[] {
   ];
 }
 
+const LINUX_BROWSER_CACHES = [
+  'google-chrome', 'google-chrome-beta', 'google-chrome-unstable', 'chromium', 'BraveSoftware', 'microsoft-edge',
+  'microsoft-edge-beta', 'microsoft-edge-dev', 'vivaldi', 'opera', 'mozilla', 'librewolf', 'zen',
+];
+const LINUX_DEV_CACHES = [
+  'pip', 'yarn', 'pnpm', 'go-build', 'ccache', 'sccache', 'electron', 'electron-builder', 'node-gyp', 'ms-playwright', 'deno', 'bazel', 'pypoetry', 'uv',
+];
+const LINUX_BROWSER_CONFIGS = ['google-chrome', 'google-chrome-beta', 'chromium', path.join('BraveSoftware', 'Brave-Browser'), 'microsoft-edge', 'vivaldi'];
+const FLATPAK_BROWSERS: [string, string][] = [
+  ['com.google.Chrome', path.join('config', 'google-chrome')],
+  ['org.chromium.Chromium', path.join('config', 'chromium')],
+  ['com.brave.Browser', path.join('config', 'BraveSoftware', 'Brave-Browser')],
+  ['com.microsoft.Edge', path.join('config', 'microsoft-edge')],
+  ['com.vivaldi.Vivaldi', path.join('config', 'vivaldi')],
+];
+
 function linuxDefs(): Def[] {
+  const cache = process.env.XDG_CACHE_HOME && path.isAbsolute(process.env.XDG_CACHE_HOME) ? process.env.XDG_CACHE_HOME : path.join(home(), '.cache');
+  const config = process.env.XDG_CONFIG_HOME && path.isAbsolute(process.env.XDG_CONFIG_HOME) ? process.env.XDG_CONFIG_HOME : path.join(home(), '.config');
+  const dataHome = process.env.XDG_DATA_HOME && path.isAbsolute(process.env.XDG_DATA_HOME) ? process.env.XDG_DATA_HOME : path.join(home(), '.local', 'share');
+  const flatpakApps = path.join(home(), '.var', 'app');
+  const appCache = (base: string) => ['Cache', 'Code Cache', 'GPUCache', 'DawnCache', 'DawnGraphiteCache', path.join('Service Worker', 'CacheStorage')].map((c) => path.join(base, c));
   return [
     {
       id: 'linux-cache',
       name: 'User caches',
-      description: 'Apps keep these to load faster and rebuild them when needed.',
+      description: 'Thumbnails, shader caches and app caches in ~/.cache. Apps rebuild them when needed.',
       icon: 'layers',
       safe: true,
       kind: 'cache',
-      roots: () => dirs([path.join(home(), '.cache')]),
+      roots: () => dirs([cache], () => [...LINUX_BROWSER_CACHES, ...LINUX_DEV_CACHES]),
+    },
+    {
+      id: 'browser-cache',
+      name: 'Browser caches',
+      description: 'Chrome, Firefox, Brave, Edge and others rebuild these as you browse. Logins and history stay.',
+      icon: 'globe',
+      safe: true,
+      kind: 'cache',
+      roots: async () => {
+        const paths = LINUX_BROWSER_CACHES.map((b) => path.join(cache, b));
+        for (const b of LINUX_BROWSER_CONFIGS) paths.push(...(await chromiumCaches(path.join(config, b))));
+        for (const [appId, userData] of FLATPAK_BROWSERS) paths.push(...(await chromiumCaches(path.join(flatpakApps, appId, userData))));
+        return dirs(paths);
+      },
+    },
+    {
+      id: 'flatpak-cache',
+      name: 'Flatpak app caches',
+      description: 'Each Flatpak app keeps its own cache folder. The apps rebuild them on their own.',
+      icon: 'apps',
+      safe: true,
+      kind: 'cache',
+      roots: async () => dirs((await subdirs(flatpakApps)).map((a) => path.join(a, 'cache'))),
+    },
+    {
+      id: 'app-cache',
+      name: 'App caches',
+      description: 'Discord, Slack, Teams, VS Code and Zoom rebuild these on their own.',
+      icon: 'apps',
+      safe: true,
+      kind: 'cache',
+      roots: () =>
+        dirs([
+          ...appCache(path.join(config, 'discord')),
+          ...appCache(path.join(config, 'Slack')),
+          ...appCache(path.join(config, 'Microsoft', 'Microsoft Teams')),
+          ...appCache(path.join(config, 'teams-for-linux')),
+          ...appCache(path.join(config, 'Code')),
+          path.join(config, 'Code', 'CachedData'),
+          path.join(config, 'Code', 'CachedExtensionVSIXs'),
+          ...appCache(path.join(config, 'Signal')),
+          path.join(home(), '.zoom', 'logs'),
+        ]),
+    },
+    {
+      id: 'dev-cache',
+      name: 'Developer caches',
+      description: 'npm, pip, Yarn, pnpm, Go, Cargo and Gradle caches. The next build downloads or compiles again.',
+      icon: 'code',
+      safe: false,
+      kind: 'cache',
+      roots: () =>
+        dirs([
+          path.join(home(), '.npm', '_cacache'),
+          ...LINUX_DEV_CACHES.map((d) => path.join(cache, d)),
+          path.join(home(), '.yarn', 'berry', 'cache'),
+          path.join(dataHome, 'pnpm', 'store'),
+          path.join(home(), '.gradle', 'caches'),
+          path.join(home(), '.cargo', 'registry', 'cache'),
+        ]),
     },
     {
       id: 'trash',
@@ -375,7 +456,7 @@ function linuxDefs(): Def[] {
       safe: false,
       kind: 'cache',
       // info/ holds the .trashinfo records; leaving them would show ghost items in the file manager.
-      roots: () => dirs([path.join(home(), '.local', 'share', 'Trash', 'files'), path.join(home(), '.local', 'share', 'Trash', 'info')]),
+      roots: () => dirs([path.join(dataHome, 'Trash', 'files'), path.join(dataHome, 'Trash', 'info')]),
     },
     oldDownloadsDef('Trash'),
   ];

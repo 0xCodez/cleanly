@@ -159,25 +159,27 @@ export default function Protection() {
   const issues = [!status.enabled, status.realtime === false, status.firewall === false, defsFresh === 'off'].filter(Boolean).length;
   const level: Level = issues === 0 && status.score >= 80 ? 'good' : !status.enabled || issues > 1 ? 'bad' : 'warn';
 
+  // Linux has no built-in antivirus: the rows describe kernel access control and system updates instead.
+  const hardening = status.kind === 'hardening';
   const facts: { label: string; state: Tri }[] = [
-    { label: status.enabled ? 'Antivirus on' : 'Antivirus off', state: status.enabled ? 'on' : 'off' },
+    { label: `${hardening ? 'Protection' : 'Antivirus'} ${status.enabled ? 'on' : 'off'}`, state: status.enabled ? 'on' : 'off' },
   ];
-  if (status.realtime !== null) facts.push({ label: `Real-time ${status.realtime ? 'on' : 'off'}`, state: tri(status.realtime) });
+  if (status.realtime !== null) facts.push({ label: `${hardening ? 'Access control' : 'Real-time'} ${status.realtime ? 'on' : 'off'}`, state: tri(status.realtime) });
   if (status.firewall !== null) facts.push({ label: `Firewall ${status.firewall ? 'on' : 'off'}`, state: tri(status.firewall) });
   if (status.definitionsUpdated) facts.push({ label: `Updated ${timeAgo(status.definitionsUpdated, now)}`, state: defsFresh });
 
   const rows: { icon: IconName; label: string; detail: string; state: Tri; tag: ReactNode }[] = [
     {
       icon: 'shield',
-      label: 'Antivirus',
+      label: hardening ? 'Security' : 'Antivirus',
       detail: status.provider,
       state: status.enabled ? 'on' : 'off',
       tag: triTag(status.enabled ? 'on' : 'off'),
     },
     {
       icon: 'spark',
-      label: 'Real-time protection',
-      detail: 'Checks files the moment they are opened or downloaded',
+      label: hardening ? 'Access control' : 'Real-time protection',
+      detail: hardening ? 'SELinux or AppArmor limits what each app may touch' : 'Checks files the moment they are opened or downloaded',
       state: tri(status.realtime),
       tag: triTag(tri(status.realtime)),
     },
@@ -190,18 +192,22 @@ export default function Protection() {
     },
     {
       icon: 'clock',
-      label: 'Definitions updated',
+      label: hardening ? 'System updates' : 'Definitions updated',
       detail: status.definitionsUpdated ? timeAgo(status.definitionsUpdated, now) : 'Not reported by your system',
       state: defsFresh,
       tag: triTag(defsFresh, ['Up to date', 'Out of date']),
     },
-    {
-      icon: 'scan',
-      label: 'Last scan',
-      detail: status.lastScan ? timeAgo(status.lastScan, now) : 'Not reported by your system',
-      state: scanFresh,
-      tag: triTag(scanFresh, ['Recent', 'A while ago']),
-    },
+    ...(hardening
+      ? []
+      : [
+          {
+            icon: 'scan' as IconName,
+            label: 'Last scan',
+            detail: status.lastScan ? timeAgo(status.lastScan, now) : 'Not reported by your system',
+            state: scanFresh,
+            tag: triTag(scanFresh, ['Recent', 'A while ago']),
+          },
+        ]),
   ];
 
   return (

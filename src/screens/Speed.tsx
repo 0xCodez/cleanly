@@ -78,7 +78,8 @@ export default function Speed() {
   const locked = list.filter((i) => !i.canToggle).length;
   const admin = list.filter((i) => i.canToggle && i.needsAdmin).length;
   const off = list.length - enabled.length;
-  const askHint = system?.platform === 'darwin' ? 'macOS will ask for your password' : 'Windows will ask for permission';
+  const askHint =
+    system?.platform === 'darwin' ? 'macOS will ask for your password' : system?.platform === 'linux' ? 'Your system will ask for your password' : 'Windows will ask for permission';
 
   return (
     <div className="screen sy-screen">

@@ -5,6 +5,7 @@ import { existsSync, promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import type { InstalledApp } from '../../shared/types';
+import { appliesHere, execProgram, isTrue, readDesktopEntry, resolveIcon, xdgDataDirs } from './desktopEntry';
 import { regQuery, type RegKey } from './startup';
 
 interface RunResult {
@@ -383,6 +384,295 @@ async function uninstallMac(id: string): Promise<{ ok: boolean; message: string 
   }
 }
 
+/* ---------- Linux ---------- */
+
+interface LinuxTarget {
+  kind: 'flatpak' | 'snap' | 'appimage';
+  /** flatpak app id, snap name or AppImage path */
+  ref: string;
+  installation?: 'user' | 'system';
+}
+
+const linuxTargets = new Map<string, LinuxTarget>();
+const FLATPAK_ID = /^[A-Za-z0-9_][A-Za-z0-9_.-]{1,254}$/;
+const SNAP_NAME = /^[a-z0-9][a-z0-9-]{0,39}$/;
+const UNIT: Record<string, number> = { bytes: 1, byte: 1, b: 1, kb: 1e3, mb: 1e6, gb: 1e9, tb: 1e12, kib: 1024, mib: 1024 ** 2, gib: 1024 ** 3, tib: 1024 ** 4 };
+/** Plain env for helper tools: C locale so numbers and sizes parse the same everywhere. */
+const C_ENV = { ...process.env, LC_ALL: 'C', LANG: 'C' };
+
+function runC(file: string, args: string[], timeout = 15000): Promise<RunResult> {
+  return new Promise((resolve) => {
+    execFile(file, args, { timeout, env: C_ENV, maxBuffer: 32 * 1024 * 1024 }, (err, stdout) => {
+      resolve({ ok: !err, stdout: String(stdout ?? '') });
+    });
+  });
+}
+
+function parseHumanSize(s: string): number | undefined {
+  const m = /^([\d.]+)\s*([a-zA-Z]+)$/.exec(s.trim());
+  if (!m) return undefined;
+  const n = Number(m[1]);
+  const unit = UNIT[m[2].toLowerCase()];
+  return Number.isFinite(n) && unit ? Math.round(n * unit) : undefined;
+}
+
+const has = (file: string) => existsSync(file);
+
+async function birth(p: string): Promise<number | undefined> {
+  try {
+    const st = await fs.stat(p);
+    return Math.round(st.birthtimeMs || st.mtimeMs) || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function flatpakRoot(installation: 'user' | 'system'): string {
+  return installation === 'user' ? path.join(os.homedir(), '.local', 'share', 'flatpak') : '/var/lib/flatpak';
+}
+
+async function listFlatpaks(): Promise<InstalledApp[]> {
+  const bin = ['/usr/bin/flatpak', '/bin/flatpak'].find(has);
+  if (!bin) return [];
+  const res = await runC(bin, ['list', '--app', '--columns=application,name,version,installation,size'], 30000);
+  const apps: InstalledApp[] = [];
+  for (const line of res.stdout.split('\n')) {
+    const [appId, name, version, inst, size] = line.split('\t').map((s) => s?.trim());
+    if (!appId || !FLATPAK_ID.test(appId) || (inst !== 'user' && inst !== 'system')) continue;
+    const root = flatpakRoot(inst);
+    const id = `flatpak:${inst}:${appId}`;
+    linuxTargets.set(id, { kind: 'flatpak', ref: appId, installation: inst });
+    const exports = path.join(root, 'exports', 'share');
+    apps.push({
+      id,
+      name: name || appId,
+      version: version || undefined,
+      publisher: inst === 'user' ? 'Flatpak (your account)' : 'Flatpak',
+      size: size ? parseHumanSize(size) : undefined,
+      installed: await birth(path.join(root, 'app', appId)),
+      path: path.join(root, 'app', appId),
+      iconPath: await resolveIcon(appId, [exports]),
+      canUninstall: true,
+    });
+  }
+  return apps;
+}
+
+async function listSnaps(): Promise<InstalledApp[]> {
+  const bin = ['/usr/bin/snap', '/bin/snap'].find(has);
+  if (!bin) return [];
+  const res = await runC(bin, ['list'], 20000);
+  const desktopDir = '/var/lib/snapd/desktop/applications';
+  let desktopFiles: string[] = [];
+  try {
+    desktopFiles = await fs.readdir(desktopDir);
+  } catch {
+    desktopFiles = [];
+  }
+  const apps: InstalledApp[] = [];
+  for (const line of res.stdout.split('\n').slice(1)) {
+    const [name, version, rev, , publisher, notes] = line.trim().split(/\s+/);
+    if (!name || !SNAP_NAME.test(name) || /\b(base|core|snapd|gadget|kernel)\b/.test(notes ?? '')) continue;
+    // Only snaps with a launcher are apps; the rest are runtimes and content packs.
+    const launcher = desktopFiles.find((f) => f.startsWith(`${name}_`) && f.endsWith('.desktop'));
+    if (!launcher) continue;
+    const entry = await readDesktopEntry(path.join(desktopDir, launcher));
+    const snapFile = `/var/lib/snapd/snaps/${name}_${rev}.snap`;
+    let size: number | undefined;
+    try {
+      size = (await fs.stat(snapFile)).size;
+    } catch {
+      size = undefined;
+    }
+    const id = `snap:${name}`;
+    linuxTargets.set(id, { kind: 'snap', ref: name });
+    const icon = entry?.get('Icon');
+    apps.push({
+      id,
+      name: entry?.get('Name') || name,
+      version,
+      publisher: publisher && publisher !== '-' ? `${publisher.replace(/\*$|✓$/u, '')} (Snap)` : 'Snap',
+      size,
+      installed: await birth(snapFile),
+      path: `/snap/${name}`,
+      iconPath: icon && path.isAbsolute(icon) ? icon : await resolveIcon(icon),
+      canUninstall: true,
+    });
+  }
+  return apps;
+}
+
+const APPIMAGE_DIRS = () => ['Applications', 'AppImages', 'Apps', '.local/bin', 'bin'].map((d) => path.join(os.homedir(), d));
+
+async function findAppImages(): Promise<string[]> {
+  const found: string[] = [];
+  for (const dir of APPIMAGE_DIRS()) {
+    let entries: import('node:fs').Dirent[];
+    try {
+      entries = await fs.readdir(dir, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+    for (const e of entries) if (e.isFile() && /\.appimage$/i.test(e.name)) found.push(path.join(dir, e.name));
+  }
+  return found;
+}
+
+function appImageName(file: string): { name: string; version?: string } {
+  const base = path.basename(file).replace(/\.appimage$/i, '').replace(/[-_.](x86[-_]64|amd64|aarch64|arm64|i[36]86|armhf)$/i, '');
+  const m = /^(.*?)[-_ ]v?(\d+(?:\.\d+)+[\w.+-]*)$/.exec(base);
+  return m ? { name: m[1].replace(/[-_]+/g, ' '), version: m[2] } : { name: base.replace(/[-_]+/g, ' ') };
+}
+
+async function listAppImages(): Promise<InstalledApp[]> {
+  const apps: InstalledApp[] = [];
+  for (const file of await findAppImages()) {
+    let st: import('node:fs').Stats;
+    try {
+      st = await fs.stat(file);
+    } catch {
+      continue;
+    }
+    const { name, version } = appImageName(file);
+    const id = `appimage:${shortHash(file)}`;
+    linuxTargets.set(id, { kind: 'appimage', ref: file });
+    apps.push({
+      id,
+      name,
+      version,
+      publisher: 'AppImage',
+      size: st.size,
+      installed: Math.round(st.birthtimeMs || st.mtimeMs) || undefined,
+      path: file,
+      canUninstall: true,
+    });
+  }
+  return apps;
+}
+
+interface PackageInfo {
+  version?: string;
+  size?: number;
+  installed?: number;
+  manager: string;
+}
+
+/** Owning distro package of a file, through rpm or dpkg. */
+async function ownerPackage(file: string): Promise<PackageInfo | null> {
+  if (has('/usr/bin/rpm') && (has('/var/lib/rpm') || has('/usr/lib/sysimage/rpm'))) {
+    const res = await runC('/usr/bin/rpm', ['-qf', '--qf', '%{VERSION}\\t%{SIZE}\\t%{INSTALLTIME}\\n', file], 8000);
+    const line = res.ok ? res.stdout.split('\n')[0] : '';
+    const [version, size, time] = line.split('\t');
+    if (version && size !== undefined) return { version, size: Number(size) || undefined, installed: Number(time) * 1000 || undefined, manager: 'rpm' };
+  }
+  if (has('/usr/bin/dpkg-query') && has('/var/lib/dpkg/status')) {
+    const owner = await runC('/usr/bin/dpkg-query', ['-S', file], 8000);
+    const pkg = owner.ok ? /^([^:,\s]+)(?::[^:\s]+)?:\s/.exec(owner.stdout)?.[1] : undefined;
+    if (pkg) {
+      const res = await runC('/usr/bin/dpkg-query', ['-W', '-f=${Version}\\t${Installed-Size}\\n', pkg], 8000);
+      const [version, kb] = res.stdout.trim().split('\t');
+      if (version) return { version, size: Number(kb) * 1024 || undefined, manager: 'dpkg' };
+    }
+  }
+  return null;
+}
+
+/** Launchers installed by the distro or by other tools: listed for the full picture, removed with the system's software center. */
+async function listDesktopApps(skipPrograms: Set<string>): Promise<InstalledApp[]> {
+  const seen = new Set<string>();
+  const files: string[] = [];
+  for (const d of xdgDataDirs()) {
+    if (/flatpak\/exports|snapd\/desktop/.test(d)) continue;
+    const dir = path.join(d, 'applications');
+    let names: string[];
+    try {
+      names = await fs.readdir(dir);
+    } catch {
+      continue;
+    }
+    for (const n of names) {
+      if (!n.endsWith('.desktop') || seen.has(n)) continue;
+      seen.add(n);
+      files.push(path.join(dir, n));
+    }
+  }
+  const home = os.homedir();
+  const rows = await mapLimit(files, 8, async (file): Promise<InstalledApp | null> => {
+    const e = await readDesktopEntry(file);
+    if (!e || (e.get('Type') ?? 'Application') !== 'Application') return null;
+    if (isTrue(e.get('NoDisplay')) || isTrue(e.get('Hidden')) || !appliesHere(e)) return null;
+    if (e.has('X-Flatpak') || e.has('X-SnapInstanceName')) return null;
+    const program = execProgram(e.get('Exec'));
+    if (!program || skipPrograms.has(program)) return null;
+    const pkg = file.startsWith(home + path.sep) ? null : await ownerPackage(file);
+    return {
+      id: `desktop:${shortHash(file)}`,
+      name: e.get('Name') || path.basename(file, '.desktop'),
+      version: pkg?.version,
+      publisher: pkg ? 'System package' : undefined,
+      size: pkg?.size,
+      installed: pkg?.installed,
+      path: path.isAbsolute(program) ? program : undefined,
+      iconPath: await resolveIcon(e.get('Icon')),
+      canUninstall: false,
+    };
+  });
+  return rows.filter((r): r is InstalledApp => r !== null);
+}
+
+async function listLinux(): Promise<InstalledApp[]> {
+  linuxTargets.clear();
+  const [flatpaks, snaps, appImages] = await Promise.all([
+    listFlatpaks().catch(() => []),
+    listSnaps().catch(() => []),
+    listAppImages().catch(() => []),
+  ]);
+  // A launcher an AppImage integration tool wrote should not list the AppImage twice.
+  const skip = new Set(appImages.map((a) => a.path!).filter(Boolean));
+  const desktop = await listDesktopApps(skip).catch(() => []);
+  return [...flatpaks, ...snaps, ...appImages, ...desktop];
+}
+
+async function uninstallLinux(id: string): Promise<{ ok: boolean; message: string }> {
+  if (linuxTargets.size === 0) await listLinux();
+  const t = linuxTargets.get(id);
+  if (!t) return { ok: false, message: 'This app cannot be removed from Cleanly. Use your software center' };
+
+  if (t.kind === 'appimage') {
+    if (!/\.appimage$/i.test(t.ref) || !APPIMAGE_DIRS().includes(path.dirname(t.ref))) return { ok: false, message: 'This app cannot be removed from Cleanly' };
+    try {
+      await fs.lstat(t.ref);
+    } catch {
+      return { ok: false, message: 'The app is already gone' };
+    }
+    try {
+      await shell.trashItem(t.ref);
+      linuxTargets.delete(id);
+      return { ok: true, message: 'Moved to Trash. You can put it back from there' };
+    } catch {
+      return { ok: false, message: 'Could not move the AppImage to the Trash' };
+    }
+  }
+
+  if (t.kind === 'flatpak') {
+    if (!FLATPAK_ID.test(t.ref)) return { ok: false, message: 'This app cannot be removed from Cleanly' };
+    const bin = ['/usr/bin/flatpak', '/bin/flatpak'].find(has);
+    if (!bin) return { ok: false, message: 'Flatpak is not available' };
+    // System-wide apps make flatpak ask for the password through polkit.
+    const res = await runC(bin, ['uninstall', `--${t.installation ?? 'system'}`, '--noninteractive', '-y', t.ref], 300000);
+    if (res.ok) linuxTargets.delete(id);
+    return res.ok ? { ok: true, message: 'Uninstalled' } : { ok: false, message: 'Flatpak did not remove the app. The password prompt may have been cancelled' };
+  }
+
+  if (!SNAP_NAME.test(t.ref)) return { ok: false, message: 'This app cannot be removed from Cleanly' };
+  const bin = ['/usr/bin/snap', '/bin/snap'].find(has);
+  if (!bin) return { ok: false, message: 'Snap is not available' };
+  // snapd asks for the password through polkit.
+  const res = await runC(bin, ['remove', t.ref], 300000);
+  if (res.ok) linuxTargets.delete(id);
+  return res.ok ? { ok: true, message: 'Uninstalled' } : { ok: false, message: 'Snap did not remove the app. The password prompt may have been cancelled' };
+}
+
 /* ---------- Public API ---------- */
 
 export async function listApps(): Promise<InstalledApp[]> {
@@ -390,6 +680,7 @@ export async function listApps(): Promise<InstalledApp[]> {
   try {
     if (process.platform === 'win32') apps = await listWindows();
     else if (process.platform === 'darwin') apps = await listMac();
+    else apps = await listLinux();
   } catch {
     apps = [];
   }
@@ -400,5 +691,5 @@ export async function uninstallApp(id: string): Promise<{ ok: boolean; message: 
   if (typeof id !== 'string') return { ok: false, message: 'Invalid request' };
   if (process.platform === 'win32') return uninstallWindows(id);
   if (process.platform === 'darwin') return uninstallMac(id);
-  return { ok: false, message: 'Uninstalling is not supported on this system' };
+  return uninstallLinux(id);
 }

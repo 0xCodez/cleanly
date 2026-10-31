@@ -4,6 +4,7 @@ import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import type { StartupItem } from '../../shared/types';
+import { appliesHere, cleanExec, isTrue, readDesktopEntry, xdgConfigDirs, xdgConfigHome, type DesktopEntry } from './desktopEntry';
 
 interface RunResult {
   ok: boolean;
@@ -431,6 +432,164 @@ async function setMac(id: string, enabled: boolean): Promise<void> {
   if (!res.ok) throw new Error('macOS did not allow the change');
 }
 
+/* ---------- Linux (XDG autostart) ---------- */
+
+interface LinuxTarget {
+  /** file name, identical in the user and system autostart folders */
+  file: string;
+  /** the system entry this one shadows, when there is one */
+  systemFile?: string;
+  /** whether the user folder already holds this entry */
+  userFile?: string;
+}
+
+const linuxTargets = new Map<string, LinuxTarget>();
+const CLEANLY_MARK = '# Written by Cleanly to switch this startup entry off; delete this file to undo.';
+const SAFE_DESKTOP = /^[A-Za-z0-9][A-Za-z0-9 ._@+-]{0,200}\.desktop$/;
+
+/**
+ * Pieces of the desktop session itself: switching them off can leave the user without a panel,
+ * password prompts or a working keyboard layout. Listed as built in, never toggled.
+ */
+const CORE_AUTOSTART = [
+  /plasmashell/i, /kglobalaccel/i, /powerdevil/i, /polkit/i, /keyring/i, /kwallet/i, /at-spi/i, /xdg-user-dirs/i,
+  /xembedsniproxy/i, /gmenudbusmenuproxy/i, /\bgsd-/i, /gnome-shell/i, /org\.gnome\.SettingsDaemon/i, /xfce4-/i, /xfsettingsd/i,
+  /lxqt-/i, /lxsession/i, /cinnamon-/i, /mate-settings/i, /\bibus\b/i, /fcitx/i, /pipewire/i, /pulseaudio/i, /wireplumber/i,
+  /spice-vdagent/i, /vmware-user/i, /vboxclient/i, /snap-userd/i, /kxkb/i, /kaccess/i, /session-restore/i, /\borca\b/i,
+];
+const CORE_GNOME_PHASES = /^(Initialization|WindowManager|Panel|Desktop|DisplayServer|EarlyInitialization|PreDisplayServer)$/i;
+
+function isCoreAutostart(file: string, e: DesktopEntry): boolean {
+  const phase = e.get('X-KDE-autostart-phase');
+  if (phase === '0' || phase === '1') return true;
+  if (CORE_GNOME_PHASES.test(e.get('X-GNOME-Autostart-Phase') ?? '')) return true;
+  if (isTrue(e.get('X-GNOME-AutoRestart'))) return true;
+  const hay = `${file} ${e.get('Exec') ?? ''}`;
+  return CORE_AUTOSTART.some((r) => r.test(hay));
+}
+
+const entryEnabled = (e: DesktopEntry) =>
+  !isTrue(e.get('Hidden')) && e.get('X-GNOME-Autostart-enabled')?.toLowerCase() !== 'false';
+
+async function desktopFiles(dir: string): Promise<string[]> {
+  try {
+    return (await fs.readdir(dir)).filter((n) => n.endsWith('.desktop') && SAFE_DESKTOP.test(n));
+  } catch {
+    return [];
+  }
+}
+
+const userAutostartDir = () => path.join(xdgConfigHome(), 'autostart');
+
+async function listLinux(): Promise<StartupItem[]> {
+  linuxTargets.clear();
+  const userDir = userAutostartDir();
+  // Earlier config dirs win, like the session manager reads them.
+  const systemFiles = new Map<string, string>();
+  for (const dir of xdgConfigDirs()) {
+    for (const f of await desktopFiles(path.join(dir, 'autostart'))) if (!systemFiles.has(f)) systemFiles.set(f, path.join(dir, 'autostart', f));
+  }
+  const userFiles = new Map((await desktopFiles(userDir)).map((f): [string, string] => [f, path.join(userDir, f)]));
+
+  const items: StartupItem[] = [];
+  for (const file of new Set([...userFiles.keys(), ...systemFiles.keys()])) {
+    const userFile = userFiles.get(file);
+    const systemFile = systemFiles.get(file);
+    const user = userFile ? await readDesktopEntry(userFile) : null;
+    const sys = systemFile ? await readDesktopEntry(systemFile) : null;
+    // A user entry overrides the system one of the same name, even if it only says Hidden=true.
+    const effective = user ?? sys;
+    if (!effective || (effective.get('Type') ?? 'Application') !== 'Application') continue;
+    const described = user?.get('Exec') ? user : sys ?? user;
+    if (!described || !appliesHere(described)) continue;
+    const core = isCoreAutostart(file, described);
+    // Core session parts the user never touched are noise in this list.
+    if (core && !user) continue;
+
+    const id = `linux:${file}`;
+    const command = cleanExec(described.get('Exec')) || file;
+    const name = described.get('Name') || file.replace(/\.desktop$/, '');
+    if (!core) linuxTargets.set(id, { file, systemFile: systemFile ?? undefined, userFile: userFile ?? undefined });
+    items.push({
+      id,
+      name,
+      command,
+      location: userFile && !systemFile ? 'Autostart (your account)' : 'Autostart (all users)',
+      enabled: entryEnabled(effective),
+      impact: impactOf(name, command),
+      canToggle: !core,
+      needsAdmin: false,
+    });
+  }
+  return items;
+}
+
+/** Sets a key inside the [Desktop Entry] group, adding it when missing. */
+function setDesktopKey(text: string, key: string, value: string): string {
+  const lines = text.split(/\r?\n/);
+  let start = -1;
+  let end = lines.length;
+  for (let i = 0; i < lines.length; i++) {
+    const t = lines[i].trim();
+    if (t === '[Desktop Entry]') start = i;
+    else if (start >= 0 && t.startsWith('[')) {
+      end = i;
+      break;
+    }
+  }
+  if (start < 0) {
+    lines.unshift('[Desktop Entry]');
+    start = 0;
+    end = lines.length;
+  }
+  const re = new RegExp(`^\\s*${key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*=`);
+  for (let i = start + 1; i < end; i++) {
+    if (re.test(lines[i])) {
+      lines[i] = `${key}=${value}`;
+      return lines.join('\n');
+    }
+  }
+  let at = end;
+  while (at > start + 1 && lines[at - 1].trim() === '') at--;
+  lines.splice(at, 0, `${key}=${value}`);
+  return lines.join('\n');
+}
+
+async function setLinux(id: string, enabled: boolean): Promise<void> {
+  if (linuxTargets.size === 0) await listLinux();
+  const target = linuxTargets.get(id);
+  if (!target || !SAFE_DESKTOP.test(target.file)) throw new Error('This item cannot be changed from Cleanly');
+  const userDir = userAutostartDir();
+  const dest = path.join(userDir, target.file);
+  if (path.dirname(dest) !== userDir) throw new Error('This item cannot be changed from Cleanly');
+
+  // Never write through a link: it could point anywhere.
+  const existing = await fs.lstat(dest).catch(() => null);
+  if (existing && !existing.isFile()) throw new Error('This item cannot be changed from Cleanly');
+
+  // Edit the user's own copy, or shadow the system entry with one: system files are never touched.
+  let text: string;
+  if (existing) text = await fs.readFile(dest, 'utf8');
+  else if (target.systemFile) text = `${CLEANLY_MARK}\n${await fs.readFile(target.systemFile, 'utf8')}`;
+  else throw new Error('The startup entry is gone');
+
+  // Switching back on: an override Cleanly wrote is simply removed, so the system entry applies unchanged.
+  if (enabled && existing && target.systemFile && text.startsWith(CLEANLY_MARK)) {
+    const sys = await readDesktopEntry(target.systemFile);
+    if (sys && entryEnabled(sys)) {
+      await fs.unlink(dest);
+      return;
+    }
+  }
+
+  text = setDesktopKey(text, 'Hidden', enabled ? 'false' : 'true');
+  text = setDesktopKey(text, 'X-GNOME-Autostart-enabled', enabled ? 'true' : 'false');
+  await fs.mkdir(userDir, { recursive: true });
+  const tmp = `${dest}.cleanly-${process.pid}.tmp`;
+  await fs.writeFile(tmp, text.endsWith('\n') ? text : `${text}\n`, { mode: 0o644 });
+  await fs.rename(tmp, dest);
+}
+
 /* ---------- Public API ---------- */
 
 export async function listStartup(): Promise<StartupItem[]> {
@@ -438,6 +597,7 @@ export async function listStartup(): Promise<StartupItem[]> {
   try {
     if (process.platform === 'win32') items = await listWindows();
     else if (process.platform === 'darwin') items = await listMac();
+    else items = await listLinux();
   } catch {
     items = [];
   }
@@ -449,6 +609,6 @@ export async function setStartup(id: unknown, enabled: unknown): Promise<Startup
   if (typeof id !== 'string' || id.length > 600 || typeof enabled !== 'boolean') throw new Error('Invalid request');
   if (process.platform === 'win32') await setWindows(id, enabled);
   else if (process.platform === 'darwin') await setMac(id, enabled);
-  else throw new Error('Startup items are not supported on this system');
+  else await setLinux(id, enabled);
   return listStartup();
 }

@@ -1,7 +1,7 @@
 import os from 'node:os';
 import path from 'node:path';
 import type { LargeFile, ScanProgress } from '../../shared/types';
-import { dataDriveMounts, listDisks } from './disk';
+import { dataDriveMounts, foreignMounts, listDisks } from './disk';
 import { displayPath, isInside, localAppData, samePath, walk, type WalkFile } from './walk';
 
 type Progress = (p: ScanProgress) => void;
@@ -42,7 +42,7 @@ const DRIVE_SKIP_TOP = new Set(
         'Windows', 'Windows.old', 'Program Files', 'Program Files (x86)', 'ProgramData', 'System Volume Information', 'Recovery',
         'Boot', 'EFI', 'PerfLogs', 'WindowsApps', 'WpSystem', 'Config.Msi', 'MSOCache', 'OneDriveTemp',
       ]
-    : ['System', 'Library', 'private', 'usr', 'bin', 'sbin', 'cores', 'opt', 'etc', 'var', 'Backups.backupdb']
+    : ['System', 'Library', 'private', 'usr', 'bin', 'sbin', 'cores', 'opt', 'etc', 'var', 'Backups.backupdb', 'lost+found', 'timeshift', 'proc', 'sys', 'dev', 'run', 'boot']
   ).map((s) => s.toLowerCase()),
 );
 const SYSTEM_FILES = /^(pagefile\.sys|hiberfil\.sys|swapfile\.sys|dumpstack\.log(\.tmp)?)$/i;
@@ -53,14 +53,18 @@ export async function scanLargeFiles(minBytes: unknown, progress: Progress): Pro
   const n = Number(minBytes);
   const min = Number.isFinite(n) && n >= MB ? n : 100 * MB;
   const home = os.homedir();
-  const appData = process.platform === 'darwin' ? path.join(home, 'Library') : path.join(home, 'AppData');
+  const appData =
+    process.platform === 'darwin' ? path.join(home, 'Library') : process.platform === 'win32' ? path.join(home, 'AppData') : path.join(home, '.config');
   const skipExact = [
     path.join(localAppData(), 'Temp'),
     os.tmpdir(),
     path.join(home, 'Library', 'Caches'),
     path.join(home, '.Trash'),
     path.join(home, '.cache'),
+    path.join(home, '.local', 'share', 'Trash'),
   ];
+  // Linux: other file systems mounted inside home (network shares, FUSE) are not the user's disk.
+  const foreignHome = await foreignMounts(home);
 
   // walk hands out resolved paths, so a lowercase lookup is enough on the case-insensitive desktop file systems
   const skipSet = new Set(skipExact.map((s) => path.resolve(s).toLowerCase()));
@@ -90,7 +94,7 @@ export async function scanLargeFiles(minBytes: unknown, progress: Progress): Pro
   const homeStats = await walk(home, {
     maxEntries: MAX_ENTRIES,
     skipDir: (p, name) =>
-      skipSet.has(p.toLowerCase()) || (CACHE_DIRS.has(name.toLowerCase()) && isInside(appData, p)),
+      foreignHome.has(p) || skipSet.has(p.toLowerCase()) || (CACHE_DIRS.has(name.toLowerCase()) && isInside(appData, p)),
     onFile: collect,
     onTick: ticker(homePhase),
   });
@@ -108,10 +112,11 @@ export async function scanLargeFiles(minBytes: unknown, progress: Progress): Pro
     if (budget <= 0) break;
     const phase = `Looking on ${d.label}`;
     progress({ task: 'large', phase, done: seen, total: 0 });
+    const foreign = await foreignMounts(d.mount);
     const stats = await walk(d.mount, {
       maxEntries: budget,
       skipDir: (p, name, depth) =>
-        isInside(home, p) || samePath(home, p) ||
+        foreign.has(p) || isInside(home, p) || samePath(home, p) ||
         (depth === 1 && (DRIVE_SKIP_TOP.has(name.toLowerCase()) || name.startsWith(isWin ? '$' : '.'))),
       onFile: (f) => {
         if (f.depth === 1 && SYSTEM_FILES.test(f.name)) return;
