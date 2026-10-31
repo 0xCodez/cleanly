@@ -17,8 +17,8 @@ const PROVIDERS: Record<AiProvider, { name: string; keyUrl: string; placeholder:
   chatgpt: { name: 'ChatGPT', keyUrl: 'https://platform.openai.com/api-keys', placeholder: 'sk-...' },
 };
 
-const SUGGESTIONS = ['What can I safely delete?', 'Why is my disk so full?', "Which large files haven't I used in a year?"];
-const PRIVACY = 'Only file names, paths and sizes are shared — never file contents.';
+const SUGGESTIONS = ['哪些文件可以安全删除？', '为什么我的磁盘这么满？', '哪些大文件已经一年没用过了？'];
+const PRIVACY = '只会共享文件名、路径和大小 — 绝不会共享文件内容。';
 const LARGE_MIN = 500 * 1024 * 1024;
 
 const norm = (p: string) => p.replace(/\\/g, '/').replace(/\/+$/, '').toLowerCase();
@@ -37,16 +37,16 @@ function KeySetup({ provider }: { provider: AiProvider }) {
     try {
       await setApiKey(provider, k);
       setKey('');
-      toast(`${info.name} is ready`);
+      toast(`${info.name} 已就绪`);
     } catch (e) {
-      toast(e instanceof Error ? e.message : 'Could not save the key', 'err');
+      toast(e instanceof Error ? e.message : '无法保存密钥', 'err');
     } finally {
       setSaving(false);
     }
   };
 
   const openKeys = () => {
-    api.openExternal(info.keyUrl).catch(() => toast('Could not open the browser', 'err'));
+    api.openExternal(info.keyUrl).catch(() => toast('无法打开浏览器', 'err'));
   };
 
   return (
@@ -54,9 +54,9 @@ function KeySetup({ provider }: { provider: AiProvider }) {
       <span className="sy-orb" style={{ width: 52, height: 52, borderRadius: 18 }}>
         <Icon name="lock" />
       </span>
-      <h3>Connect {info.name}</h3>
+      <h3>连接 {info.name}</h3>
       <p>
-        The assistant uses your own {info.name} API key. It is stored securely on this computer and only sent to {info.name}.
+        AI助手使用你自己的 {info.name} API 密钥。密钥会安全地存储在这台电脑上，并且只会发送给 {info.name}。
       </p>
       <div className="sy-keyrow">
         <input
@@ -64,22 +64,22 @@ function KeySetup({ provider }: { provider: AiProvider }) {
           type="password"
           autoComplete="off"
           spellCheck={false}
-          placeholder={`Paste your key (${info.placeholder})`}
+          placeholder={`粘贴你的密钥（${info.placeholder}）`}
           value={key}
           onChange={(e) => setKey(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Enter') void save();
           }}
-          aria-label={`${info.name} API key`}
+          aria-label={`${info.name} API 密钥`}
         />
         <button type="button" className="btn primary" onClick={() => void save()} disabled={saving || !key.trim()}>
           {saving ? <span className="spinner" style={{ borderColor: 'rgba(255,255,255,0.35)', borderTopColor: '#fff' }} /> : <Icon name="check" />}
-          Save key
+          保存密钥
         </button>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
         <button type="button" className="sy-link" onClick={openKeys}>
-          Get a key
+          获取密钥
           <Icon name="arrow" />
         </button>
         <span className="sy-privacy">
@@ -126,7 +126,7 @@ export default function Assistant() {
     try {
       await updateSettings({ aiProvider: p });
     } catch (e) {
-      toast(e instanceof Error ? e.message : 'Could not switch the assistant', 'err');
+      toast(e instanceof Error ? e.message : '无法切换AI助手', 'err');
     } finally {
       setSwitching(false);
     }
@@ -156,7 +156,7 @@ export default function Assistant() {
     const q = raw.trim();
     if (!q || asking) return;
     if (!ready) {
-      toast(`Add your ${PROVIDERS[provider].name} key first`, 'err');
+      toast(`请先添加你的 ${PROVIDERS[provider].name} 密钥`, 'err');
       return;
     }
     setText('');
@@ -172,7 +172,7 @@ export default function Assistant() {
       const advice = await api.askAi(q, context);
       push({ role: 'ai', advice });
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'The assistant could not answer';
+      const msg = e instanceof Error ? e.message : 'AI助手无法回答';
       push({ role: 'err', text: msg });
       toast(msg, 'err');
     } finally {
@@ -198,7 +198,7 @@ export default function Assistant() {
   };
 
   const reveal = (p: string) => {
-    api.revealPath(p).catch(() => toast('Could not show that item', 'err'));
+    api.revealPath(p).catch(() => toast('无法显示该项目', 'err'));
   };
 
   const moveToTrash = async (key: string, p: string) => {
@@ -209,13 +209,13 @@ export default function Assistant() {
       if (res.removed > 0) {
         setTrashed((s) => new Set(s).add(norm(p)));
         setLargeFiles((fs) => (fs ? fs.filter((f) => norm(f.path) !== norm(p)) : fs));
-        toast(`Moved ${baseName(p)} to Trash — you can restore it from there`);
+        toast(`已将 ${baseName(p)} 移到回收站 — 你可以从那里恢复它`);
         void refreshDisk();
       } else {
-        toast(res.skipped[0] ?? `Could not move ${baseName(p)} to Trash`, 'err');
+        toast(res.skipped[0] ?? `无法将 ${baseName(p)} 移到回收站`, 'err');
       }
     } catch (e) {
-      toast(e instanceof Error ? e.message : `Could not move ${baseName(p)} to Trash`, 'err');
+      toast(e instanceof Error ? e.message : `无法将 ${baseName(p)} 移到回收站`, 'err');
     } finally {
       setTrashing(null);
     }
@@ -223,12 +223,12 @@ export default function Assistant() {
 
   return (
     <div className="screen">
-      <ScreenHead title="Assistant" sub="Ask about your disk in plain words. You get clear advice, and nothing is removed without your say.">
+      <ScreenHead title="AI助手" sub="用日常语言询问你的磁盘情况。你会得到清晰的建议，未经你同意不会删除任何内容。">
         {settings && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             {switching && <span className="spinner" />}
             <Segmented<AiProvider>
-              label="Assistant provider"
+              label="AI助手服务商"
               value={provider}
               onChange={(p) => void switchProvider(p)}
               options={[
@@ -244,7 +244,7 @@ export default function Assistant() {
         {!settings ? (
           <div className="sy-center">
             <span className="spinner" />
-            Getting the assistant ready
+            正在准备AI助手
           </div>
         ) : !hasKey ? (
           <KeySetup provider={provider} />
@@ -253,9 +253,9 @@ export default function Assistant() {
             <span className="sy-orb">
               <Icon name="assist" />
             </span>
-            <h2>What would you like to know?</h2>
+            <h2>你想了解什么？</h2>
             <p>
-              I can look at your scan results, the biggest folders and large files, then suggest what is safe to remove and what is worth keeping.
+              我可以查看你的扫描结果、最大的文件夹和大文件，然后建议哪些可以安全删除、哪些值得保留。
             </p>
             <span className="sy-privacy">
               <Icon name="shield" />
@@ -291,7 +291,7 @@ export default function Assistant() {
                 <Icon name="assist" />
               </span>
               <div className="sy-ai-body">
-                <span className="sy-by">{PROVIDERS[advice.provider]?.name ?? 'Assistant'}</span>
+                <span className="sy-by">{PROVIDERS[advice.provider]?.name ?? 'AI助手'}</span>
                 <div className="sy-bubble">{advice.answer}</div>
                 {advice.suggestions.length > 0 && (
                   <div className="sy-sugs">
@@ -311,7 +311,7 @@ export default function Assistant() {
                             <div className="sy-sug-top">
                               <b>{baseName(s.path)}</b>
                               <span className={`tag ${s.verdict}`}>
-                                {s.verdict === 'safe' ? 'Safe to remove' : s.verdict === 'review' ? 'Review first' : 'Keep'}
+                                {s.verdict === 'safe' ? '可安全删除' : s.verdict === 'review' ? '请先确认' : '保留'}
                               </span>
                             </div>
                             <div className="sy-sug-path" title={s.path}>
@@ -322,39 +322,39 @@ export default function Assistant() {
                               {gone ? (
                                 <span className="sy-lock">
                                   <Icon name="check" />
-                                  Moved to Trash
+                                  已移到回收站
                                 </span>
                               ) : (
                                 <>
                                   <button type="button" className="btn small" onClick={() => reveal(full)}>
                                     <Icon name="reveal" />
-                                    Reveal
+                                    显示位置
                                   </button>
                                   {canTrash &&
                                     (trashing === key ? (
                                       <span className="sy-lock">
                                         <span className="spinner" />
-                                        Moving to Trash
+                                        正在移到回收站
                                       </span>
                                     ) : confirm === key ? (
                                       <div className="sy-confirm">
-                                        <span>Move to Trash? You can restore it.</span>
+                                        <span>移到回收站？你可以恢复它。</span>
                                         <button type="button" className="btn small ghost" onClick={() => setConfirm(null)}>
-                                          Cancel
+                                          取消
                                         </button>
                                         <button type="button" className="btn small danger" onClick={() => void moveToTrash(key, full)}>
-                                          Move
+                                          移动
                                         </button>
                                       </div>
                                     ) : (
                                       <button type="button" className="btn small" disabled={trashing !== null} onClick={() => setConfirm(key)}>
                                         <Icon name="trash" />
-                                        Move to Trash
+                                        移到回收站
                                       </button>
                                     ))}
                                   {junkish && s.verdict !== 'keep' && (
                                     <button type="button" className="btn small ghost" onClick={() => go('cleanup')}>
-                                      Clean in Cleanup
+                                      在清理中处理
                                       <Icon name="arrow" />
                                     </button>
                                   )}
@@ -377,7 +377,7 @@ export default function Assistant() {
             <span className="sy-ai-ico">
               <Icon name="assist" />
             </span>
-            <div className="sy-bubble" style={{ padding: 0 }} role="status" aria-label="Thinking">
+            <div className="sy-bubble" style={{ padding: 0 }} role="status" aria-label="思考中">
               <span className="sy-dots">
                 <i />
                 <i />
@@ -403,18 +403,18 @@ export default function Assistant() {
             ref={taRef}
             className="sy-ta"
             rows={1}
-            placeholder={ready ? 'Ask anything about your disk' : `Add your ${PROVIDERS[provider].name} key to start`}
+            placeholder={ready ? '询问任何关于磁盘的问题' : `添加你的 ${PROVIDERS[provider].name} 密钥以开始`}
             value={text}
             disabled={!ready}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={onKey}
-            aria-label="Message"
+            aria-label="消息"
           />
-          <button type="button" className="sy-send" disabled={!ready || asking || !text.trim()} onClick={() => void send(text)} aria-label="Send">
+          <button type="button" className="sy-send" disabled={!ready || asking || !text.trim()} onClick={() => void send(text)} aria-label="发送">
             {asking ? <span className="spinner" style={{ borderColor: 'rgba(255,255,255,0.35)', borderTopColor: '#fff' }} /> : <Icon name="arrow" />}
           </button>
         </div>
-        <div className="sy-hint">Enter to send · Shift+Enter for a new line</div>
+        <div className="sy-hint">按 Enter 发送 · Shift+Enter 换行</div>
       </div>
     </div>
   );

@@ -216,7 +216,7 @@ function iconFor(files: string[]): Promise<string | null | undefined> {
 
 /** Real system icons as PNG data URLs, keyed by the path exactly as requested. Unknown or invalid paths are left out. */
 export async function getFileIcons(paths: unknown): Promise<Record<string, string>> {
-  if (!Array.isArray(paths) || paths.length > MAX_PATHS) throw new Error('Invalid request');
+  if (!Array.isArray(paths) || paths.length > MAX_PATHS) throw new Error('请求无效');
   const wanted: { key: string; files: string[] }[] = [];
   const seen = new Set<string>();
   for (const p of paths) {

@@ -48,9 +48,9 @@ mac:
   entitlements: build/entitlements.mac.plist
   entitlementsInherit: build/entitlements.mac.plist
   extendInfo:
-    NSDesktopFolderUsageDescription: Cleanly measures your Desktop to show what takes up space.
-    NSDocumentsFolderUsageDescription: Cleanly measures your Documents to show what takes up space.
-    NSDownloadsFolderUsageDescription: Cleanly looks for old downloads you may want to remove.
+    NSDesktopFolderUsageDescription: Cleanly 会测量你的桌面文件夹，以显示哪些内容占用了空间。
+    NSDocumentsFolderUsageDescription: Cleanly 会测量你的文稿文件夹，以显示哪些内容占用了空间。
+    NSDownloadsFolderUsageDescription: Cleanly 会查找你可能想删除的旧下载文件。
 dmg:
   title: Cleanly
   sign: false

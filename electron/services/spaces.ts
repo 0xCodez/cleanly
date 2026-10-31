@@ -61,7 +61,7 @@ function iconFor(name: string, isDir: boolean, absPath: string): IconName {
 }
 
 function displayName(name: string): string {
-  if (name.toLowerCase() === 'appdata') return 'App data';
+  if (name.toLowerCase() === 'appdata') return '应用数据';
   return name;
 }
 
@@ -83,7 +83,7 @@ function toChildren(parent: string, buckets: Map<string, Bucket>): SpaceNode[] {
   const rest = all.slice(MAX_CHILDREN);
   if (rest.length > 0) {
     shown.push({
-      name: `${rest.length.toLocaleString('en-US')} more items`,
+      name: `其他 ${rest.length.toLocaleString('en-US')} 个项目`,
       path: parent,
       size: rest.reduce((s, n) => s + n.size, 0),
       kind: 'other',
@@ -132,7 +132,7 @@ interface MeasureOpts {
 /** Walks one folder; its direct children become the drill-down level. Null when empty or out of budget. */
 async function measure(scan: Scan, dir: string, opts: MeasureOpts): Promise<SpaceNode | null> {
   if (scan.budget <= 0) return null;
-  const phase = `Measuring ${opts.label}`;
+  const phase = `正在测量 ${opts.label}`;
   scan.step(phase);
   const isDownloads = samePath(dir, scan.known.downloads);
   const isAppData = /^(appdata|library)$/i.test(path.basename(dir)) && isInside(os.homedir(), dir);
@@ -250,7 +250,7 @@ function looseNodes(dir: string, files: { name: string; size: number }[]): Space
   const total = small.reduce((s, f) => s + f.size, 0);
   if (total > 0) {
     const buckets = new Map(small.map((f): [string, Bucket] => [f.name, { size: f.size, reclaimable: 0, isDir: false }]));
-    out.push({ name: 'Loose files', path: dir, size: total, kind: 'file', icon: 'file', reclaimable: 0, children: toChildren(dir, buckets) });
+    out.push({ name: '散落文件', path: dir, size: total, kind: 'file', icon: 'file', reclaimable: 0, children: toChildren(dir, buckets) });
   }
   return out;
 }
@@ -283,13 +283,13 @@ async function scanHome(scan: Scan): Promise<SpaceNode> {
 
   const homeSize = sum(children, 'size');
   const disk = await getDisk().catch(() => null);
-  const rest = remainderNode(disk, homeSize, 'System & apps');
+  const rest = remainderNode(disk, homeSize, '系统与应用');
   if (rest) children.push(rest);
 
   children.sort((a, b) => b.size - a.size);
   scan.done = scan.total;
-  scan.step('Done');
-  return { name: 'Home', path: home, size: sum(children, 'size'), kind: 'folder', icon: 'user', reclaimable: sum(children, 'reclaimable'), children };
+  scan.step('完成');
+  return { name: '主文件夹', path: home, size: sum(children, 'size'), kind: 'folder', icon: 'user', reclaimable: sum(children, 'reclaimable'), children };
 }
 
 async function scanDrive(scan: Scan, disk: DiskInfo): Promise<SpaceNode> {
@@ -308,7 +308,7 @@ async function scanDrive(scan: Scan, disk: DiskInfo): Promise<SpaceNode> {
     const size = sum(kids, 'size');
     if (size > 0) {
       kids.sort((a, b) => b.size - a.size);
-      children.push({ name: 'Your files', path: home, size, kind: 'folder', icon: 'user', reclaimable: sum(kids, 'reclaimable'), children: kids });
+      children.push({ name: '你的文件', path: home, size, kind: 'folder', icon: 'user', reclaimable: sum(kids, 'reclaimable'), children: kids });
     }
   }
 
@@ -346,12 +346,12 @@ async function scanDrive(scan: Scan, disk: DiskInfo): Promise<SpaceNode> {
   }
   children.push(...looseNodes(mount, known.filter((f) => !SYSTEM_FILES.test(f.name))));
 
-  const rest = remainderNode(disk, sum(children, 'size'), disk.system ? 'System & hidden' : 'Hidden & reserved');
+  const rest = remainderNode(disk, sum(children, 'size'), disk.system ? '系统与隐藏' : '隐藏与保留');
   if (rest) children.push(rest);
 
   children.sort((a, b) => b.size - a.size);
   scan.done = scan.total;
-  scan.step('Done');
+  scan.step('完成');
   return {
     name: disk.label,
     path: mount,
@@ -368,9 +368,9 @@ export async function scanSpaces(progress: Progress, root?: unknown): Promise<Sp
   const scan = new Scan(progress);
   if (root === undefined || root === null) return scanHome(scan);
   if (typeof root !== 'string' || root.length === 0 || root.length > 260 || root.includes('\0')) {
-    throw new Error('That drive is not available');
+    throw new Error('该驱动器不可用');
   }
   const disk = (await listDisks()).find((d) => sameMount(d.mount, root));
-  if (!disk) throw new Error('That drive is not available');
+  if (!disk) throw new Error('该驱动器不可用');
   return scanDrive(scan, disk);
 }

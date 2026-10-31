@@ -19,29 +19,29 @@ export function formatBytes(bytes: number): string {
 }
 
 export function timeAgo(ms: number | null | undefined, now = Date.now()): string {
-  if (!ms) return 'never';
+  if (!ms) return '从未';
   const s = Math.max(0, (now - ms) / 1000);
-  if (s < 60) return 'just now';
+  if (s < 60) return '刚刚';
   const steps: [number, string][] = [
-    [60, 'minute'],
-    [60, 'hour'],
-    [24, 'day'],
-    [30, 'month'],
-    [12, 'year'],
+    [60, '分钟'],
+    [60, '小时'],
+    [24, '天'],
+    [30, '个月'],
+    [12, '年'],
   ];
   let v = s / 60;
-  let label = 'minute';
+  let label = '分钟';
   for (let i = 1; i < steps.length && v >= steps[i][0]; i++) {
     v /= steps[i][0];
     label = steps[i][1];
   }
   const n = Math.floor(v);
-  return `${n} ${label}${n === 1 ? '' : 's'} ago`;
+  return `${n}${label}前`;
 }
 
 export function formatDate(ms: number | null | undefined): string {
   if (!ms) return '—';
-  return new Date(ms).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  return new Date(ms).toLocaleDateString('zh-CN', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 /** Replace the home directory with ~ and keep long paths readable. */

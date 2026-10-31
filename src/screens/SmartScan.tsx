@@ -172,8 +172,8 @@ export default function SmartScan() {
     setArmed(false);
     const res = await cleanJunk(safeIds);
     if (!res) return;
-    const note = res.skipped.length ? ` · ${res.skipped.slice(0, 2).join(', ')}` : res.failed ? ` · ${res.failed} in use, skipped` : '';
-    toast(`Freed ${formatBytes(res.freed)}${note}`);
+    const note = res.skipped.length ? ` · ${res.skipped.slice(0, 2).join(', ')}` : res.failed ? ` · ${res.failed} 个正在使用，已跳过` : '';
+    toast(`已释放 ${formatBytes(res.freed)}${note}`);
   }, [canClean, settings, armed, cleanJunk, safeIds, toast]);
 
   const rescan = useCallback(() => {
@@ -204,37 +204,37 @@ export default function SmartScan() {
   let eyebrow: string;
   let dot = '';
   if (cleaning) {
-    eyebrow = phase ? `Cleaning · ${phase}` : 'Cleaning…';
+    eyebrow = phase ? `正在清理 · ${phase}` : '正在清理…';
     dot = 'busy';
   } else if (scanning) {
-    eyebrow = phase ? `Scanning · ${phase}` : 'Scanning…';
+    eyebrow = phase ? `正在扫描 · ${phase}` : '正在扫描…';
     dot = 'busy';
   } else if (afterClean && cleanedAt !== null) {
-    eyebrow = `${allClear ? 'All clear' : 'Cleaned'} · ${timeAgo(cleanedAt, now)}`;
+    eyebrow = `${allClear ? '全部清理完成' : '已清理'} · ${timeAgo(cleanedAt, now)}`;
   } else if (lastScanAt) {
-    eyebrow = `Scan complete · ${new Date(lastScanAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    eyebrow = `扫描完成 · ${new Date(lastScanAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}`;
   } else {
-    eyebrow = 'Not scanned yet';
+    eyebrow = '尚未扫描';
     dot = 'idle';
   }
 
   const busyProgress = (scanning || cleaning) && progress && progress.total > 0 ? progress.done / progress.total : undefined;
 
   let hint: string;
-  if (cleaning) hint = 'Deleting caches and temp files…';
-  else if (scanning) hint = 'Looking for caches and temp files…';
-  else if (armed) hint = 'Caches are deleted for good · press again';
-  else if (itemCount) hint = `${itemCount.toLocaleString('en-US')} items · ${safeIds.length} ${safeIds.length === 1 ? 'group' : 'groups'} · ↵ to clean`;
-  else if (lastScanAt) hint = 'Nothing safe to remove right now';
-  else hint = 'Run a scan to see what can go';
+  if (cleaning) hint = '正在删除缓存和临时文件…';
+  else if (scanning) hint = '正在查找缓存和临时文件…';
+  else if (armed) hint = '缓存将被永久删除 · 再次点击确认';
+  else if (itemCount) hint = `${itemCount.toLocaleString('zh-CN')} 项 · ${safeIds.length} 个分组 · 按 ↵ 清理`;
+  else if (lastScanAt) hint = '目前没有可安全删除的内容';
+  else hint = '运行扫描，看看哪些可以清理';
 
-  let ctaLabel = 'Clean';
-  let ctaSub = reclaimable > 0 ? formatBytes(reclaimable) : 'Nothing to clean';
-  if (cleaning) [ctaLabel, ctaSub] = ['Cleaning', formatBytes(reclaimable)];
-  else if (scanning) [ctaLabel, ctaSub] = ['Scanning', phase ?? 'one moment'];
-  else if (armed) [ctaLabel, ctaSub] = ['Clean now?', `${formatBytes(reclaimable)} for good`];
-  else if (nothingLeft) [ctaLabel, ctaSub] = ['Rescan', allClear ? 'all clear' : 'nothing to clean'];
-  else if (!lastScanAt) [ctaLabel, ctaSub] = ['Scan', 'find junk'];
+  let ctaLabel = '清理';
+  let ctaSub = reclaimable > 0 ? formatBytes(reclaimable) : '无需清理';
+  if (cleaning) [ctaLabel, ctaSub] = ['正在清理', formatBytes(reclaimable)];
+  else if (scanning) [ctaLabel, ctaSub] = ['正在扫描', phase ?? '请稍候'];
+  else if (armed) [ctaLabel, ctaSub] = ['确认清理？', `永久删除 ${formatBytes(reclaimable)}`];
+  else if (nothingLeft) [ctaLabel, ctaSub] = ['重新扫描', allClear ? '全部清理完成' : '无需清理'];
+  else if (!lastScanAt) [ctaLabel, ctaSub] = ['扫描', '查找垃圾文件'];
 
   const ctaAction = nothingLeft || (!lastScanAt && !scanning) ? rescan : clean;
   const ctaDisabled = !nothingLeft && !!lastScanAt && !canClean;
@@ -248,7 +248,7 @@ export default function SmartScan() {
     if (rest.length) {
       out.push({
         id: '__more',
-        name: `+${rest.length} more`,
+        name: `+${rest.length} 更多`,
         size: sum(rest.map((n) => n.size)),
         icon: 'more',
         badge: badge(sum(rest.map((n) => n.reclaimable))),
@@ -277,12 +277,12 @@ export default function SmartScan() {
     ? ''
     : usageKnown
       ? stale
-        ? `${stale} not used for 6+ months`
-        : 'All used in the last 6 months'
-      : 'Installed on this computer';
+        ? `${stale} 个超过 6 个月未使用`
+        : '近 6 个月内均有使用'
+      : '已安装在此电脑上';
 
   const prot = protection.data;
-  const protSub = prot ? (prot.notes[0] ?? `${prot.provider} is ${prot.enabled ? 'on' : 'off'}`) : '';
+  const protSub = prot ? (prot.notes[0] ?? `${prot.provider} 已${prot.enabled ? '开启' : '关闭'}`) : '';
   const openProtection = () => go('protection');
   const onProtKey = (e: ReactKeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -294,7 +294,7 @@ export default function SmartScan() {
   return (
     <div className="screen home">
       <div className="home-top">
-        <section className="hero card-w rise" style={delay(0.08)} aria-label="Scan result">
+        <section className="hero card-w rise" style={delay(0.08)} aria-label="扫描结果">
           <div className="hero-plume">
             <Flow mode="plume" calm={afterClean} pulse={cleanPulse} />
           </div>
@@ -303,11 +303,11 @@ export default function SmartScan() {
               <span className={`dot ${dot}`} />
               <span className="eyebrow-t">{eyebrow}</span>
             </span>
-            <h1>{afterClean ? 'Left to clean' : 'Ready to reclaim'}</h1>
+            <h1>{afterClean ? '待清理' : '可释放空间'}</h1>
             <div className="big" aria-live="polite">
               <span>{big.value}</span> <small>{big.unit}</small>
             </div>
-            <p>Caches and temp files are deleted for good — they rebuild themselves. Your own files always go to Trash.</p>
+            <p>缓存和临时文件将被永久删除——它们会自动重建。你的个人文件始终会移至回收站。</p>
             <div className="actions">
               <CleanButton
                 label={ctaLabel}
@@ -320,7 +320,7 @@ export default function SmartScan() {
               />
               <div className="act-text">
                 <button type="button" className="link" onClick={() => go('cleanup')}>
-                  Review what gets removed <Icon name="arrow" size={16} />
+                  查看将删除的内容 <Icon name="arrow" size={16} />
                 </button>
                 <span className="hint">{hint}</span>
                 {(scanning || cleaning) && (
@@ -330,7 +330,7 @@ export default function SmartScan() {
                 )}
                 {armed && (
                   <button type="button" className="cancel" onClick={() => setArmed(false)}>
-                    Cancel
+                    取消
                   </button>
                 )}
               </div>
@@ -338,11 +338,11 @@ export default function SmartScan() {
           </div>
         </section>
 
-        <section className="map card-w rise" style={delay(0.16)} aria-label="Space map">
+        <section className="map card-w rise" style={delay(0.16)} aria-label="空间地图">
           <div className="map-head">
-            <b>Space map</b>
+            <b>空间地图</b>
             <button type="button" className="link" onClick={() => go('spaces')}>
-              Open ›
+              打开 ›
             </button>
           </div>
           <div className="map-body">
@@ -350,12 +350,12 @@ export default function SmartScan() {
               bubbles.length ? (
                 <Bubbles items={bubbles} onSelect={() => go('spaces')} />
               ) : (
-                <div className="map-empty">No folders to show yet</div>
+                <div className="map-empty">暂无可显示的文件夹</div>
               )
             ) : spacesError && !spacesScanning ? (
               <div className="map-empty">
                 <button type="button" className="btn small" onClick={() => void scanSpaces()}>
-                  <Icon name="scan" /> Measure again
+                  <Icon name="scan" /> 重新测量
                 </button>
               </div>
             ) : (
@@ -373,17 +373,17 @@ export default function SmartScan() {
               hasBadges ? (
                 <>
                   <i className="hot-key" />
-                  <span>Badge: space you can free there</span>
+                  <span>角标：此处可释放的空间</span>
                 </>
               ) : (
-                <span>{afterClean ? 'No folders left to clean' : 'Sized by how much space they take'}</span>
+                <span>{afterClean ? '没有需要清理的文件夹了' : '气泡大小表示占用空间'}</span>
               )
             ) : spacesError && !spacesScanning ? (
-              <span>Could not measure your folders</span>
+              <span>无法测量你的文件夹</span>
             ) : (
               <>
                 <span className="spinner" />
-                <span>Measuring folders…</span>
+                <span>正在测量文件夹…</span>
               </>
             )}
           </div>
@@ -400,7 +400,7 @@ export default function SmartScan() {
             <span className="glass-ico">
               <Icon name="broom" />
             </span>
-            <b>Cleanup</b>
+            <b>清理</b>
           </div>
           <div className="lc-num">
             {junk ? (
@@ -412,27 +412,27 @@ export default function SmartScan() {
               <span className="lc-skel" />
             )}
           </div>
-          <div className="lc-sub">{allClear ? 'Caches & temp files removed' : 'Caches · temp files · trash'}</div>
+          <div className="lc-sub">{allClear ? '缓存和临时文件已删除' : '缓存 · 临时文件 · 回收站'}</div>
           <div className="lc-foot">
             {allClear ? (
               <span className="pill done">
                 <Icon name="check" />
-                Removed
+                已删除
               </span>
             ) : (
               <button type="button" className="pill" onClick={() => void clean()} disabled={!canClean}>
                 {cleaning ? (
                   <>
                     <span className="spinner pill-spin" />
-                    Removing
+                    正在删除
                   </>
                 ) : armed ? (
                   <>
-                    Confirm <Icon name="check" />
+                    确认 <Icon name="check" />
                   </>
                 ) : (
                   <>
-                    Remove <Icon name="arrow" />
+                    删除 <Icon name="arrow" />
                   </>
                 )}
               </button>
@@ -446,13 +446,13 @@ export default function SmartScan() {
             <span className="glass-ico">
               <Icon name="gauge" />
             </span>
-            <b>Speed</b>
+            <b>启动加速</b>
           </div>
           <div className="lc-num">
             {startupItems ? (
               <>
                 <strong>{heavy}</strong>
-                <em>{heavy === 1 ? 'heavy app' : 'heavy apps'}</em>
+                <em>个高影响应用</em>
               </>
             ) : startup.error ? (
               <strong>—</strong>
@@ -462,16 +462,16 @@ export default function SmartScan() {
           </div>
           <div className="lc-sub">
             {startupItems
-              ? `At login · ${enabledItems.length} of ${startupItems.length} items on`
+              ? `登录时 · 已启用 ${startupItems.length} 项中的 ${enabledItems.length} 项`
               : startup.error
-                ? 'Could not read login items'
-                : 'Checking login items…'}
+                ? '无法读取登录项'
+                : '正在检查登录项…'}
           </div>
           <div className="lc-foot">
             <button
               type="button"
               className={`slider${startupItems ? '' : ' loading'}`}
-              aria-label="Manage apps that start at login"
+              aria-label="管理登录时启动的应用"
               onClick={() => go('speed')}
             >
               <span className="fill" style={sliderFill} />
@@ -485,7 +485,7 @@ export default function SmartScan() {
           style={delay(0.36)}
           role="button"
           tabIndex={0}
-          aria-label="Open Protection"
+          aria-label="打开安全防护"
           onClick={openProtection}
           onKeyDown={onProtKey}
         >
@@ -494,7 +494,7 @@ export default function SmartScan() {
             <span className="glass-ico">
               <Icon name="shield" />
             </span>
-            <b>Protection</b>
+            <b>安全防护</b>
           </div>
           <div className="lc-num">
             {prot ? (
@@ -509,7 +509,7 @@ export default function SmartScan() {
             )}
           </div>
           <div className="lc-sub" title={protSub}>
-            {prot ? protSub : protection.error ? 'Could not read protection status' : 'Checking protection…'}
+            {prot ? protSub : protection.error ? '无法读取防护状态' : '正在检查防护状态…'}
           </div>
           <div className="lc-foot parts" aria-hidden="true">
             {PARTICLES.map((s, i) => (
@@ -525,13 +525,13 @@ export default function SmartScan() {
             <span className="glass-ico">
               <Icon name="apps" />
             </span>
-            <b>Applications</b>
+            <b>应用程序</b>
           </div>
           <div className="lc-num">
             {appList ? (
               <>
                 <strong>{appList.length}</strong>
-                <em>{appList.length === 1 ? 'app' : 'apps'}</em>
+                <em>个应用</em>
               </>
             ) : apps.error ? (
               <strong>—</strong>
@@ -539,10 +539,10 @@ export default function SmartScan() {
               <span className="lc-skel" />
             )}
           </div>
-          <div className="lc-sub">{appList ? appsSub : apps.error ? 'Could not list apps' : 'Listing installed apps…'}</div>
+          <div className="lc-sub">{appList ? appsSub : apps.error ? '无法列出应用' : '正在列出已安装的应用…'}</div>
           <div className="lc-foot">
             <button type="button" className="pill" onClick={() => go('apps')}>
-              Review <Icon name="arrow" />
+              查看 <Icon name="arrow" />
             </button>
           </div>
         </article>

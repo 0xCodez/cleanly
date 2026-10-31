@@ -8,9 +8,9 @@ import { useStore } from '../state';
 import './system.css';
 
 const GROUPS: { impact: StartupItem['impact']; title: string; hint: string }[] = [
-  { impact: 'high', title: 'High impact', hint: 'These slow your start the most' },
-  { impact: 'medium', title: 'Medium impact', hint: 'Noticeable, but lighter' },
-  { impact: 'low', title: 'Low impact', hint: 'Barely felt at login' },
+  { impact: 'high', title: '高影响', hint: '这些最拖慢开机速度' },
+  { impact: 'medium', title: '中影响', hint: '有一定影响，但较轻' },
+  { impact: 'low', title: '低影响', hint: '登录时几乎感觉不到' },
 ];
 
 const ABSOLUTE = /^(?:[a-z]:[\\/]|\\\\|\/)/i;
@@ -40,7 +40,7 @@ export default function Speed() {
       setItems(await api.startupItems());
     } catch (e) {
       setFailed(true);
-      toast(e instanceof Error ? e.message : 'Could not read startup apps', 'err');
+      toast(e instanceof Error ? e.message : '无法读取开机启动项', 'err');
     } finally {
       setLoading(false);
     }
@@ -55,9 +55,9 @@ export default function Speed() {
     setPending(item.id);
     try {
       setItems(await api.setStartupItem(item.id, enabled));
-      toast(`${enabled ? 'Turned on' : 'Turned off'} ${item.name} — takes effect next start`);
+      toast(`已${enabled ? '开启' : '关闭'} ${item.name} — 下次开机时生效`);
     } catch (e) {
-      toast(e instanceof Error ? e.message : `Could not change ${item.name}`, 'err');
+      toast(e instanceof Error ? e.message : `无法更改 ${item.name}`, 'err');
     } finally {
       setPending(null);
     }
@@ -78,27 +78,27 @@ export default function Speed() {
   const locked = list.filter((i) => !i.canToggle).length;
   const admin = list.filter((i) => i.canToggle && i.needsAdmin).length;
   const off = list.length - enabled.length;
-  const askHint = system?.platform === 'darwin' ? 'macOS will ask for your password' : 'Windows will ask for permission';
+  const askHint = system?.platform === 'darwin' ? 'macOS 会要求输入密码' : 'Windows 会请求权限';
 
   return (
     <div className="screen sy-screen">
-      <ScreenHead title="Speed" sub="Pick which apps launch with your computer. Fewer at login means a quicker, calmer start.">
+      <ScreenHead title="开机启动项" sub="选择哪些应用随电脑开机启动。登录时启动的应用越少，开机越快、越流畅。">
         <button type="button" className="btn small" onClick={() => void load()} disabled={loading}>
           {loading ? <span className="spinner" /> : <Icon name="history" />}
-          Refresh
+          刷新
         </button>
       </ScreenHead>
 
       {loading && !items ? (
         <div className="card-w sy-center">
           <span className="spinner" />
-          Looking at what starts with your computer
+          正在查看随电脑启动的项目
         </div>
       ) : failed && !items ? (
         <div className="card-w">
-          <Empty icon="warning" title="Could not read startup apps" text="Something blocked the check. Try again in a moment.">
+          <Empty icon="warning" title="无法读取开机启动项" text="检查时遇到了阻碍。请稍后重试。">
             <button type="button" className="btn" onClick={() => void load()}>
-              Try again
+              重试
             </button>
           </Empty>
         </div>
@@ -112,17 +112,17 @@ export default function Speed() {
                 <span className="glass-ico">
                   <Icon name="gauge" />
                 </span>
-                <b>Startup</b>
+                <b>开机启动项</b>
               </div>
               <div className="lc-num">
                 <strong>{enabled.length}</strong>
-                <em>of {list.length} on</em>
+                <em>/ {list.length} 已开启</em>
               </div>
               <div className="lc-sub">
-                {enabled.length === 1 ? '1 app opens' : `${enabled.length} apps open`} when your computer starts
+                电脑启动时打开 {enabled.length} 个应用
               </div>
               <div className="lc-foot">
-                <div className="slider on sy-slider" role="img" aria-label={`${Math.round(share * 100)}% of startup apps are on`}>
+                <div className="slider on sy-slider" role="img" aria-label={`${Math.round(share * 100)}% 的开机启动项已开启`}>
                   <span className="fill" style={{ width: `calc((100% - 10px) * ${Math.max(share, 0.04)})` }} />
                   <span className="knob" style={{ left: `calc((100% - 36px) * ${share} + 2px)` }} />
                 </div>
@@ -131,30 +131,30 @@ export default function Speed() {
 
             <section className="card-w panel">
               <div className="sy-sec-head">
-                <h2>At a glance</h2>
+                <h2>概览</h2>
               </div>
               <p className="sy-note" style={{ margin: 0 }}>
-                Turning an app off only stops it from launching at login. Nothing is uninstalled, and you can switch it back on any time.
-                {admin > 0 && ' Items marked Admin are system-wide, so you will be asked for permission first.'}
+                关闭应用只是阻止它在登录时启动。不会卸载任何内容，你可以随时重新开启。
+                {admin > 0 && ' 标记为管理员的项目是系统级的，因此会先向你请求权限。'}
               </p>
               <div className="sy-stats">
                 <div className={`sy-stat${heavyOn ? ' hot' : ''}`}>
                   <strong>{heavyOn}</strong>
-                  <span>heavy apps on</span>
+                  <span>高影响应用已开启</span>
                 </div>
                 <div className="sy-stat">
                   <strong>{off}</strong>
-                  <span>turned off</span>
+                  <span>已关闭</span>
                 </div>
                 {locked > 0 || admin === 0 ? (
                   <div className="sy-stat">
                     <strong>{locked}</strong>
-                    <span>locked by the system</span>
+                    <span>被系统锁定</span>
                   </div>
                 ) : (
                   <div className="sy-stat">
                     <strong>{admin}</strong>
-                    <span>need admin rights</span>
+                    <span>需要管理员权限</span>
                   </div>
                 )}
               </div>
@@ -163,7 +163,7 @@ export default function Speed() {
 
           {list.length === 0 ? (
             <div className="card-w">
-              <Empty icon="power" title="Nothing starts with your computer" text="Your login is already as light as it gets." />
+              <Empty icon="power" title="没有随电脑启动的项目" text="你的登录已经尽可能轻量了。" />
             </div>
           ) : (
             <div className="sy-stagger sy-groups">
@@ -174,10 +174,10 @@ export default function Speed() {
                   <section key={g.impact} className="card-w panel">
                     <div className="sy-sec-head">
                       <h2>{g.title}</h2>
-                      <span className={`tag ${g.impact}`}>{g.impact[0].toUpperCase() + g.impact.slice(1)}</span>
+                      <span className={`tag ${g.impact}`}>{g.impact === 'high' ? '高' : g.impact === 'medium' ? '中' : '低'}</span>
                       <span className="grow" />
                       <span className="sy-count">
-                        {rows.filter((r) => r.enabled).length} of {rows.length} on · {g.hint}
+                        {rows.filter((r) => r.enabled).length} / {rows.length} 已开启 · {g.hint}
                       </span>
                     </div>
                     <div className="list">
@@ -203,34 +203,34 @@ export default function Speed() {
                                 {asks && (
                                   <span className="sy-admin" title={askHint}>
                                     <Icon name="shield" />
-                                    Admin
+                                    管理员
                                   </span>
                                 )}
                               </div>
                               <div className="sub sy-cmd" title={item.command}>
-                                {item.command || 'No command recorded'}
+                                {item.command || '未记录命令'}
                               </div>
-                              {asks && <div className={`sub sy-ask${busy ? ' on' : ''}`}>{busy ? 'Waiting for your permission…' : askHint}</div>}
+                              {asks && <div className={`sub sy-ask${busy ? ' on' : ''}`}>{busy ? '正在等待你授权…' : askHint}</div>}
                             </div>
                             <span className="sy-loc">{item.location}</span>
                             {item.canToggle ? (
                               busy ? (
-                                <span className="sy-pending" role="status" aria-label={`Changing ${item.name}`}>
+                                <span className="sy-pending" role="status" aria-label={`正在更改 ${item.name}`}>
                                   <span className="spinner" />
                                 </span>
                               ) : (
                                 <span title={asks ? askHint : undefined} className="sy-switch">
                                   <Toggle
                                     checked={item.enabled}
-                                    label={`Start ${item.name} at login${asks ? ` (${askHint.toLowerCase()})` : ''}`}
+                                    label={`登录时启动 ${item.name}${asks ? `（${askHint}）` : ''}`}
                                     onChange={(v) => void toggle(item, v)}
                                   />
                                 </span>
                               )
                             ) : (
-                              <span className="sy-lock" title="This item is controlled by your system or an administrator policy and cannot be changed here">
+                              <span className="sy-lock" title="此项目由系统或管理员策略控制，无法在此处更改">
                                 <Icon name="lock" />
-                                Managed by the system
+                                由系统管理
                               </span>
                             )}
                           </div>

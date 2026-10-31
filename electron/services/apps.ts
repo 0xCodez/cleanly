@@ -210,7 +210,7 @@ function normalizeCommand(raw: string): string {
 async function uninstallWindows(id: string): Promise<{ ok: boolean; message: string }> {
   if (winCommands.size === 0) await listWindows();
   const command = winCommands.get(id);
-  if (!command) return { ok: false, message: 'This app has no uninstaller' };
+  if (!command) return { ok: false, message: '此应用没有卸载程序' };
   return new Promise((resolve) => {
     let settled = false;
     const done = (r: { ok: boolean; message: string }) => {
@@ -221,13 +221,13 @@ async function uninstallWindows(id: string): Promise<{ ok: boolean; message: str
     try {
       // shell:true is limited to this registry-sourced string; renderer input never reaches it.
       const child = spawn(normalizeCommand(command), { shell: true, detached: true, stdio: 'ignore', windowsHide: false });
-      child.once('error', () => done({ ok: false, message: 'Could not start the uninstaller' }));
+      child.once('error', () => done({ ok: false, message: '无法启动卸载程序' }));
       child.once('spawn', () => {
         child.unref();
-        done({ ok: true, message: 'The uninstaller is open' });
+        done({ ok: true, message: '卸载程序已打开' });
       });
     } catch {
-      done({ ok: false, message: 'Could not start the uninstaller' });
+      done({ ok: false, message: '无法启动卸载程序' });
     }
   });
 }
@@ -368,18 +368,18 @@ function isAllowedAppPath(p: string): boolean {
 async function uninstallMac(id: string): Promise<{ ok: boolean; message: string }> {
   if (macPaths.size === 0) await listMac();
   const appPath = macPaths.get(id);
-  if (!appPath || !isAllowedAppPath(appPath)) return { ok: false, message: 'This app cannot be removed from Cleanly' };
+  if (!appPath || !isAllowedAppPath(appPath)) return { ok: false, message: '此应用无法通过 Cleanly 移除' };
   try {
     await fs.lstat(appPath);
   } catch {
-    return { ok: false, message: 'The app is already gone' };
+    return { ok: false, message: '此应用已被删除' };
   }
   try {
     await shell.trashItem(appPath);
     macPaths.delete(id);
-    return { ok: true, message: 'Moved to Trash. You can put it back from there' };
+    return { ok: true, message: '已移至废纸篓。你可以从废纸篓中将其放回。' };
   } catch {
-    return { ok: false, message: 'macOS needs your permission. Drag the app to the Trash in Finder' };
+    return { ok: false, message: '需要 macOS 授权。请在访达中将应用拖到废纸篓。' };
   }
 }
 
@@ -397,8 +397,8 @@ export async function listApps(): Promise<InstalledApp[]> {
 }
 
 export async function uninstallApp(id: string): Promise<{ ok: boolean; message: string }> {
-  if (typeof id !== 'string') return { ok: false, message: 'Invalid request' };
+  if (typeof id !== 'string') return { ok: false, message: '请求无效' };
   if (process.platform === 'win32') return uninstallWindows(id);
   if (process.platform === 'darwin') return uninstallMac(id);
-  return { ok: false, message: 'Uninstalling is not supported on this system' };
+  return { ok: false, message: '此系统不支持卸载应用' };
 }

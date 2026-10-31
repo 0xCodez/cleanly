@@ -72,7 +72,7 @@ export async function scanLargeFiles(minBytes: unknown, progress: Progress): Pro
   };
   let last = 0;
   let seen = 0;
-  const homePhase = 'Looking for large files';
+  const homePhase = '正在查找大文件';
   progress({ task: 'large', phase: homePhase, done: 0, total: 0 });
 
   const collect = (f: WalkFile) => {
@@ -106,7 +106,7 @@ export async function scanLargeFiles(minBytes: unknown, progress: Progress): Pro
   for (const d of drives) {
     const budget = Math.min(MAX_ENTRIES, TOTAL_ENTRIES - seen);
     if (budget <= 0) break;
-    const phase = `Looking on ${d.label}`;
+    const phase = `正在查找 ${d.label}`;
     progress({ task: 'large', phase, done: seen, total: 0 });
     const stats = await walk(d.mount, {
       maxEntries: budget,
@@ -123,6 +123,6 @@ export async function scanLargeFiles(minBytes: unknown, progress: Progress): Pro
   }
 
   trim();
-  progress({ task: 'large', phase: 'Done', done: found.length, total: found.length });
+  progress({ task: 'large', phase: '完成', done: found.length, total: found.length });
   return found;
 }

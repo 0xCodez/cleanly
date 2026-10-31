@@ -209,10 +209,10 @@ export async function trashPaths(paths: unknown): Promise<CleanResult> {
   }
 
   result.failed = blocked + locked + errors;
-  if (locked) result.skipped.push(`${plural(locked, 'item is', 'items are')} in use`);
-  if (blocked) result.skipped.push(`${plural(blocked, 'item', 'items')} blocked for safety`);
-  if (errors) result.skipped.push(`${plural(errors, 'item', 'items')} could not be moved to the Trash`);
-  if (gone) result.skipped.push(`${plural(gone, 'item was', 'items were')} already gone`);
+  if (locked) result.skipped.push(`${plural(locked, '个项目', '个项目')}正在使用中`);
+  if (blocked) result.skipped.push(`${plural(blocked, '个项目', '个项目')}出于安全原因被阻止`);
+  if (errors) result.skipped.push(`${plural(errors, '个项目', '个项目')}无法移至回收站`);
+  if (gone) result.skipped.push(`${plural(gone, '个项目', '个项目')}已经不存在`);
   return result;
 }
 

@@ -21,9 +21,9 @@ const DAY = 24 * 60 * 60 * 1000;
 
 function age(ms: number): string {
   const days = Math.floor((Date.now() - ms) / DAY);
-  if (days <= 0) return 'today';
-  if (days === 1) return 'yesterday';
-  return `${days} days ago`;
+  if (days <= 0) return '今天';
+  if (days === 1) return '昨天';
+  return `${days} 天前`;
 }
 
 function freshness(ms: number | null, fresh: number, stale: number, points: number): number {
@@ -110,26 +110,26 @@ async function windowsStatus(): Promise<ProtectionStatus> {
     provider = thirdParty[0].name!;
     enabled = true;
     realtime = true;
-    notes.push(`${provider} is protecting this PC`);
-    notes.push(avUpToDate(thirdParty[0].state) ? 'Virus definitions are up to date' : 'Virus definitions may be out of date');
+    notes.push(`${provider} 正在保护这台电脑`);
+    notes.push(avUpToDate(thirdParty[0].state) ? '病毒库已是最新' : '病毒库可能已过期');
   } else if (mp) {
     enabled = defenderActive;
     realtime = defenderActive && Boolean(mp.RealTimeProtectionEnabled);
     definitionsUpdated = mp.SigUpdated ?? null;
     const scans = [mp.QuickScan, mp.FullScan].filter((t): t is number => typeof t === 'number');
     lastScan = scans.length ? Math.max(...scans) : null;
-    notes.push(enabled ? 'Antivirus is on' : 'Antivirus is off');
-    notes.push(realtime ? 'Real-time protection is on' : 'Real-time protection is off');
-    if (definitionsUpdated !== null) notes.push(`Virus definitions updated ${age(definitionsUpdated)}`);
-    notes.push(lastScan !== null ? `Last scan ${age(lastScan)}` : 'No scan on record yet');
+    notes.push(enabled ? '防病毒已开启' : '防病毒已关闭');
+    notes.push(realtime ? '实时保护已开启' : '实时保护已关闭');
+    if (definitionsUpdated !== null) notes.push(`病毒库更新：${age(definitionsUpdated)}`);
+    notes.push(lastScan !== null ? `上次扫描：${age(lastScan)}` : '暂无扫描记录');
   } else if (avs.length > 0) {
     const any = avs.find((a) => avIsOn(a.state)) ?? avs[0];
     provider = any.name ?? provider;
     enabled = avIsOn(any.state);
     realtime = enabled;
-    notes.push(enabled ? `${provider} is on` : `${provider} is off`);
+    notes.push(enabled ? `${provider} 已开启` : `${provider} 已关闭`);
   } else {
-    notes.push('Could not read antivirus status');
+    notes.push('无法读取防病毒状态');
   }
 
   const profiles = asArray(raw.fw).filter((p) => p.Name);
@@ -139,11 +139,11 @@ async function windowsStatus(): Promise<ProtectionStatus> {
     const off = profiles.filter((p) => !p.Enabled);
     firewall = off.length === 0;
     firewallShare = (profiles.length - off.length) / profiles.length;
-    if (off.length === 0) notes.push('Firewall is on');
-    else if (off.length === profiles.length) notes.push('Firewall is off');
-    else for (const p of off) notes.push(`Firewall is off for ${p.Name} networks`);
+    if (off.length === 0) notes.push('防火墙已开启');
+    else if (off.length === profiles.length) notes.push('防火墙已关闭');
+    else for (const p of off) notes.push(`${p.Name} 网络的防火墙已关闭`);
   } else {
-    notes.push('Could not read firewall status');
+    notes.push('无法读取防火墙状态');
   }
 
   const score = Math.round(
@@ -191,18 +191,18 @@ async function macStatus(): Promise<ProtectionStatus> {
 
   const gkText = `${gk.stdout} ${gk.stderr}`;
   const gatekeeper: boolean | null = /assessments enabled/i.test(gkText) ? true : /assessments disabled/i.test(gkText) ? false : null;
-  notes.push(gatekeeper === null ? 'Could not read Gatekeeper status' : gatekeeper ? 'Gatekeeper is on' : 'Gatekeeper is off');
+  notes.push(gatekeeper === null ? '无法读取 Gatekeeper 状态' : gatekeeper ? 'Gatekeeper 已开启' : 'Gatekeeper 已关闭');
 
   const fwText = fw.stdout;
   const firewall: boolean | null = /enabled|State = [12]/i.test(fwText) ? true : /disabled|State = 0/i.test(fwText) ? false : null;
-  notes.push(firewall === null ? 'Could not read firewall status' : firewall ? 'Firewall is on' : 'Firewall is off');
+  notes.push(firewall === null ? '无法读取防火墙状态' : firewall ? '防火墙已开启' : '防火墙已关闭');
 
   const sipText = sip.stdout;
   const sipOn: boolean | null = /status:\s*enabled/i.test(sipText) ? true : /status:\s*disabled/i.test(sipText) ? false : null;
-  if (sipOn !== null) notes.push(sipOn ? 'System Integrity Protection is on' : 'System Integrity Protection is off');
+  if (sipOn !== null) notes.push(sipOn ? '系统完整性保护已开启' : '系统完整性保护已关闭');
 
-  if (xp) notes.push(`XProtect${xp.version ? ` ${xp.version}` : ''} updated ${age(xp.updated)}`);
-  else notes.push('Could not find XProtect');
+  if (xp) notes.push(`XProtect${xp.version ? ` ${xp.version}` : ''} 更新：${age(xp.updated)}`);
+  else notes.push('找不到 XProtect');
 
   const enabled = Boolean(xp) && gatekeeper !== false;
   const score = Math.round(
@@ -236,13 +236,13 @@ export async function getProtection(): Promise<ProtectionStatus> {
     // Fall through to the unknown status below.
   }
   return {
-    provider: 'Unknown',
+    provider: '未知',
     enabled: false,
     realtime: null,
     firewall: null,
     definitionsUpdated: null,
     lastScan: null,
     score: 0,
-    notes: ['Protection status is not available on this system'],
+    notes: ['此系统无法获取防护状态'],
   };
 }
