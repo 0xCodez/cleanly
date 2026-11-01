@@ -12,6 +12,7 @@
     "dev": "concurrently -k -n vite,main,app \"vite\" \"node scripts/build-electron.mjs --watch\" \"wait-on tcp:5174 file:dist-electron/main.js file:dist-electron/preload.cjs && cross-env VITE_DEV_SERVER_URL=http://localhost:5174 electron .\"",
     "demo": "vite",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json",
+    "test:security": "node --test scripts/security-tests.mjs",
     "build": "npm run typecheck && vite build && node scripts/build-electron.mjs",
     "icons": "node scripts/make-icons.mjs",
     "dist": "npm run build && electron-builder",
