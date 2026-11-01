@@ -115,10 +115,28 @@ export interface ProtectionStatus {
 }
 
 export type AiProvider = 'claude' | 'chatgpt';
+export type AiConnectionMode = 'local' | 'api';
+export type AiEffort = 'default' | 'low' | 'medium' | 'high' | 'xhigh' | 'max';
+export interface AiRequest {
+  id: string;
+  provider: AiProvider;
+  connection: AiConnectionMode;
+  model: string;
+  effort: AiEffort;
+}
+export interface AiProgress {
+  requestId: string;
+  stage: 'connecting' | 'waiting' | 'thinking' | 'responding';
+}
+export type LocalAiStatus =
+  | { kind: 'ready'; appName: string }
+  | { kind: 'not-installed'; appName: string }
+  | { kind: 'signed-out'; appName: string }
+  | { kind: 'unavailable'; appName: string };
+export type AiConnections = Record<AiProvider, LocalAiStatus>;
 export type Background = 'mist' | 'grid' | 'dots' | 'grain';
 
 export interface Settings {
-  aiProvider: AiProvider;
   hasClaudeKey: boolean;
   hasOpenAiKey: boolean;
   background: Background;
@@ -138,6 +156,8 @@ export interface AiAdvice {
   answer: string;
   suggestions: { path: string; verdict: 'safe' | 'review' | 'keep'; reason: string }[];
   provider: AiProvider;
+  model: string;
+  effort: AiEffort;
 }
 
 export interface TipsProfile {
@@ -196,7 +216,11 @@ export interface CleanlyApi {
   getSettings(): Promise<Settings>;
   setSettings(patch: Partial<Omit<Settings, 'hasClaudeKey' | 'hasOpenAiKey'>>): Promise<Settings>;
   setApiKey(provider: AiProvider, key: string | null): Promise<Settings>;
-  askAi(question: string, context: AiContext): Promise<AiAdvice>;
+  aiConnections(): Promise<AiConnections>;
+  signInAi(provider: AiProvider): Promise<AiConnections>;
+  askAi(question: string, context: AiContext, request: AiRequest): Promise<AiAdvice>;
+  cancelAi(requestId: string): Promise<void>;
+  onAiProgress(cb: (progress: AiProgress) => void): () => void;
   tipsProfile(): Promise<TipsProfile>;
   startTip(req: TipRequest): Promise<{ url: string }>;
   sendFeedback(payload: FeedbackPayload): Promise<FeedbackResult>;
@@ -208,9 +232,10 @@ export interface CleanlyApi {
 export const API_METHODS = [
   'system', 'disk', 'disks', 'fileIcons', 'scanJunk', 'cleanJunk', 'scanSpaces', 'scanLargeFiles', 'scanDuplicates', 'trashPaths',
   'revealPath', 'startupItems', 'setStartupItem', 'installedApps', 'uninstallApp', 'protection', 'getSettings',
-  'setSettings', 'setApiKey', 'askAi', 'tipsProfile', 'startTip', 'sendFeedback', 'openExternal',
-] as const satisfies readonly Exclude<keyof CleanlyApi, 'onProgress'>[];
+  'setSettings', 'setApiKey', 'aiConnections', 'signInAi', 'askAi', 'cancelAi', 'tipsProfile', 'startTip', 'sendFeedback', 'openExternal',
+] as const satisfies readonly Exclude<keyof CleanlyApi, 'onProgress' | 'onAiProgress'>[];
 
 export type ApiMethod = (typeof API_METHODS)[number];
 export const PROGRESS_CHANNEL = 'cleanly:progress';
+export const AI_PROGRESS_CHANNEL = 'cleanly:ai-progress';
 export const channelFor = (m: ApiMethod) => `cleanly:${m}`;

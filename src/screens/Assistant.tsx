@@ -1,10 +1,13 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
-import type { AiAdvice, AiContext, AiProvider } from '../../shared/types';
+import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
+import type { AiAdvice, AiConnections, AiConnectionMode, AiContext, AiEffort, AiProvider, AiProgress } from '../../shared/types';
 import { api } from '../api';
 import { Icon } from '../components/Icon';
-import { ScreenHead, Segmented } from '../components/ui';
+import { ScreenHead } from '../components/ui';
 import { shortPath } from '../lib/format';
 import { useStore } from '../state';
+import { cachedLargeFiles } from '../lib/largeFileCache';
+import { effortName, modelName, validEffort, validModelId } from '../../shared/aiModels';
+import AssistantSetup, { PROVIDERS, LOCAL_APPS, PRIVACY, ModelControls } from './AssistantSetup';
 import './system.css';
 
 type NewMsg = { role: 'user'; text: string } | { role: 'ai'; advice: AiAdvice } | { role: 'err'; text: string };
@@ -12,91 +15,28 @@ type Msg = NewMsg & { id: number };
 
 type LargeCtx = NonNullable<AiContext['largeFiles']>;
 
-const PROVIDERS: Record<AiProvider, { name: string; keyUrl: string; placeholder: string }> = {
-  claude: { name: 'Claude', keyUrl: 'https://console.anthropic.com/settings/keys', placeholder: 'sk-ant-...' },
-  chatgpt: { name: 'ChatGPT', keyUrl: 'https://platform.openai.com/api-keys', placeholder: 'sk-...' },
-};
-
 const SUGGESTIONS = ['What can I safely delete?', 'Why is my disk so full?', "Which large files haven't I used in a year?"];
-const PRIVACY = 'Only file names, paths and sizes are shared — never file contents.';
-const LARGE_MIN = 500 * 1024 * 1024;
 
 const norm = (p: string) => p.replace(/\\/g, '/').replace(/\/+$/, '').toLowerCase();
 const baseName = (p: string) => p.split(/[\\/]/).filter(Boolean).pop() ?? p;
 
-function KeySetup({ provider }: { provider: AiProvider }) {
-  const { setApiKey, toast } = useStore();
-  const [key, setKey] = useState('');
-  const [saving, setSaving] = useState(false);
-  const info = PROVIDERS[provider];
-
-  const save = async () => {
-    const k = key.trim();
-    if (!k) return;
-    setSaving(true);
-    try {
-      await setApiKey(provider, k);
-      setKey('');
-      toast(`${info.name} is ready`);
-    } catch (e) {
-      toast(e instanceof Error ? e.message : 'Could not save the key', 'err');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const openKeys = () => {
-    api.openExternal(info.keyUrl).catch(() => toast('Could not open the browser', 'err'));
-  };
-
-  return (
-    <section className="card-w panel sy-setup rise">
-      <span className="sy-orb" style={{ width: 52, height: 52, borderRadius: 18 }}>
-        <Icon name="lock" />
-      </span>
-      <h3>Connect {info.name}</h3>
-      <p>
-        The assistant uses your own {info.name} API key. It is stored securely on this computer and only sent to {info.name}.
-      </p>
-      <div className="sy-keyrow">
-        <input
-          className="input"
-          type="password"
-          autoComplete="off"
-          spellCheck={false}
-          placeholder={`Paste your key (${info.placeholder})`}
-          value={key}
-          onChange={(e) => setKey(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') void save();
-          }}
-          aria-label={`${info.name} API key`}
-        />
-        <button type="button" className="btn primary" onClick={() => void save()} disabled={saving || !key.trim()}>
-          {saving ? <span className="spinner" style={{ borderColor: 'rgba(255,255,255,0.35)', borderTopColor: '#fff' }} /> : <Icon name="check" />}
-          Save key
-        </button>
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-        <button type="button" className="sy-link" onClick={openKeys}>
-          Get a key
-          <Icon name="arrow" />
-        </button>
-        <span className="sy-privacy">
-          <Icon name="shield" />
-          {PRIVACY}
-        </span>
-      </div>
-    </section>
-  );
-}
-
 export default function Assistant() {
-  const { settings, updateSettings, junk, spaces, disk, system, toast, go, refreshDisk } = useStore();
+  const { settings, junk, spaces, disk, system, toast, go, refreshDisk } = useStore();
   const [messages, setMessages] = useState<Msg[]>([]);
   const [text, setText] = useState('');
-  const [asking, setAsking] = useState(false);
-  const [switching, setSwitching] = useState(false);
+  const [provider, setProvider] = useState<AiProvider | null>(null);
+  const [mode, setMode] = useState<AiConnectionMode | null>(null);
+  const [model, setModel] = useState('');
+  const [effort, setEffort] = useState<AiEffort | null>(null);
+  const [chatReady, setChatReady] = useState(false);
+  const [pending, setPending] = useState<{ id: string; provider: AiProvider; model: string; effort: AiEffort; stage: AiProgress['stage']; startedAt: number } | null>(null);
+  const [elapsed, setElapsed] = useState(0);
+  const [cancelling, setCancelling] = useState(false);
+  const pendingRef = useRef<string | null>(null);
+  const cancelledRef = useRef<string | null>(null);
+  const asking = pending !== null;
+  const [connections, setConnections] = useState<AiConnections | null>(null);
+  const [checking, setChecking] = useState(false);
   const [largeFiles, setLargeFiles] = useState<LargeCtx | null>(null);
   const [confirm, setConfirm] = useState<string | null>(null);
   const [trashing, setTrashing] = useState<string | null>(null);
@@ -105,46 +45,73 @@ export default function Assistant() {
   const taRef = useRef<HTMLTextAreaElement>(null);
   const nextId = useRef(1);
 
-  const provider = settings?.aiProvider ?? 'claude';
-  const hasKey = settings ? (provider === 'claude' ? settings.hasClaudeKey : settings.hasOpenAiKey) : false;
-  const ready = !!settings && hasKey;
+  const hasKey = !!settings && (provider === 'claude' ? settings.hasClaudeKey : settings.hasOpenAiKey);
+  const ready = chatReady && provider !== null && mode !== null && validModelId(model)
+    && validEffort(provider, model, effort)
+    && (mode === 'api' ? hasKey : connections?.[provider].kind === 'ready');
+  const activity = pending ? pending.stage === 'thinking' ? PROVIDERS[pending.provider].name + ' is thinking…'
+    : pending.stage === 'responding' ? 'Receiving the answer…'
+    : pending.stage === 'connecting' ? 'Connecting to ' + PROVIDERS[pending.provider].name + '…' : 'Waiting for ' + PROVIDERS[pending.provider].name + '…' : '';
+  const refreshConnections = async () => {
+    setChecking(true);
+    try { setConnections(await api.aiConnections()); }
+    catch { toast('Could not check installed apps. Try again or use an API key.', 'err'); }
+    finally { setChecking(false); }
+  };
+
+  useEffect(() => { void refreshConnections(); }, []);
+  useEffect(() => api.onAiProgress((progress) => {
+    setPending((current) => current?.id === progress.requestId ? { ...current, stage: progress.stage } : current);
+  }), []);
+  useEffect(() => () => {
+    if (pendingRef.current) void api.cancelAi(pendingRef.current).catch(() => undefined);
+  }, []);
+  useEffect(() => {
+    if (!pending) return;
+    setElapsed(0);
+    const timer = setInterval(() => setElapsed(Math.floor((Date.now() - pending.startedAt) / 1000)), 1000);
+    return () => clearInterval(timer);
+  }, [pending?.id]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: 'end', behavior: 'smooth' });
   }, [messages, asking]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = taRef.current;
-    if (!el) return;
-    el.style.height = 'auto';
-    el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
-  }, [text]);
+    if (!el || !chatReady) return;
+    const resize = () => {
+      if (!el.clientWidth) return;
+      el.style.height = 'auto';
+      const contentHeight = el.scrollHeight;
+      el.style.height = `${Math.max(40, Math.min(contentHeight, 160))}px`;
+      el.style.overflowY = contentHeight > 160 ? 'auto' : 'hidden';
+      if (!text) el.scrollTop = 0;
+    };
+    resize();
+    let width = el.clientWidth;
+    const observer = new ResizeObserver(() => {
+      if (el.clientWidth === width) return;
+      width = el.clientWidth;
+      resize();
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [text, chatReady]);
 
-  const switchProvider = async (p: AiProvider) => {
-    if (p === provider) return;
-    setSwitching(true);
-    try {
-      await updateSettings({ aiProvider: p });
-    } catch (e) {
-      toast(e instanceof Error ? e.message : 'Could not switch the assistant', 'err');
-    } finally {
-      setSwitching(false);
-    }
+  const switchProvider = (value: AiProvider) => {
+    setProvider(value); setMode(null); setModel(''); setEffort(null); setChatReady(false);
   };
-
-  const getLargeFiles = async (): Promise<LargeCtx> => {
-    if (largeFiles) return largeFiles;
-    try {
-      const found = await api.scanLargeFiles(LARGE_MIN);
-      const ctx = [...found]
-        .sort((a, b) => b.size - a.size)
-        .slice(0, 60)
-        .map((f) => ({ path: f.path, size: f.size, modified: f.modified }));
-      setLargeFiles(ctx);
-      return ctx;
-    } catch {
-      return [];
-    }
+  const changeModel = (value: string) => {
+    setModel(value);
+    if (!provider || !validEffort(provider, value, effort)) setEffort(null);
+  };
+  const cancel = async () => {
+    if (!pending) return;
+    cancelledRef.current = pending.id;
+    setCancelling(true);
+    try { await api.cancelAi(pending.id); }
+    catch (error) { cancelledRef.current = null; setCancelling(false); toast(error instanceof Error ? error.message : 'Could not cancel the request', 'err'); }
   };
 
   const push = (m: NewMsg) => {
@@ -154,29 +121,39 @@ export default function Assistant() {
 
   const send = async (raw: string) => {
     const q = raw.trim();
-    if (!q || asking) return;
-    if (!ready) {
-      toast(`Add your ${PROVIDERS[provider].name} key first`, 'err');
+    if (!q || asking || pendingRef.current) return;
+    if (!ready || !provider || !mode || !effort) {
+      toast('Choose an assistant, connection, model, and thinking level first', 'err');
       return;
     }
     setText('');
     push({ role: 'user', text: q });
-    setAsking(true);
+    const id = crypto.randomUUID();
+    cancelledRef.current = null;
+    pendingRef.current = id;
+    setPending({ id, provider, model, effort, stage: 'connecting', startedAt: Date.now() });
     try {
+      const files = cachedLargeFiles().map((file) => ({ path: file.path, size: file.size, modified: file.modified }));
+      setLargeFiles(files);
       const context: AiContext = {
         junk: (junk ?? []).filter((j) => j.size > 0).map((j) => ({ name: j.name, size: j.size, locations: j.locations })),
         spaces: (spaces?.children ?? []).slice(0, 40).map((c) => ({ name: c.name, size: c.size })),
         disk: disk ? { total: disk.total, free: disk.free } : undefined,
-        largeFiles: await getLargeFiles(),
+        largeFiles: files,
       };
-      const advice = await api.askAi(q, context);
-      push({ role: 'ai', advice });
+      const advice = await api.askAi(q, context, { id, provider, connection: mode, model, effort });
+      if (cancelledRef.current === id) push({ role: 'err', text: 'Request cancelled.' });
+      else push({ role: 'ai', advice });
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'The assistant could not answer';
+      const msg = cancelledRef.current === id ? 'Request cancelled.' : e instanceof Error ? e.message : 'The assistant could not answer';
+      if (/sign in/i.test(msg)) {
+        setChatReady(false);
+        setConnections((current) => current ? { ...current, [provider]: { kind: 'signed-out', appName: LOCAL_APPS[provider].name } } : current);
+      }
       push({ role: 'err', text: msg });
-      toast(msg, 'err');
+      if (msg !== 'Request cancelled.') toast(msg, 'err');
     } finally {
-      setAsking(false);
+      pendingRef.current = null; cancelledRef.current = null; setPending(null); setCancelling(false);
     }
   };
 
@@ -223,22 +200,14 @@ export default function Assistant() {
 
   return (
     <div className="screen">
-      <ScreenHead title="Assistant" sub="Ask about your disk in plain words. You get clear advice, and nothing is removed without your say.">
-        {settings && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            {switching && <span className="spinner" />}
-            <Segmented<AiProvider>
-              label="Assistant provider"
-              value={provider}
-              onChange={(p) => void switchProvider(p)}
-              options={[
-                { value: 'claude', label: 'Claude' },
-                { value: 'chatgpt', label: 'ChatGPT' },
-              ]}
-            />
-          </div>
-        )}
-      </ScreenHead>
+      <ScreenHead title="Assistant" sub="Ask about your completed scans. You choose the assistant, connection, and model." />
+      {chatReady && provider && mode && (
+        <div className="sy-connection-bar">
+          <span>{PROVIDERS[provider].name} · {mode === 'local' ? LOCAL_APPS[provider].name : 'API key'}</span>
+          <ModelControls key={provider} provider={provider} model={model} effort={effort} onModel={changeModel} onEffort={setEffort} disabled={asking} />
+          <button type="button" className="sy-link" disabled={asking} onClick={() => setChatReady(false)}>Change setup</button>
+        </div>
+      )}
 
       <div className="sy-chat">
         {!settings ? (
@@ -246,8 +215,10 @@ export default function Assistant() {
             <span className="spinner" />
             Getting the assistant ready
           </div>
-        ) : !hasKey ? (
-          <KeySetup provider={provider} />
+        ) : !chatReady ? (
+          <AssistantSetup key={provider ?? 'choose'} provider={provider} mode={mode} model={model} effort={effort} connections={connections} checking={checking}
+            onProvider={switchProvider} onMode={(value) => { setMode(value); setModel(''); setEffort(null); }} onModel={changeModel} onEffort={setEffort}
+            refresh={refreshConnections} onConnected={setConnections} onStart={() => setChatReady(true)} />
         ) : messages.length === 0 && !asking ? (
           <div className="sy-intro rise">
             <span className="sy-orb">
@@ -291,7 +262,7 @@ export default function Assistant() {
                 <Icon name="assist" />
               </span>
               <div className="sy-ai-body">
-                <span className="sy-by">{PROVIDERS[advice.provider]?.name ?? 'Assistant'}</span>
+                <span className="sy-by">{PROVIDERS[advice.provider].name} · {modelName(advice.provider, advice.model)} · {effortName(advice.effort)} thinking</span>
                 <div className="sy-bubble">{advice.answer}</div>
                 {advice.suggestions.length > 0 && (
                   <div className="sy-sugs">
@@ -377,8 +348,8 @@ export default function Assistant() {
             <span className="sy-ai-ico">
               <Icon name="assist" />
             </span>
-            <div className="sy-bubble" style={{ padding: 0 }} role="status" aria-label="Thinking">
-              <span className="sy-dots">
+            <div className="sy-bubble" style={{ padding: 0 }} role="status" aria-label={activity}>
+              <span className="sy-dots" aria-hidden="true">
                 <i />
                 <i />
                 <i />
@@ -389,7 +360,7 @@ export default function Assistant() {
         <div ref={endRef} />
       </div>
 
-      <div className="sy-composer">
+      <div className="sy-composer" hidden={!chatReady}>
         <div className="sy-chips">
           {SUGGESTIONS.map((s) => (
             <button key={s} type="button" disabled={!ready || asking} onClick={() => void send(s)}>
@@ -398,12 +369,16 @@ export default function Assistant() {
             </button>
           ))}
         </div>
+        {pending && <div className="sy-request-status" role="status" aria-live="polite">
+          <span>{cancelling ? 'Cancelling…' : activity} · {modelName(pending.provider, pending.model)} · {effortName(pending.effort)} thinking · {elapsed}s</span>
+          <button type="button" className="sy-link" disabled={cancelling} onClick={() => void cancel()}>{cancelling ? 'Cancelling…' : 'Cancel'}</button>
+        </div>}
         <div className="sy-box">
           <textarea
             ref={taRef}
             className="sy-ta"
             rows={1}
-            placeholder={ready ? 'Ask anything about your disk' : `Add your ${PROVIDERS[provider].name} key to start`}
+            placeholder={ready ? 'Ask anything about your disk' : 'Choose a connection above to start'}
             value={text}
             disabled={!ready}
             onChange={(e) => setText(e.target.value)}

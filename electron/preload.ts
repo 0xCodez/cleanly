@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
-import { API_METHODS, channelFor, PROGRESS_CHANNEL, type CleanlyApi, type ScanProgress } from '../shared/types';
+import { API_METHODS, channelFor, PROGRESS_CHANNEL, AI_PROGRESS_CHANNEL, type CleanlyApi, type ScanProgress, type AiProgress } from '../shared/types';
 
 // Electron wraps main-process errors as "Error invoking remote method 'x': Error: msg"; the UI shows msg alone.
 const cleanMessage = (e: unknown) =>
@@ -21,6 +21,12 @@ api.onProgress = (cb: (p: ScanProgress) => void) => {
   return () => {
     ipcRenderer.removeListener(PROGRESS_CHANNEL, listener);
   };
+};
+
+api.onAiProgress = (cb: (p: AiProgress) => void) => {
+  const listener = (_e: IpcRendererEvent, p: AiProgress) => cb(p);
+  ipcRenderer.on(AI_PROGRESS_CHANNEL, listener);
+  return () => ipcRenderer.removeListener(AI_PROGRESS_CHANNEL, listener);
 };
 
 contextBridge.exposeInMainWorld('cleanly', api as unknown as CleanlyApi);

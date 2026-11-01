@@ -5,6 +5,7 @@ import { Icon } from '../components/Icon';
 import { Empty, Progress, ScreenHead, Segmented } from '../components/ui';
 import { formatBytes, shortPath, splitBytes, sum, timeAgo } from '../lib/format';
 import { useFileIcons } from '../lib/useFileIcons';
+import { largeFileCache as cache } from '../lib/largeFileCache';
 import { driveOf, useStore } from '../state';
 import './files.css';
 
@@ -39,14 +40,13 @@ const lastUsed = (f: LargeFile) => Math.max(f.accessed || 0, f.modified || 0);
 const parentDir = (p: string) => p.replace(/[\\/][^\\/]*$/, '');
 
 // results survive leaving the screen; the walk is not cheap
-let cache: { min: number; files: LargeFile[] } | null = null;
 let pending: { min: number; promise: Promise<LargeFile[]> } | null = null;
 
 function scan(min: number): Promise<LargeFile[]> {
   if (pending && pending.min === min) return pending.promise;
   const promise = api.scanLargeFiles(min).then(
     (files) => {
-      cache = { min, files };
+      cache.set(String(min), files);
       pending = null;
       return files;
     },
@@ -62,7 +62,7 @@ function scan(min: number): Promise<LargeFile[]> {
 export default function LargeFiles() {
   const { settings, progress, system, disks, toast, refreshDisk } = useStore();
   const min = settings ? settings.largeFileMinMb * MB : null;
-  const [files, setFiles] = useState<LargeFile[] | null>(cache && cache.min === min ? cache.files : null);
+  const [files, setFiles] = useState<LargeFile[] | null>(cache.get(String(min)) ?? null);
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
   const [filter, setFilter] = useState<Filter>('all');
@@ -77,11 +77,12 @@ export default function LargeFiles() {
   const load = useCallback(
     async (force = false) => {
       if (min === null) return;
-      if (!force && cache && cache.min === min) {
-        setFiles(cache.files);
+      const cached = cache.get(String(min));
+      if (!force && cached) {
+        setFiles(cached);
         return;
       }
-      if (force) cache = null;
+      if (force) cache.delete(String(min));
       setLoading(true);
       setFailed(false);
       try {
@@ -161,7 +162,7 @@ export default function LargeFiles() {
         const gone = new Set(paths);
         const next = (files ?? []).filter((f) => !gone.has(f.path));
         setFiles(next);
-        if (min !== null) cache = { min, files: next };
+        if (min !== null) cache.set(String(min), next);
         setSelected(new Set());
       }
       void refreshDisk();

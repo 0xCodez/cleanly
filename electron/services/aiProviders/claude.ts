@@ -1,29 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { jsonSchemaOutputFormat } from '@anthropic-ai/sdk/helpers/json-schema';
-import { CLAUDE_MODEL } from '../../config';
 import type { ProviderRequest } from '../ai';
-
-const ADVICE_SCHEMA = {
-  type: 'object',
-  properties: {
-    answer: { type: 'string' },
-    suggestions: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          path: { type: 'string' },
-          verdict: { type: 'string', enum: ['safe', 'review', 'keep'] },
-          reason: { type: 'string' },
-        },
-        required: ['path', 'verdict', 'reason'],
-        additionalProperties: false,
-      },
-    },
-  },
-  required: ['answer', 'suggestions'],
-  additionalProperties: false,
-} as const;
+import { ADVICE_SCHEMA } from '../aiSchema';
 
 function friendlyError(err: unknown): Error {
   if (err instanceof Anthropic.AuthenticationError) return new Error('Your Claude API key was rejected. Check it in Settings.');
@@ -39,18 +17,19 @@ function friendlyError(err: unknown): Error {
 }
 
 export async function askClaude(req: ProviderRequest): Promise<unknown> {
-  const client = new Anthropic({ apiKey: req.apiKey, timeout: 60_000, maxRetries: 1 });
+  const client = new Anthropic({ apiKey: req.apiKey, baseURL: 'https://api.anthropic.com', timeout: 60_000, maxRetries: 1 });
 
   let response;
   try {
-    // Claude Opus 5.5 always thinks; no thinking parameter is sent.
+    req.progress('waiting');
     response = await client.messages.parse({
-      model: CLAUDE_MODEL,
+      model: req.model,
       max_tokens: 16000,
       system: req.system,
       messages: [{ role: 'user', content: req.user }],
-      output_config: { format: jsonSchemaOutputFormat(ADVICE_SCHEMA) },
-    });
+      ...(req.effort !== 'default' ? { thinking: { type: 'adaptive' } } : {}),
+      output_config: { format: jsonSchemaOutputFormat(ADVICE_SCHEMA), ...(req.effort !== 'default' ? { effort: req.effort } : {}) },
+    }, { signal: req.signal });
   } catch (err) {
     throw friendlyError(err);
   }
