@@ -1,5 +1,6 @@
 import type {
   AiAdvice,
+  AiProgress,
   CleanResult,
   CleanlyApi,
   DiskInfo,
@@ -413,7 +414,6 @@ function initialApps(): InstalledApp[] {
 
 function initialSettings(): Settings {
   return {
-    aiProvider: 'claude',
     hasClaudeKey: false,
     hasOpenAiKey: false,
     background: 'mist',
@@ -440,6 +440,8 @@ function removeFromTree(node: SpaceNode, path: string, bytes: number): boolean {
 export function createMockApi(): CleanlyApi {
   const listeners = new Set<(p: ScanProgress) => void>();
   const emit = (p: ScanProgress) => listeners.forEach((cb) => cb(p));
+  const aiListeners = new Set<(p: AiProgress) => void>();
+  const aiRequests = new Map<string, AbortController>();
 
   let junk = initialJunk();
   let large = initialLargeFiles();
@@ -682,8 +684,21 @@ export function createMockApi(): CleanlyApi {
       return { ...settings };
     },
 
-    async askAi(question, context) {
-      await wait(900, 1200);
+    async aiConnections() {
+      return { claude: { kind: 'not-installed', appName: 'Claude Code' }, chatgpt: { kind: 'not-installed', appName: 'Codex' } };
+    },
+
+    async signInAi() {
+      throw new Error('Installed-app connections are available in the desktop app.');
+    },
+
+    async askAi(question, context, request) {
+      if (!request?.model) throw new Error('Choose an assistant, connection, and model first.');
+      const abort = new AbortController();
+      aiRequests.set(request.id, abort);
+      aiListeners.forEach((cb) => cb({ requestId: request.id, stage: 'thinking' }));
+      try { await wait(900, 1200); } finally { aiRequests.delete(request.id); }
+      if (abort.signal.aborted) throw new Error('Request cancelled.');
       const safeJunk = (context.junk ?? []).filter((j) => j.size > 0);
       const bigOnes = (context.largeFiles ?? []).slice().sort((a, b) => b.size - a.size).slice(0, 3);
       const gb = (n: number) => `${(n / GB).toFixed(1)} GB`;
@@ -701,10 +716,15 @@ export function createMockApi(): CleanlyApi {
           ...bigOnes.map((f) => ({ path: f.path, verdict: 'review' as const, reason: `${gb(f.size)}, last changed ${Math.round((now - f.modified) / DAY)} days ago` })),
           { path: tilde(join(HOME, 'Documents')), verdict: 'keep' as const, reason: 'Your own work. Only remove files you recognize.' },
         ],
-        provider: settings.aiProvider,
+        provider: request.provider,
+        model: request.model,
+        effort: request.effort,
       };
       return advice;
     },
+
+    async cancelAi(id) { aiRequests.get(id)?.abort(); },
+    onAiProgress(cb) { aiListeners.add(cb); return () => { aiListeners.delete(cb); }; },
 
     async tipsProfile() {
       await wait(300, 700);

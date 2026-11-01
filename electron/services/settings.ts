@@ -7,7 +7,6 @@ type StoredSettings = Omit<Settings, 'hasClaudeKey' | 'hasOpenAiKey'>;
 type StoredKeys = Partial<Record<AiProvider, string>>;
 
 const DEFAULTS: StoredSettings = {
-  aiProvider: 'claude',
   background: 'mist',
   largeFileMinMb: 500,
   confirmBeforeClean: true,
@@ -55,10 +54,6 @@ function validatePatch(patch: unknown): Partial<StoredSettings> {
   const out: Partial<StoredSettings> = {};
   for (const [key, value] of Object.entries(patch)) {
     switch (key) {
-      case 'aiProvider':
-        if (!PROVIDERS.includes(value as AiProvider)) throw new Error('Unknown assistant provider.');
-        out.aiProvider = value as AiProvider;
-        break;
       case 'background':
         if (!BACKGROUNDS.includes(value as Background)) throw new Error('Unknown background style.');
         out.background = value as Background;

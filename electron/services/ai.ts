@@ -1,14 +1,20 @@
 import os from 'node:os';
-import type { AiAdvice, AiContext, AiProvider } from '../../shared/types';
+import type { AiAdvice, AiContext, AiProgress, AiProvider, AiRequest } from '../../shared/types';
+import { validEffort, validModelId } from '../../shared/aiModels';
 import { askClaude } from './aiProviders/claude';
 import { askOpenAi } from './aiProviders/openai';
-import { getApiKey, getSettings } from './settings';
+import { getApiKey } from './settings';
+import { askLocalAi } from './aiProviders/local';
 
 /** What every provider receives. Providers return the raw parsed JSON; this module validates it. */
 export interface ProviderRequest {
   apiKey: string;
   system: string;
   user: string;
+  model: string;
+  effort: AiRequest['effort'];
+  signal: AbortSignal;
+  progress: (stage: AiProgress['stage']) => void;
 }
 
 type Verdict = AiAdvice['suggestions'][number]['verdict'];
@@ -128,7 +134,7 @@ function buildContext(ctx: AiContext): { data: Record<string, unknown>; known: S
   return { data, known };
 }
 
-function parseAdvice(raw: unknown, known: Set<string>, provider: AiProvider): AiAdvice {
+function parseAdvice(raw: unknown, known: Set<string>, provider: AiProvider): Omit<AiAdvice, 'model' | 'effort'> {
   if (!isRecord(raw) || typeof raw.answer !== 'string' || !raw.answer.trim()) {
     throw new Error('The assistant sent an answer Cleanly could not read. Please try again.');
   }
@@ -145,21 +151,26 @@ function parseAdvice(raw: unknown, known: Set<string>, provider: AiProvider): Ai
   return { answer: raw.answer.trim(), suggestions, provider };
 }
 
-export async function askAi(question: string, context: AiContext): Promise<AiAdvice> {
+const requests = new Map<string, AbortController>();
+const validRequestId = (id: unknown): id is string => typeof id === 'string' && /^[a-zA-Z0-9-]{1,80}$/.test(id);
+
+export async function cancelAi(id: string): Promise<void> {
+  if (!validRequestId(id)) throw new Error('Invalid assistant request.');
+  requests.get(id)?.abort();
+}
+
+export async function askAi(question: string, context: AiContext, request: AiRequest, report: (progress: AiProgress) => void = () => {}): Promise<AiAdvice> {
   const q = typeof question === 'string' ? question.trim() : '';
   if (!q) throw new Error('Type a question for the assistant first.');
   if (q.length > MAX_QUESTION) throw new Error(`Please keep your question under ${MAX_QUESTION} characters.`);
 
-  const { aiProvider } = await getSettings();
-  const apiKey = await getApiKey(aiProvider);
-  if (!apiKey) {
-    throw new Error(
-      aiProvider === 'claude'
-        ? 'Add your Claude API key in Settings to use the assistant.'
-        : 'Add your ChatGPT (OpenAI) API key in Settings to use the assistant.',
-    );
+  if (!isRecord(request) || (request.provider !== 'claude' && request.provider !== 'chatgpt') || (request.connection !== 'local' && request.connection !== 'api')) {
+    throw new Error('Choose an assistant and connection first.');
   }
-
+  if (!validModelId(request.model)) throw new Error('Choose a model before sending.');
+  if (!validEffort(request.provider, request.model, request.effort)) throw new Error('Choose a supported thinking level for this model.');
+  if (!validRequestId(request.id) || requests.has(request.id)) throw new Error('Invalid or duplicate assistant request.');
+  const { provider, model, effort } = request;
   const { data, known } = buildContext(context);
   const user = [
     `Question: ${q}`,
@@ -170,7 +181,31 @@ export async function askAi(question: string, context: AiContext): Promise<AiAdv
     '</cleanly_data>',
   ].join('\n');
 
-  const req: ProviderRequest = { apiKey, system: SYSTEM_PROMPT, user };
-  const raw = aiProvider === 'claude' ? await askClaude(req) : await askOpenAi(req);
-  return parseAdvice(raw, known, aiProvider);
+  const abort = new AbortController();
+  requests.set(request.id, abort);
+  const timer = setTimeout(() => abort.abort(new Error('Assistant request timed out.')), 90_000);
+  const progress = (stage: AiProgress['stage']) => report({ requestId: request.id, stage });
+  try {
+    progress('connecting');
+    abort.signal.throwIfAborted();
+    const req = { system: `${SYSTEM_PROMPT}\nThe user selected ${provider === 'claude' ? 'Claude' : 'ChatGPT'} and model ${model}.`, user, model, effort, signal: abort.signal, progress };
+    let raw: unknown;
+    if (request.connection === 'local') raw = await askLocalAi(provider, req);
+    else {
+      const apiKey = await getApiKey(provider);
+      if (!apiKey) throw new Error('Add an API key, or choose an installed app.');
+      raw = provider === 'claude' ? await askClaude({ ...req, apiKey }) : await askOpenAi({ ...req, apiKey });
+    }
+    abort.signal.throwIfAborted();
+    return { ...parseAdvice(raw, known, provider), model, effort };
+  } catch (error) {
+    if (abort.signal.aborted) {
+      if (abort.signal.reason instanceof Error && abort.signal.reason.message === 'Assistant request timed out.') throw new Error('The assistant took too long. Try another model or connection.');
+      throw new Error('Request cancelled.');
+    }
+    throw error;
+  } finally {
+    clearTimeout(timer);
+    requests.delete(request.id);
+  }
 }

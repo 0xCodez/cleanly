@@ -7,11 +7,13 @@ import {
   API_METHODS,
   channelFor,
   PROGRESS_CHANNEL,
+  AI_PROGRESS_CHANNEL,
   type CleanlyApi,
   type ScanProgress,
   type SystemInfo,
 } from '../shared/types';
-import { askAi } from './services/ai';
+import { askAi, cancelAi } from './services/ai';
+import { getAiConnections, signInAi } from './services/localAi';
 import { listApps, uninstallApp } from './services/apps';
 import { getDisk, listDisks } from './services/disk';
 import { getFileIcons } from './services/icons';
@@ -78,7 +80,7 @@ function revealablePath(p: unknown): string {
   return path.resolve(abs);
 }
 
-type Handlers = Omit<CleanlyApi, 'onProgress'>;
+type Handlers = Omit<CleanlyApi, 'onProgress' | 'onAiProgress'>;
 
 const handlers: Handlers = {
   system: async () => systemInfo(),
@@ -102,7 +104,10 @@ const handlers: Handlers = {
   getSettings: () => getSettings(),
   setSettings: (patch) => setSettings(patch),
   setApiKey: (provider, key) => setApiKey(provider, key),
-  askAi: (question, context) => askAi(question, context),
+  aiConnections: () => getAiConnections(),
+  signInAi: (provider) => signInAi(provider),
+  askAi: (question, context, request) => askAi(question, context, request, (p) => win?.webContents.send(AI_PROGRESS_CHANNEL, p)),
+  cancelAi: (id) => cancelAi(id),
   tipsProfile: () => getTipsProfile(),
   startTip: async (req) => {
     const checkout = await createTipCheckout(req);

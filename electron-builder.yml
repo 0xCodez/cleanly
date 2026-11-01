@@ -4,7 +4,7 @@ copyright: Copyright © 2026 Cleanly
 directories:
   output: release
   buildResources: build
-# main, preload and the Anthropic SDK are bundled by esbuild, so no node_modules ship in the app
+# SDK JavaScript is bundled by esbuild; Codex's native runtime is copied below.
 files:
   - dist/**
   - dist-electron/**
@@ -15,6 +15,9 @@ artifactName: ${productName}-${os}-${arch}.${ext}
 publish: null
 
 win:
+  extraResources:
+    - from: node_modules/@openai/codex-win32-${arch}/vendor
+      to: codex-runtime
   icon: build/icon.png
   target:
     - target: nsis
@@ -32,6 +35,9 @@ portable:
   artifactName: ${productName}-portable.${ext}
 
 mac:
+  extraResources:
+    - from: node_modules/@openai/codex-darwin-${arch}/vendor
+      to: codex-runtime
   icon: build/icon.png
   category: public.app-category.utilities
   target:
@@ -59,6 +65,9 @@ dmg:
     - { x: 390, y: 190, type: link, path: /Applications }
 
 linux:
+  extraResources:
+    - from: node_modules/@openai/codex-linux-${arch}/vendor
+      to: codex-runtime
   icon: build/icon.png
   target: [AppImage]
   category: Utility

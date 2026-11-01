@@ -57,7 +57,7 @@ function KeyRow({ id, name, keyUrl, has }: { id: AiProvider; name: string; keyUr
           <Icon name={has ? 'lock' : 'assist'} />
         </span>
         <div className="grow">
-          <b>{name}</b>
+          <b>{name} API key</b>
           <small>{has ? 'Key saved on this computer' : 'No key yet'}</small>
         </div>
         <span className={`tag${has ? ' safe' : ''}`}>{has ? 'Connected' : 'Not set'}</span>
@@ -234,14 +234,13 @@ export default function Settings() {
               <Icon name="assist" />
             </span>
             <h2>Assistant</h2>
-            <span style={{ flex: 1 }} />
-            {spin('provider')}
-            <Segmented<AiProvider>
-              label="Assistant provider"
-              value={settings.aiProvider}
-              options={PROVIDERS.map((p) => ({ value: p.id, label: p.name }))}
-              onChange={(v) => void save('provider', { aiProvider: v })}
-            />
+          </div>
+          <div className="sy-opt">
+            <div className="grow">
+              <b>Installed apps or API keys</b>
+              <small>Reuse your Claude Code or Codex sign-in. API keys below are optional when an installed app is connected.</small>
+            </div>
+            <button type="button" className="btn small" onClick={() => go('assistant')}>Manage connections</button>
           </div>
           {PROVIDERS.map((p) => (
             <KeyRow key={p.id} id={p.id} name={p.name} keyUrl={p.keyUrl} has={p.id === 'claude' ? settings.hasClaudeKey : settings.hasOpenAiKey} />

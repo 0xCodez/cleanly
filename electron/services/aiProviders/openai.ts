@@ -1,4 +1,3 @@
-import { OPENAI_MODEL } from '../../config';
 import type { ProviderRequest } from '../ai';
 
 const ENDPOINT = 'https://api.openai.com/v1/chat/completions';
@@ -18,11 +17,13 @@ function statusError(status: number): Error {
 export async function askOpenAi(req: ProviderRequest): Promise<unknown> {
   let res: Response;
   try {
+    req.progress('waiting');
     res = await fetch(ENDPOINT, {
       method: 'POST',
       headers: { 'content-type': 'application/json', authorization: `Bearer ${req.apiKey}` },
       body: JSON.stringify({
-        model: OPENAI_MODEL,
+        model: req.model,
+        ...(req.effort !== 'default' ? { reasoning_effort: req.effort } : {}),
         response_format: { type: 'json_object' },
         max_completion_tokens: 16000,
         messages: [
@@ -30,7 +31,7 @@ export async function askOpenAi(req: ProviderRequest): Promise<unknown> {
           { role: 'user', content: req.user },
         ],
       }),
-      signal: AbortSignal.timeout(TIMEOUT_MS),
+      signal: AbortSignal.any([req.signal, AbortSignal.timeout(TIMEOUT_MS)]),
     });
   } catch (err) {
     const name = err instanceof Error ? err.name : '';
