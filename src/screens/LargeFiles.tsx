@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { IconName, LargeFile } from '../../shared/types';
 import { api } from '../api';
 import { Icon } from '../components/Icon';
 import { Empty, Progress, ScreenHead, Segmented } from '../components/ui';
 import { formatBytes, shortPath, splitBytes, sum, timeAgo } from '../lib/format';
 import { useFileIcons } from '../lib/useFileIcons';
-import { driveOf, useStore } from '../state';
+import { driveName, driveOf, useStore } from '../state';
 import './files.css';
 
 type Filter = 'all' | 'video' | 'archive' | 'disk-image' | 'installer' | 'other';
@@ -39,30 +39,38 @@ const lastUsed = (f: LargeFile) => Math.max(f.accessed || 0, f.modified || 0);
 const parentDir = (p: string) => p.replace(/[\\/][^\\/]*$/, '');
 
 // results survive leaving the screen; the walk is not cheap
-let cache: { min: number; files: LargeFile[] } | null = null;
-let pending: { min: number; promise: Promise<LargeFile[]> } | null = null;
+const cache = new Map<string, LargeFile[]>();
+let pending: { key: string; promise: Promise<LargeFile[]> } | null = null;
+let lastDrive: string | null = null;
+const scanKey = (min: number, root: string) => JSON.stringify([min, root]);
 
-function scan(min: number): Promise<LargeFile[]> {
-  if (pending && pending.min === min) return pending.promise;
-  const promise = api.scanLargeFiles(min).then(
+function scan(min: number, root: string): Promise<LargeFile[]> {
+  const key = scanKey(min, root);
+  if (pending?.key === key) return pending.promise;
+  const promise = api.scanLargeFiles(min, root || undefined).then(
     (files) => {
-      cache = { min, files };
-      pending = null;
+      cache.set(key, files);
+      if (pending?.promise === promise) pending = null;
       return files;
     },
     (e: unknown) => {
-      pending = null;
+      if (pending?.promise === promise) pending = null;
       throw e;
     },
   );
-  pending = { min, promise };
+  pending = { key, promise };
   return promise;
 }
 
 export default function LargeFiles() {
   const { settings, progress, system, disks, toast, refreshDisk } = useStore();
   const min = settings ? settings.largeFileMinMb * MB : null;
-  const [files, setFiles] = useState<LargeFile[] | null>(cache && cache.min === min ? cache.files : null);
+  const [picked, setPicked] = useState(lastDrive);
+  const root = picked === '' ? '' : disks?.find((d) => d.mount === picked)?.mount
+    ?? disks?.find((d) => d.system)?.mount ?? disks?.[0]?.mount;
+  const selectedDrive = disks?.find((d) => d.mount === root);
+  const [files, setFiles] = useState<LargeFile[] | null>(null);
+  const requestId = useRef(0);
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
   const [filter, setFilter] = useState<Filter>('all');
@@ -76,30 +84,39 @@ export default function LargeFiles() {
 
   const load = useCallback(
     async (force = false) => {
-      if (min === null) return;
-      if (!force && cache && cache.min === min) {
-        setFiles(cache.files);
+      if (min === null || root === undefined) return;
+      const request = ++requestId.current;
+      const key = scanKey(min, root);
+      setSelected(new Set());
+      setConfirming(false);
+      setFailed(false);
+      const cached = cache.get(key);
+      if (!force && cached && (!pending || pending.key === key)) {
+        setFiles(cached);
+        setLoading(false);
         return;
       }
-      if (force) cache = null;
+      if (force) cache.delete(key);
+      setFiles(null);
       setLoading(true);
-      setFailed(false);
       try {
-        const next = await scan(min);
+        const next = await scan(min, root);
+        if (request !== requestId.current) return;
         setFiles(next);
-        setSelected(new Set());
       } catch (e) {
+        if (request !== requestId.current) return;
         setFailed(true);
         toast(e instanceof Error ? e.message : 'Could not look for large files', 'err');
       } finally {
-        setLoading(false);
+        if (request === requestId.current) setLoading(false);
       }
     },
-    [min, toast],
+    [min, root, toast],
   );
 
   useEffect(() => {
     void load();
+    return () => { requestId.current++; };
   }, [load]);
 
   const counts = useMemo(() => {
@@ -155,13 +172,14 @@ export default function LargeFiles() {
       const moved = result.removed;
       const note = result.failed > 0 ? ` · ${result.failed} could not be moved` : '';
       toast(`Moved ${moved} ${moved === 1 ? 'file' : 'files'} (${formatBytes(result.freed)}) to Trash${note}`, result.failed && !moved ? 'err' : 'ok');
+      cache.clear();
       if (result.failed > 0) {
         await load(true);
       } else {
         const gone = new Set(paths);
         const next = (files ?? []).filter((f) => !gone.has(f.path));
         setFiles(next);
-        if (min !== null) cache = { min, files: next };
+        if (min !== null && root !== undefined) cache.set(scanKey(min, root), next);
         setSelected(new Set());
       }
       void refreshDisk();
@@ -178,7 +196,7 @@ export default function LargeFiles() {
     <div className="screen">
       <ScreenHead
         title="Large Files"
-        sub={`Files over ${settings ? formatBytes(settings.largeFileMinMb * MB) : '…'} that you may have forgotten${otherDrives ? ', on every drive' : ''}. Anything you remove goes to the Trash.`}
+        sub={`Files over ${settings ? formatBytes(settings.largeFileMinMb * MB) : '…'}${selectedDrive ? ` on ${driveName(selectedDrive)}` : otherDrives ? ' on all drives' : ''}. Anything you remove goes to the Trash.`}
       >
         {files && files.length > 0 && (
           <div className="fx-stat">
@@ -189,11 +207,32 @@ export default function LargeFiles() {
             </div>
           </div>
         )}
-        <button type="button" className="btn small" onClick={() => void load(true)} disabled={loading || trashing || min === null}>
+        <button type="button" className="btn small" onClick={() => void load(true)} disabled={loading || trashing || min === null || root === undefined}>
           {loading ? <span className="spinner" /> : <Icon name="scan" />}
           {loading ? 'Searching' : 'Rescan'}
         </button>
       </ScreenHead>
+
+      <div className="fx-source">
+        <label className="fx-drive-picker">
+          Drive
+          <select
+            aria-label="Scan drive"
+            value={root ?? ''}
+            disabled={trashing || !disks?.length}
+            onChange={(event) => {
+              lastDrive = event.target.value;
+              setPicked(lastDrive);
+              setSelected(new Set());
+              setConfirming(false);
+              setFiles(null);
+            }}
+          >
+            <option value="">All drives</option>
+            {(disks ?? []).map((d) => <option key={d.mount} value={d.mount}>{d.label}</option>)}
+          </select>
+        </label>
+      </div>
 
       {!files && (
         <section className="card-w rise">
@@ -209,7 +248,7 @@ export default function LargeFiles() {
                 <Icon name="file" />
               </span>
               <h3>Looking for big files</h3>
-              <p>{prog?.phase ?? (otherDrives ? 'Checking your home folder and your other drives.' : 'Checking Downloads, Desktop, Documents, Movies and more.')}</p>
+              <p>{root === undefined ? 'Loading drives…' : prog?.phase ?? (selectedDrive ? `Checking ${selectedDrive.label}.` : 'Checking your home folder and your other drives.')}</p>
               <Progress value={prog && prog.total > 0 ? prog.done / prog.total : undefined} />
               {prog?.current && <div className="cur">{shortPath(prog.current, home)}</div>}
             </div>
