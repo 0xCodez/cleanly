@@ -135,7 +135,8 @@ test('a selected drive does not traverse another drive mounted inside it', async
 
 test('drive scans keep system folders and fresh temp folders out of results', async (t) => {
   const f = await fixture(t);
-  await f.write(path.join(f.mounts[0], 'Windows', 'system.bin'), 10 * MB);
+  const systemFolder = process.platform === 'win32' ? 'Windows' : 'System';
+  await f.write(path.join(f.mounts[0], systemFolder, 'system.bin'), 10 * MB);
   await f.write(path.join(process.env.LOCALAPPDATA, 'Temp', 'active.tmp'), 10 * MB);
   const files = await scanLargeFiles(MB, () => {}, f.mounts[0]);
   assert.deepEqual(files.map((file) => file.path).sort(), [f.homeFile, f.cFile].sort());
