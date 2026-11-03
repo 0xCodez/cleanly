@@ -186,8 +186,8 @@ export interface CleanlyApi {
   cleanJunk(ids: string[]): Promise<CleanResult>;
   /** root = undefined for the home folder, or the mount of a drive from disks() */
   scanSpaces(root?: string): Promise<SpaceNode>;
-  /** scans the home folder plus every other fixed drive */
-  scanLargeFiles(minBytes: number): Promise<LargeFile[]>;
+  /** root = a fixed drive mount, or undefined for the home folder plus every other fixed drive */
+  scanLargeFiles(minBytes: number, root?: string): Promise<LargeFile[]>;
   scanDuplicates(): Promise<DuplicateGroup[]>;
   trashPaths(paths: string[]): Promise<CleanResult>;
   revealPath(path: string): Promise<void>;

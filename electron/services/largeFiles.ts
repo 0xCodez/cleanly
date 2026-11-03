@@ -1,7 +1,7 @@
 import os from 'node:os';
 import path from 'node:path';
-import type { LargeFile, ScanProgress } from '../../shared/types';
-import { dataDriveMounts, listDisks } from './disk';
+import type { DiskInfo, LargeFile, ScanProgress } from '../../shared/types';
+import { dataDriveMounts, listDisks, sameMount } from './disk';
 import { displayPath, isInside, localAppData, samePath, walk, type WalkFile } from './walk';
 
 type Progress = (p: ScanProgress) => void;
@@ -47,9 +47,30 @@ const DRIVE_SKIP_TOP = new Set(
 );
 const SYSTEM_FILES = /^(pagefile\.sys|hiberfil\.sys|swapfile\.sys|dumpstack\.log(\.tmp)?)$/i;
 const TOTAL_ENTRIES = 4_000_000;
+let activeScan: AbortController | null = null;
+let latestRequest = 0;
 
-/** Biggest files under the home folder and on every other fixed drive, at least minBytes each. */
-export async function scanLargeFiles(minBytes: unknown, progress: Progress): Promise<LargeFile[]> {
+/** Biggest files on a chosen fixed drive, or under home and on the other fixed drives. */
+export async function scanLargeFiles(minBytes: unknown, progress: Progress, root?: unknown): Promise<LargeFile[]> {
+  const request = ++latestRequest;
+  let selectedDrive: DiskInfo | undefined;
+  let otherMounts: string[] = [];
+  if (root !== undefined) {
+    if (typeof root !== 'string' || root.length === 0 || root.length > 260 || root.includes('\0')) {
+      throw new Error('That drive is not available');
+    }
+    const disks = await listDisks();
+    selectedDrive = disks.find((d) => sameMount(d.mount, root));
+    if (!selectedDrive) throw new Error('That drive is not available');
+    otherMounts = disks.filter((d) => !sameMount(d.mount, root)).map((d) => d.mount);
+  }
+  if (request !== latestRequest) throw new Error('A newer search replaced this one');
+  activeScan?.abort();
+  const controller = new AbortController();
+  activeScan = controller;
+  const checkCancelled = () => {
+    if (controller.signal.aborted) throw new Error('A newer search replaced this one');
+  };
   const n = Number(minBytes);
   const min = Number.isFinite(n) && n >= MB ? n : 100 * MB;
   const home = os.homedir();
@@ -81,37 +102,51 @@ export async function scanLargeFiles(minBytes: unknown, progress: Progress): Pro
     if (found.length > MAX_RESULTS * 10) trim();
   };
   const ticker = (phase: string) => (entries: number, current: string) => {
+    if (controller.signal.aborted) return;
     const now = Date.now();
     if (now - last < 120) return;
     last = now;
     progress({ task: 'large', phase, done: seen + entries, total: 0, current: displayPath(current) });
   };
 
-  const homeStats = await walk(home, {
-    maxEntries: MAX_ENTRIES,
-    skipDir: (p, name) =>
-      skipSet.has(p.toLowerCase()) || (CACHE_DIRS.has(name.toLowerCase()) && isInside(appData, p)),
-    onFile: collect,
-    onTick: ticker(homePhase),
-  });
-  seen += homeStats.files + homeStats.dirs;
+  if (!selectedDrive || isInside(selectedDrive.mount, home) || samePath(selectedDrive.mount, home)) {
+    const homeStats = await walk(home, {
+      signal: controller.signal,
+      maxEntries: MAX_ENTRIES,
+      skipDir: (p, name) =>
+        otherMounts.some((mount) => samePath(p, mount)) ||
+        skipSet.has(p.toLowerCase()) || (CACHE_DIRS.has(name.toLowerCase()) && isInside(appData, p)),
+      onFile: collect,
+      onTick: ticker(homePhase),
+    });
+    seen += homeStats.files + homeStats.dirs;
+  }
+  checkCancelled();
 
   let drives: { mount: string; label: string }[] = [];
-  try {
-    const mounts = await dataDriveMounts();
-    drives = (await listDisks()).filter((d) => mounts.includes(d.mount));
-  } catch {
-    // home only
+  if (selectedDrive) drives = [selectedDrive];
+  else {
+    try {
+      const mounts = await dataDriveMounts();
+      drives = (await listDisks()).filter((d) => mounts.includes(d.mount));
+    } catch {
+      // home only
+    }
   }
   for (const d of drives) {
+    checkCancelled();
     const budget = Math.min(MAX_ENTRIES, TOTAL_ENTRIES - seen);
     if (budget <= 0) break;
     const phase = `Looking on ${d.label}`;
     progress({ task: 'large', phase, done: seen, total: 0 });
     const stats = await walk(d.mount, {
+      signal: controller.signal,
       maxEntries: budget,
       skipDir: (p, name, depth) =>
         isInside(home, p) || samePath(home, p) ||
+        otherMounts.some((mount) => samePath(p, mount)) ||
+        (depth === 1 && process.platform === 'darwin' && d.mount === '/' && name === 'Volumes') ||
+        skipSet.has(p.toLowerCase()) || (CACHE_DIRS.has(name.toLowerCase()) && isInside(appData, p)) ||
         (depth === 1 && (DRIVE_SKIP_TOP.has(name.toLowerCase()) || name.startsWith(isWin ? '$' : '.'))),
       onFile: (f) => {
         if (f.depth === 1 && SYSTEM_FILES.test(f.name)) return;
@@ -122,6 +157,7 @@ export async function scanLargeFiles(minBytes: unknown, progress: Progress): Pro
     seen += stats.files + stats.dirs;
   }
 
+  checkCancelled();
   trim();
   progress({ task: 'large', phase: 'Done', done: found.length, total: found.length });
   return found;

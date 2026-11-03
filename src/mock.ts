@@ -581,9 +581,9 @@ export function createMockApi(): CleanlyApi {
       return clone(target);
     },
 
-    async scanLargeFiles(minBytes) {
+    async scanLargeFiles(minBytes, root) {
       await walk('large', [{ phase: 'Downloads' }, { phase: 'Videos' }, { phase: 'Documents' }, { phase: 'Pictures' }, { phase: 'Everything else' }, { phase: 'Drive D:', current: D }], 1800);
-      return clone(large.filter((f) => f.size >= minBytes).sort((a, b) => b.size - a.size));
+      return clone(large.filter((f) => f.size >= minBytes && (!root || f.path.toLowerCase().startsWith(root.toLowerCase()))).sort((a, b) => b.size - a.size));
     },
 
     async scanDuplicates() {
