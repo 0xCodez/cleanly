@@ -269,7 +269,8 @@ export async function deleteCacheEntry(target: string, root: string, opts: Delet
       return out;
     }
     const [realRoot, realTarget] = await Promise.all([fsp.realpath(root), fsp.realpath(target)]);
-    if (!isInside(realRoot, realTarget)) {
+    // A junction above the cache root must not redirect cleanup into unrelated data.
+    if (!samePath(realRoot, root) || !samePath(realTarget, target) || !isInside(realRoot, realTarget)) {
       out.refused = true;
       return out;
     }
