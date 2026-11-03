@@ -110,6 +110,7 @@
 .fx-dock .btn.primary { background: linear-gradient(135deg, #2b2f3a, var(--ink)); }
 .fx-dock .btn.primary.danger { color: #fff; background: linear-gradient(135deg, #e0455f, #b8243f); border-color: transparent; }
 .fx-dock .progress { width: 160px; }
+.fx-dock .btn.primary .spinner { border-color: rgba(255, 255, 255, 0.35); border-top-color: #fff; }
 
 /* ---------- filter chips ---------- */
 .fx-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
@@ -191,3 +192,112 @@
 @media (prefers-reduced-motion: reduce) {
   .fx-wait .orb::before, .fx-dock { animation: none; }
 }
+
+/* =====================================================================
+   Dark mode: "A - Graphite". Graphite cards (--surface), inner wells and rows
+   (--surface-2), raised controls (--raised), hairlines (--line) and a
+   top-edge highlight (inset 0 1px 0 --hair). Brand gradients stay rich.
+   Fallbacks mirror the Graphite token values in case a token is missing.
+   ===================================================================== */
+
+/* sidebar drive list */
+:root[data-theme='dark'] .disk-list.scroll { scrollbar-color: rgba(255, 255, 255, 0.18) transparent; }
+
+/* real OS file icons sit in a soft graphite well so dark glyphs stay readable */
+:root[data-theme='dark'] .chip-ico.real {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.035));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06), inset 0 1px 0 var(--hair, rgba(255, 255, 255, 0.08));
+}
+:root[data-theme='dark'] .chip-ico.real img { filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.45)); }
+:root[data-theme='dark'] .fx-drive { color: var(--link, #c5cbff); background: rgba(109, 123, 255, 0.2); }
+
+/* header stat */
+:root[data-theme='dark'] .fx-big { background-image: linear-gradient(100deg, #f5f5f7 0%, #c3c9ff 40%, #b48cff 70%, #ff9fcf 100%); }
+
+/* panels + links */
+:root[data-theme='dark'] .fx-link { color: var(--link, #c5cbff); }
+:root[data-theme='dark'] .fx-link:hover { color: #e4e7ff; }
+:root[data-theme='dark'] .fx-link:disabled { color: var(--ink-3); }
+
+/* rows */
+/* Straight inset hairlines: a border-top on a 16px-radius row curves into arcs at both ends. */
+:root[data-theme='dark'] .fx-list .row + .row { border-top-color: transparent; position: relative; }
+:root[data-theme='dark'] .fx-list .row + .row::before {
+  content: ''; position: absolute; left: 14px; right: 14px; top: -1px; height: 1px;
+  background: var(--line-soft, rgba(255, 255, 255, 0.06)); pointer-events: none;
+}
+:root[data-theme='dark'] .fx-copies .row + .row::before { content: none; }
+:root[data-theme='dark'] .fx-list .row:hover { background: rgba(255, 255, 255, 0.045); }
+:root[data-theme='dark'] .fx-list .row.on { background: rgba(109, 123, 255, 0.09); }
+:root[data-theme='dark'] .fx-list .row.on:hover { background: rgba(109, 123, 255, 0.12); }
+:root[data-theme='dark'] .chip-ico.mute { background: linear-gradient(135deg, #6b6f80, #4f5366); }
+
+/* waiting state: dark glass orb with the spinning rim */
+:root[data-theme='dark'] .fx-wait .orb { background: rgba(255, 255, 255, 0.12); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 14px 32px rgba(0, 0, 0, 0.45), 0 0 34px rgba(109, 123, 255, 0.2); }
+:root[data-theme='dark'] .fx-wait .orb::after { background: radial-gradient(circle at 32% 16%, #3c3c43 0%, #2b2b31 38%, #212125 100%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16); }
+:root[data-theme='dark'] .fx-wait .orb .ic { color: #b48cff; }
+
+/* bottom dock: dark frosted glass, same family as the sidebar */
+:root[data-theme='dark'] .fx-dock {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(46, 46, 51, 0.8) 0%, rgba(36, 36, 40, 0.8) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09), 0 1px 2px rgba(0, 0, 0, 0.45), 0 20px 50px rgba(0, 0, 0, 0.5);
+}
+:root[data-theme='dark'] .fx-dock-note.warn { color: #ff9aa8; }
+:root[data-theme='dark'] .fx-dock .btn.primary:not(.danger) {
+  color: var(--on-ink, #161618); border-color: transparent;
+  background: linear-gradient(135deg, #ffffff, #dcdce2);
+  box-shadow: inset 0 1px 0 #fff, 0 1px 2px rgba(0, 0, 0, 0.5), 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+:root[data-theme='dark'] .fx-dock .btn.primary:not(.danger) .spinner { border-color: rgba(22, 22, 24, 0.22); border-top-color: #161618; }
+:root[data-theme='dark'] .fx-dock .btn.primary.danger {
+  background: linear-gradient(135deg, #d23a55, #a81f39);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(210, 58, 85, 0.3);
+}
+
+/* filter chips: raised graphite pills */
+:root[data-theme='dark'] .fx-chip {
+  background: var(--raised, #2a2a2e); border-color: var(--line, rgba(255, 255, 255, 0.08));
+  box-shadow: inset 0 1px 0 var(--hair, rgba(255, 255, 255, 0.08)), 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+:root[data-theme='dark'] .fx-chip:hover { background: var(--raised-2, #36363c); color: var(--ink); }
+:root[data-theme='dark'] .fx-chip i { background: rgba(255, 255, 255, 0.08); }
+:root[data-theme='dark'] .fx-chip[aria-pressed='true'] {
+  background: var(--raised-2, #36363c); border-color: transparent;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 0 1.5px rgba(169, 179, 255, 0.75), 0 6px 18px rgba(109, 123, 255, 0.24);
+}
+
+/* space map stage: the graphite map card with a faint centre lift */
+:root[data-theme='dark'] .fx-stage {
+  background: radial-gradient(80% 65% at 50% 55%, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0) 70%), linear-gradient(180deg, #1e1e21 0%, #1a1a1d 100%);
+}
+:root[data-theme='dark'] .fx-crumbs button:hover { background: rgba(255, 255, 255, 0.06); color: var(--ink); }
+:root[data-theme='dark'] .fx-crumbs button[aria-current='true'] {
+  background: var(--raised, #2a2a2e);
+  box-shadow: inset 0 1px 0 var(--hair, rgba(255, 255, 255, 0.08)), 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+:root[data-theme='dark'] .fx-crumbs .sep { color: #8e8e96; }
+:root[data-theme='dark'] .fx-stage-foot i { box-shadow: 0 2px 8px rgba(255, 122, 168, 0.4); }
+:root[data-theme='dark'] .fx-hint { background: linear-gradient(135deg, rgba(255, 179, 71, 0.13), rgba(255, 122, 168, 0.13)); box-shadow: inset 0 0 0 1px rgba(255, 170, 140, 0.12); color: #ffd2b8; }
+:root[data-theme='dark'] .fx-hint .ic { color: #ffa36b; }
+:root[data-theme='dark'] .fx-side .row.sel { background: rgba(109, 123, 255, 0.16); box-shadow: inset 0 0 0 1px rgba(169, 179, 255, 0.18); }
+:root[data-theme='dark'] .fx-share { background: rgba(255, 255, 255, 0.08); }
+:root[data-theme='dark'] .icon-btn {
+  background: var(--raised, #2a2a2e); border-color: var(--line, rgba(255, 255, 255, 0.08)); color: var(--ink-2);
+  box-shadow: inset 0 1px 0 var(--hair, rgba(255, 255, 255, 0.08));
+}
+:root[data-theme='dark'] .icon-btn:hover { background: var(--raised-2, #36363c); color: var(--link, #c5cbff); box-shadow: inset 0 1px 0 var(--hair, rgba(255, 255, 255, 0.08)), 0 4px 12px rgba(0, 0, 0, 0.35); }
+
+/* duplicate groups: copies sit in a sunken well, the kept copy is raised */
+:root[data-theme='dark'] .fx-group.skip { opacity: 0.78; }
+:root[data-theme='dark'] .fx-copies { background: var(--surface-2, #1b1b1e); box-shadow: inset 0 0 0 1px var(--line, rgba(255, 255, 255, 0.08)), inset 0 1px 2px rgba(0, 0, 0, 0.25); }
+:root[data-theme='dark'] .fx-copies .row:hover { background: rgba(255, 255, 255, 0.04); }
+:root[data-theme='dark'] .fx-copies .row.keep,
+:root[data-theme='dark'] .fx-copies .row.keep:hover {
+  background: var(--raised, #2a2a2e);
+  box-shadow: inset 0 1px 0 var(--hair, rgba(255, 255, 255, 0.08)), 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+:root[data-theme='dark'] .fx-radio { border-color: rgba(255, 255, 255, 0.3); background: rgba(0, 0, 0, 0.22); }
+:root[data-theme='dark'] .fx-radio:hover { border-color: rgba(255, 255, 255, 0.45); }
+:root[data-theme='dark'] .fx-radio:checked { border-color: transparent; background: linear-gradient(135deg, #3fd6a0, #5fc6ff); }
+:root[data-theme='dark'] .fx-fate.keep { color: #6fe3b8; }

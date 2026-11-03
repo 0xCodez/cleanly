@@ -43,6 +43,8 @@ export function Sidebar() {
 
   return (
     <nav className="nav rise" aria-label="Sections">
+      {/* dark theme: the sidebar is a floating panel that reaches under the title bar; this keeps that strip draggable */}
+      <div className="nav-drag" aria-hidden="true" />
       <div className="brand">
         <BrandMark />
         <span className="brand-name">cleanly</span>

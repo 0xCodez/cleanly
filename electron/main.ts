@@ -10,6 +10,7 @@ import {
   type CleanlyApi,
   type ScanProgress,
   type SystemInfo,
+  type Theme,
 } from '../shared/types';
 import { askAi } from './services/ai';
 import { listApps, uninstallApp } from './services/apps';
@@ -31,6 +32,26 @@ const devServer = process.env.VITE_DEV_SERVER_URL;
 let win: BrowserWindow | null = null;
 
 const progress = (p: ScanProgress) => win?.webContents.send(PROGRESS_CHANNEL, p);
+
+// Window chrome per resolved theme: the paper colour behind the page and the Windows caption glyphs.
+const CHROME = {
+  light: { background: '#f2f3f6', symbol: '#3c4250' },
+  dark: { background: '#161618', symbol: '#c7c7cc' },
+} as const;
+const chrome = () => CHROME[nativeTheme.shouldUseDarkColors ? 'dark' : 'light'];
+
+/** Follow the saved appearance; 'system' hands the choice back to the OS. The renderer's prefers-color-scheme follows too. */
+function applyTheme(theme: Theme) {
+  if (nativeTheme.themeSource !== theme) nativeTheme.themeSource = theme;
+  syncChrome();
+}
+
+function syncChrome() {
+  if (!win || win.isDestroyed()) return;
+  const c = chrome();
+  win.setBackgroundColor(c.background);
+  if (process.platform !== 'darwin') win.setTitleBarOverlay({ color: '#00000000', symbolColor: c.symbol, height: 44 });
+}
 
 function systemInfo(): SystemInfo {
   const platform = process.platform === 'darwin' || process.platform === 'win32' ? process.platform : 'linux';
@@ -100,7 +121,11 @@ const handlers: Handlers = {
   uninstallApp: (id) => uninstallApp(id),
   protection: () => getProtection(),
   getSettings: () => getSettings(),
-  setSettings: (patch) => setSettings(patch),
+  setSettings: async (patch) => {
+    const next = await setSettings(patch);
+    applyTheme(next.theme);
+    return next;
+  },
   setApiKey: (provider, key) => setApiKey(provider, key),
   askAi: (question, context) => askAi(question, context),
   tipsProfile: () => getTipsProfile(),
@@ -135,12 +160,12 @@ function createWindow() {
     minWidth: 1120,
     minHeight: 740,
     show: false,
-    backgroundColor: '#f2f3f6',
+    backgroundColor: chrome().background,
     title: 'Cleanly',
     titleBarStyle: 'hidden',
     ...(isMac
       ? { trafficLightPosition: { x: 20, y: 16 } }
-      : { titleBarOverlay: { color: '#00000000', symbolColor: '#3c4250', height: 44 } }),
+      : { titleBarOverlay: { color: '#00000000', symbolColor: chrome().symbol, height: 44 } }),
     webPreferences: {
       preload: path.join(here, 'preload.cjs'),
       contextIsolation: true,
@@ -178,8 +203,11 @@ if (!app.requestSingleInstanceLock()) {
     win.focus();
   });
 
-  app.whenReady().then(() => {
-    nativeTheme.themeSource = 'light';
+  app.whenReady().then(async () => {
+    // before the first window, so it opens in the right colours without a flash
+    const saved = await getSettings().catch(() => null);
+    nativeTheme.themeSource = saved?.theme ?? 'system';
+    nativeTheme.on('updated', syncChrome);
     registerIpc();
     createWindow();
     app.on('activate', () => {

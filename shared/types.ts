@@ -116,12 +116,15 @@ export interface ProtectionStatus {
 
 export type AiProvider = 'claude' | 'chatgpt';
 export type Background = 'mist' | 'grid' | 'dots' | 'grain';
+/** 'system' follows the OS light/dark setting live */
+export type Theme = 'light' | 'dark' | 'system';
 
 export interface Settings {
   aiProvider: AiProvider;
   hasClaudeKey: boolean;
   hasOpenAiKey: boolean;
   background: Background;
+  theme: Theme;
   largeFileMinMb: number;
   confirmBeforeClean: boolean;
 }

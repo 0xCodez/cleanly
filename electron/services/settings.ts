@@ -1,7 +1,7 @@
 import { app, safeStorage } from 'electron';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import type { AiProvider, Background, Settings } from '../../shared/types';
+import type { AiProvider, Background, Settings, Theme } from '../../shared/types';
 
 type StoredSettings = Omit<Settings, 'hasClaudeKey' | 'hasOpenAiKey'>;
 type StoredKeys = Partial<Record<AiProvider, string>>;
@@ -9,12 +9,14 @@ type StoredKeys = Partial<Record<AiProvider, string>>;
 const DEFAULTS: StoredSettings = {
   aiProvider: 'claude',
   background: 'mist',
+  theme: 'system',
   largeFileMinMb: 500,
   confirmBeforeClean: true,
 };
 
 const PROVIDERS: readonly AiProvider[] = ['claude', 'chatgpt'];
 const BACKGROUNDS: readonly Background[] = ['mist', 'grid', 'dots', 'grain'];
+const THEMES: readonly Theme[] = ['light', 'dark', 'system'];
 const MIN_LARGE_MB = 10;
 const MAX_LARGE_MB = 100_000;
 
@@ -62,6 +64,10 @@ function validatePatch(patch: unknown): Partial<StoredSettings> {
       case 'background':
         if (!BACKGROUNDS.includes(value as Background)) throw new Error('Unknown background style.');
         out.background = value as Background;
+        break;
+      case 'theme':
+        if (!THEMES.includes(value as Theme)) throw new Error('Unknown appearance.');
+        out.theme = value as Theme;
         break;
       case 'largeFileMinMb':
         if (typeof value !== 'number' || !Number.isFinite(value) || value < MIN_LARGE_MB || value > MAX_LARGE_MB) {

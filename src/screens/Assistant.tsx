@@ -6,6 +6,7 @@ import { ScreenHead, Segmented } from '../components/ui';
 import { shortPath } from '../lib/format';
 import { useStore } from '../state';
 import './system.css';
+import './support.css';
 
 type NewMsg = { role: 'user'; text: string } | { role: 'ai'; advice: AiAdvice } | { role: 'err'; text: string };
 type Msg = NewMsg & { id: number };
@@ -73,7 +74,7 @@ function KeySetup({ provider }: { provider: AiProvider }) {
           aria-label={`${info.name} API key`}
         />
         <button type="button" className="btn primary" onClick={() => void save()} disabled={saving || !key.trim()}>
-          {saving ? <span className="spinner" style={{ borderColor: 'rgba(255,255,255,0.35)', borderTopColor: '#fff' }} /> : <Icon name="check" />}
+          {saving ? <span className="spinner on-ink" /> : <Icon name="check" />}
           Save key
         </button>
       </div>

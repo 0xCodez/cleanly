@@ -1,7 +1,9 @@
 import { useEffect, useRef } from 'react';
+import { useResolvedTheme } from '../state';
 
 // "Cosmic wind": domain-warped fbm smoke rendered with WebGL.
-// mode 'plume' rises from the bottom of a card; mode 'mist' is the slow silk background.
+// mode 'plume' rises from the bottom of a card; mode 'mist' is the slow silk background (light theme only).
+// On a dark card the plume is premultiplied light over graphite, so it is drawn thinner: glowing smoke, not a cloud.
 const FRAG = `
 precision highp float;
 uniform vec2 r; uniform float t; uniform float energy; uniform float mode;
@@ -65,6 +67,9 @@ const MOODS = [
   ['#ffc2b0', '#d6b8ff', '#ffb8d6', '#ffe6c4'],
 ].map((m) => m.map(hex));
 
+/** how much thinner the plume is drawn on dark cards (0 = same as light) */
+const DARK_THIN = 0.62;
+
 interface FlowProps {
   mode: 'plume' | 'mist';
   /** plume only: switch to the calm mint palette (after a clean) */
@@ -76,8 +81,10 @@ interface FlowProps {
 
 export function Flow({ mode, calm = false, pulse = 0, className }: FlowProps) {
   const ref = useRef<HTMLCanvasElement>(null);
-  const live = useRef({ calm, boost: 0 });
+  const dark = useResolvedTheme() === 'dark';
+  const live = useRef({ calm, boost: 0, dark });
   live.current.calm = calm;
+  live.current.dark = dark;
 
   useEffect(() => {
     if (pulse) live.current.boost = 1;
@@ -122,6 +129,8 @@ export function Flow({ mode, calm = false, pulse = 0, className }: FlowProps) {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const colors = (mode === 'mist' ? MOODS[0] : PLUME).map((c) => [...c] as RGB);
     let clock = mode === 'mist' ? 50 : 20;
+    // plume strength eases between themes instead of jumping
+    let thin = live.current.dark ? 1 : 0;
     let last = performance.now();
     let raf = 0;
 
@@ -140,7 +149,9 @@ export function Flow({ mode, calm = false, pulse = 0, className }: FlowProps) {
 
       gl.uniform2f(U.r, canvas.width, canvas.height);
       gl.uniform1f(U.t, clock);
-      gl.uniform1f(U.energy, mode === 'mist' ? 1.4 : 1.15 + st.boost * 0.25);
+      thin += ((st.dark ? 1 : 0) - thin) * (1 - Math.exp(-dt * 3));
+      const plume = (1.15 + st.boost * 0.25) * (1 - thin * DARK_THIN);
+      gl.uniform1f(U.energy, mode === 'mist' ? 1.4 : plume);
       gl.uniform1f(U.mode, mode === 'mist' ? 1 : 0);
       U.c.forEach((loc, i) => gl.uniform3fv(loc, colors[i]));
       gl.clearColor(0, 0, 0, 0);

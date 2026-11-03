@@ -366,7 +366,7 @@ export default function LargeFiles() {
                   disabled={trashing || loading}
                   onClick={() => (settings?.confirmBeforeClean === false ? void trash() : setConfirming(true))}
                 >
-                  {trashing ? <span className="spinner" style={{ borderColor: 'rgba(255,255,255,0.35)', borderTopColor: '#fff' }} /> : <Icon name="trash" />}
+                  {trashing ? <span className="spinner" /> : <Icon name="trash" />}
                   {trashing ? 'Moving' : 'Move to Trash'}
                 </button>
               </div>
