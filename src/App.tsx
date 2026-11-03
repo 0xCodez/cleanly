@@ -32,18 +32,34 @@ const SCREENS: Record<Screen, ComponentType> = {
   settings: Settings,
 };
 
+/** "Backlight Glow": light pooling behind the window in the dark theme. CSS transform/opacity only; static under reduced motion. */
+function BacklightGlow() {
+  return (
+    <div className="bg-layer bg-glow" aria-hidden="true">
+      <i className="glow-lav" />
+      <i className="glow-pink" />
+      <div className="glow-horizon">
+        <i />
+      </div>
+    </div>
+  );
+}
+
 function Shell() {
-  const { screen, settings, toasts } = useStore();
+  const { screen, settings, theme, toasts } = useStore();
   const bg = settings?.background ?? 'mist';
   const Current = SCREENS[screen];
 
   return (
     <div className="app" data-bg={bg}>
-      {bg === 'mist' && (
-        <div className="bg-layer">
-          <Flow mode="mist" />
-        </div>
-      )}
+      {bg === 'mist' &&
+        (theme === 'dark' ? (
+          <BacklightGlow />
+        ) : (
+          <div className="bg-layer">
+            <Flow mode="mist" />
+          </div>
+        ))}
       {bg === 'dots' && (
         <div className="bg-layer bg-dots">
           <i />

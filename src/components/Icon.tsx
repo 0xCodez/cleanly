@@ -4,7 +4,7 @@ import type { IconName } from '../../shared/types';
 // Duotone icon set: `f` = soft fill, `s` = outline, `d` = solid detail, `a` = accent.
 // Styling comes from app.css (`symbol .f` …) through custom properties, so it reaches <use> clones.
 const SPRITE = `
-<linearGradient id="g-brand" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2b4cff"/><stop offset="0.55" stop-color="#8a5cff"/><stop offset="1" stop-color="#ff5d8f"/></linearGradient>
+<linearGradient id="g-brand" x1="0" y1="0" x2="1" y2="1"><stop class="g0" offset="0" stop-color="#2b4cff"/><stop class="g1" offset="0.55" stop-color="#8a5cff"/><stop class="g2" offset="1" stop-color="#ff5d8f"/></linearGradient>
 <symbol id="i-scan" viewBox="0 0 24 24"><circle class="f" cx="12" cy="12" r="9"/><circle class="s" cx="12" cy="12" r="9"/><path class="s" d="M12 12L18.4 5.6"/><path class="s" d="M12 7a5 5 0 1 0 5 5"/><circle class="a" cx="16.2" cy="14.8" r="1.6"/></symbol>
 <symbol id="i-broom" viewBox="0 0 24 24"><path class="f" d="M6.5 13.5l4 4-2.6 3.2c-.4.5-1.1.6-1.6.2L3.1 18.1c-.5-.4-.5-1.1-.1-1.6z"/><path class="s" d="M14 10l6.5-6.5"/><path class="s" d="M6.5 13.5l4 4"/><path class="s" d="M8.5 11.5l4 4 1.5-1.5c.8-.8.8-2 0-2.8l-1.2-1.2c-.8-.8-2-.8-2.8 0z"/><path class="s" d="M6.5 13.5L3 17.2c-.4.5-.4 1.2.1 1.6l3.2 2.1c.5.3 1.2.2 1.6-.2l2.6-3.2"/><path class="s" d="M5.5 18.5l1.8-1.8"/></symbol>
 <symbol id="i-shield" viewBox="0 0 24 24"><path class="f" d="M12 3l7.5 2.8v5.9c0 4.6-3.2 8-7.5 9.3-4.3-1.3-7.5-4.7-7.5-9.3V5.8z"/><path class="s" d="M12 3l7.5 2.8v5.9c0 4.6-3.2 8-7.5 9.3-4.3-1.3-7.5-4.7-7.5-9.3V5.8z"/><path class="s" d="M8.8 12.2l2.2 2.2 4.4-4.6"/></symbol>
@@ -68,7 +68,7 @@ export function Icon({ name, size, style, className }: { name: IconName; size?: 
 /** The four-point "glint" brand mark. */
 export function BrandMark({ size = 30 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true">
+    <svg className="brand-mark" width={size} height={size} viewBox="0 0 32 32" aria-hidden="true">
       <path d="M16 2c1.2 7.4 6.6 12.8 14 14-7.4 1.2-12.8 6.6-14 14-1.2-7.4-6.6-12.8-14-14C9.4 14.8 14.8 9.4 16 2z" fill="url(#g-brand)" />
       <circle cx="25" cy="7" r="2.4" fill="#ffb547" />
     </svg>

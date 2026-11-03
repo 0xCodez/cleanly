@@ -417,6 +417,7 @@ function initialSettings(): Settings {
     hasClaudeKey: false,
     hasOpenAiKey: false,
     background: 'mist',
+    theme: 'system',
     largeFileMinMb: 500,
     confirmBeforeClean: true,
   };

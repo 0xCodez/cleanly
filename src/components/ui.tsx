@@ -22,7 +22,7 @@ export function CleanButton({
 }) {
   return (
     <button type="button" className={`cta${done ? ' done' : ''}${busy ? ' busy' : ''}`} onClick={onClick} disabled={disabled || busy}>
-      <span className="cta-ico">{busy ? <span className="spinner" style={{ borderColor: 'rgba(255,255,255,0.4)', borderTopColor: '#fff' }} /> : <Icon name={done ? 'check' : icon} />}</span>
+      <span className="cta-ico">{busy ? <span className="spinner on-color" /> : <Icon name={done ? 'check' : icon} />}</span>
       <span className="cta-t">
         <b>{label}</b>
         {sub && <small>{sub}</small>}

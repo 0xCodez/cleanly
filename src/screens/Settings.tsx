@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { AiProvider, Background, Settings as SettingsData } from '../../shared/types';
+import type { AiProvider, Background, Settings as SettingsData, Theme } from '../../shared/types';
 import { api } from '../api';
 import { BrandMark, Icon } from '../components/Icon';
 import { ScreenHead, Segmented, Toggle } from '../components/ui';
@@ -13,6 +13,12 @@ const BACKGROUNDS: { value: Background; label: string }[] = [
   { value: 'grid', label: 'Grid' },
   { value: 'dots', label: 'Dots' },
   { value: 'grain', label: 'Grain' },
+];
+
+const THEMES: { value: Theme; label: string }[] = [
+  { value: 'light', label: 'Light' },
+  { value: 'dark', label: 'Dark' },
+  { value: 'system', label: 'System' },
 ];
 
 const SIZES = ['100', '250', '500', '1000'] as const;
@@ -96,7 +102,7 @@ function KeyRow({ id, name, keyUrl, has }: { id: AiProvider; name: string; keyUr
             aria-label={`${name} API key`}
           />
           <button type="button" className="btn small primary" disabled={busy || !key.trim()} onClick={() => void apply(key.trim())}>
-            {busy ? <span className="spinner" style={{ width: 14, height: 14, borderColor: 'rgba(255,255,255,0.35)', borderTopColor: '#fff' }} /> : 'Save'}
+            {busy ? <span className="spinner on-ink" style={{ width: 14, height: 14 }} /> : 'Save'}
           </button>
           <button type="button" className="btn small ghost" onClick={() => setEditing(false)} disabled={busy}>
             Cancel
@@ -157,6 +163,14 @@ export default function Settings() {
               <Icon name="layers" />
             </span>
             <h2>Appearance</h2>
+          </div>
+          <div className="sy-opt">
+            <div className="grow">
+              <b>Theme</b>
+              <small>{settings.theme === 'system' ? 'Follows your system, light or dark' : `Always ${settings.theme}`}</small>
+            </div>
+            {spin('theme')}
+            <Segmented<Theme> label="Theme" value={settings.theme} options={THEMES} onChange={(v) => void save('theme', { theme: v })} />
           </div>
           <div className="sy-opt col">
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

@@ -38,7 +38,7 @@
 .sp-section-head b { font-size: 14px; font-weight: 600; }
 .sp-presets { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
 .sp-chip {
-  height: 52px; border-radius: 16px; border: 1px solid var(--line); background: #fff; cursor: pointer;
+  height: 52px; border-radius: 16px; border: 1px solid var(--line); background: var(--raised); cursor: pointer;
   font-family: var(--display); font-size: 17px; font-weight: 500; letter-spacing: -0.03em; color: var(--ink); font-variant-numeric: tabular-nums;
   transition: transform 0.2s var(--ease), box-shadow 0.25s var(--ease), border-color 0.2s, background 0.2s;
 }
@@ -61,7 +61,7 @@
 .sp-count.near { color: #9a5a00; }
 .sp-form .textarea { min-height: 84px; }
 .sp-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
-.sp-foot { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; line-height: 1.5; color: var(--ink-3); padding-top: 14px; border-top: 1px solid #eef0f3; }
+.sp-foot { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; line-height: 1.5; color: var(--ink-3); padding-top: 14px; border-top: 1px solid var(--line-soft); }
 .sp-foot .ic { width: 15px; height: 15px; margin-top: 1px; color: var(--ink-3); }
 
 /* thank-you and loading states */
@@ -113,3 +113,67 @@
 @media (prefers-reduced-motion: reduce) {
   .sp-badge, .sp-skel i, .fb-sys { animation: none; }
 }
+
+
+/* =====================================================================
+   Dark mode, "A - Graphite". Every rule is scoped to
+   :root[data-theme='dark'], so light mode is untouched. Tokens come from
+   app.css; the fallbacks are the Graphite values.
+   ===================================================================== */
+
+/* ---------- Support (tips) ---------- */
+/* Backlight Glow: the Flow plume becomes a soft coloured backlight. Screen
+   blend drops the darker-than-card (brown/sooty) parts, blur softens the
+   streaks and the bottom-up mask keeps the glow under the content. */
+:root[data-theme='dark'] .sp-plume {
+  inset: -16px; mix-blend-mode: screen; filter: saturate(1.8) blur(12px);
+  -webkit-mask-image: linear-gradient(to top, #000 0%, #000 28%, transparent 80%);
+  mask-image: linear-gradient(to top, #000 0%, #000 28%, transparent 80%);
+  opacity: 0.8;
+}
+:root[data-theme='dark'] .fb-aside .sp-plume { opacity: 0.6; }
+:root[data-theme='dark'] .sp-perks .ic,
+:root[data-theme='dark'] .fb-aside li .ic { color: #b48cff; --ac: #ff9fcf; }
+:root[data-theme='dark'] .sp-big { background-image: linear-gradient(100deg, #f5f5f7 0%, #c3c9ff 40%, #b48cff 70%, #ff9fcf 100%); }
+:root[data-theme='dark'] .sp-supporters {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.05));
+  border-color: var(--line, rgba(255, 255, 255, 0.08));
+  box-shadow: inset 0 1px 0 var(--hair, rgba(255, 255, 255, 0.08)), 0 4px 14px rgba(0, 0, 0, 0.3);
+}
+:root[data-theme='dark'] .sp-supporters .dots i { border-color: var(--surface, #202024); }
+
+:root[data-theme='dark'] .sp-chip { box-shadow: inset 0 1px 0 var(--hair, rgba(255, 255, 255, 0.08)), 0 1px 2px rgba(0, 0, 0, 0.35); }
+:root[data-theme='dark'] .sp-chip:hover {
+  background: var(--raised-2, #36363c);
+  box-shadow: inset 0 1px 0 var(--hair, rgba(255, 255, 255, 0.08)), 0 6px 18px rgba(0, 0, 0, 0.4);
+}
+:root[data-theme='dark'] .sp-chip[aria-pressed='true'] {
+  background: linear-gradient(180deg, #36363e, #2b2b31) padding-box, linear-gradient(135deg, #6d7bff, #a77bff 55%, #ff8fc8) border-box;
+  border-color: transparent;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(109, 123, 255, 0.3);
+}
+:root[data-theme='dark'] .sp-custom .input[aria-invalid='true'],
+:root[data-theme='dark'] .fb-form .input[aria-invalid='true'] { border-color: #ff7a8a; box-shadow: 0 0 0 4px rgba(255, 122, 138, 0.16); }
+:root[data-theme='dark'] .sp-hint.err { color: #ff8a9b; }
+:root[data-theme='dark'] .sp-count.near { color: #ffc46b; }
+
+:root[data-theme='dark'] .sp-badge { box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.5), 0 12px 32px rgba(109, 123, 255, 0.4); }
+:root[data-theme='dark'] .sp-badge.mint { box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.5), 0 12px 32px rgba(63, 214, 160, 0.32); }
+:root[data-theme='dark'] .sp-skel i { background-image: linear-gradient(90deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.05) 100%); }
+
+/* ---------- Feedback ---------- */
+:root[data-theme='dark'] .fb-star { color: #6e6e76; }
+:root[data-theme='dark'] .fb-star.lit { color: #ffb547; }
+:root[data-theme='dark'] .fb-star.lit svg { filter: drop-shadow(0 3px 8px rgba(255, 166, 60, 0.45)); }
+:root[data-theme='dark'] .fb-sys {
+  background: var(--surface-2, #1b1b1e);
+  border-color: var(--line, rgba(255, 255, 255, 0.08));
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+/* ---------- Assistant ----------
+   The chat skin (bubbles, composer, chips, key setup) lives next to its layout in system.css.
+   Only the verdict chips on suggestion cards are styled here; Assistant.tsx imports this file. */
+:root[data-theme='dark'] .sy-sug .tag.safe { background: rgba(63, 214, 160, 0.16); color: #6ee7bf; }
+:root[data-theme='dark'] .sy-sug .tag.review { background: rgba(255, 181, 71, 0.16); color: #ffcb7a; }
+:root[data-theme='dark'] .sy-sug .tag.keep { background: rgba(255, 122, 138, 0.16); color: #ff9eac; }

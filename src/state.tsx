@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type {
   AiProvider,
   CleanResult,
@@ -32,6 +32,8 @@ interface Store {
   /** every fixed drive, system drive first; null until the first answer */
   disks: DiskInfo[] | null;
   settings: Settings | null;
+  /** the appearance actually on screen: settings.theme with 'system' resolved; mirrored on <html data-theme> */
+  theme: ResolvedTheme;
 
   junk: JunkCategory[] | null;
   /** map of the home folder (same as spaceMaps['']) */
@@ -70,6 +72,12 @@ interface Store {
   toast: (text: string, kind?: Toast['kind']) => void;
 }
 
+export type ResolvedTheme = 'light' | 'dark';
+
+const darkQuery = () => window.matchMedia('(prefers-color-scheme: dark)');
+/** Best guess before settings load. Inside Electron the OS media query already reflects the saved choice (nativeTheme). */
+export const initialTheme = (): ResolvedTheme => (darkQuery().matches ? 'dark' : 'light');
+
 const Ctx = createContext<Store | null>(null);
 
 export function StoreProvider({ children }: { children: ReactNode }) {
@@ -78,6 +86,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [disk, setDisk] = useState<DiskInfo | null>(null);
   const [disks, setDisks] = useState<DiskInfo[] | null>(null);
   const [settings, setSettingsState] = useState<Settings | null>(null);
+  const [systemDark, setSystemDark] = useState(() => initialTheme() === 'dark');
   const [junk, setJunk] = useState<JunkCategory[] | null>(null);
   const [spaceMaps, setSpaceMaps] = useState<Record<string, SpaceNode>>({});
   const [spacesBusy, setSpacesBusy] = useState<string[]>([]);
@@ -200,6 +209,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return off;
   }, [smartScan]);
 
+  // live-follow the OS while the appearance is 'system'
+  useEffect(() => {
+    const mq = darkQuery();
+    const on = () => setSystemDark(mq.matches);
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, []);
+
+  const pref = settings?.theme ?? 'system';
+  const theme: ResolvedTheme = pref === 'system' ? (systemDark ? 'dark' : 'light') : pref;
+  useLayoutEffect(() => {
+    document.documentElement.dataset.theme = theme;
+  }, [theme]);
+
   const spaces = spaceMaps[''] ?? null;
   const spacesScanning = spacesBusy.includes('');
   const spacesError = spacesFailed.includes('');
@@ -213,6 +236,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     disk,
     disks,
     settings,
+    theme,
     junk,
     spaces,
     spacesScanning,
@@ -267,6 +291,11 @@ export function driveOf(path: string, home: string | undefined, disks: DiskInfo[
   if (hit) return { name: driveName(hit), dir: rel(hit.mount) };
   const letter = /^([a-z]:)\//i.exec(p);
   return letter ? { name: letter[1].toUpperCase(), dir: rel(letter[1]) } : null;
+}
+
+/** The resolved theme; safe outside the provider (falls back to the OS preference). */
+export function useResolvedTheme(): ResolvedTheme {
+  return useContext(Ctx)?.theme ?? initialTheme();
 }
 
 export function useStore(): Store {

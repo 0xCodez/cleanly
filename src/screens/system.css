@@ -206,3 +206,98 @@
   .sy-ring .arc { transition: none; }
 }
 .sy-search input::-webkit-search-cancel-button { -webkit-appearance: none; }
+
+/* ---------- Theme preview swatches (for a Light / Dark / System picker in Settings; same markup as .sy-swatch) ---------- */
+.sy-swatch.theme-light { background: radial-gradient(90% 80% at 85% 0%, rgba(214, 205, 255, 0.55), transparent 60%), linear-gradient(180deg, #f6f7f9, #eceef2); }
+.sy-swatch.theme-dark { background: radial-gradient(90% 80% at 40% 0%, rgba(154, 134, 255, 0.22), transparent 62%), radial-gradient(80% 60% at 70% 110%, rgba(255, 143, 200, 0.16), transparent 70%), #161618; }
+.sy-swatch.theme-system { background: linear-gradient(115deg, #eceef2 0 50%, #161618 50% 100%); }
+.sy-swatch.theme-dark span, .sy-swatch.theme-system span { color: #c7c7cc; background: rgba(32, 32, 36, 0.85); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08); }
+
+/* =====================================================================
+   Dark · Graphite: Speed, Applications, Protection, Assistant, Settings.
+   Light rules above are untouched; every dark rule is scoped to :root[data-theme='dark'].
+   ===================================================================== */
+
+/* Speed */
+:root[data-theme='dark'] .sy-stat { background: var(--surface-2); border-color: var(--line); box-shadow: inset 0 1px 0 var(--hair); }
+:root[data-theme='dark'] .sy-stat.hot strong { background: linear-gradient(100deg, #ff6b81, #ff9fcf); -webkit-background-clip: text; background-clip: text; }
+:root[data-theme='dark'] .sy-admin { color: #c5cbff; background: rgba(109, 123, 255, 0.18); box-shadow: inset 0 0 0 1px rgba(140, 150, 255, 0.3); }
+:root[data-theme='dark'] .row .sub.sy-ask { color: #b3bbff; }
+:root[data-theme='dark'] .row .sub.sy-ask.on { color: #b48cff; }
+:root[data-theme='dark'] .sy-appico { background: linear-gradient(180deg, #313136 0%, #28282d 100%); border-color: rgba(255, 255, 255, 0.08); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 14px rgba(0, 0, 0, 0.3); }
+:root[data-theme='dark'] .sy-appico img { filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45)); }
+:root[data-theme='dark'] .sy-appico::after { border-color: var(--surface); background: #8e95a3; }
+:root[data-theme='dark'] .sy-appico.sy-imp-high::after { background: #ff6b81; }
+:root[data-theme='dark'] .sy-appico.sy-imp-medium::after { background: #ffb36b; }
+:root[data-theme='dark'] .row.sy-busy { background: linear-gradient(90deg, rgba(109, 123, 255, 0.14), rgba(109, 123, 255, 0) 70%); }
+
+/* Applications: real icons sit in a dark well so dark glyphs never vanish */
+:root[data-theme='dark'] .sy-av { box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.35), 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 14px rgba(0, 0, 0, 0.3); }
+:root[data-theme='dark'] .sy-av-img { padding: 5px; background: linear-gradient(180deg, #313136 0%, #28282d 100%); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07), inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 14px rgba(0, 0, 0, 0.3); }
+:root[data-theme='dark'] .sy-av-img img { border-radius: 6px; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45)); }
+:root[data-theme='dark'] .sy-confirm { background: rgba(255, 107, 129, 0.12); box-shadow: inset 0 0 0 1px rgba(255, 107, 129, 0.22); }
+:root[data-theme='dark'] .sy-confirm span { color: #ff9aa8; }
+:root[data-theme='dark'] .sy-confirm .btn.danger { color: #ff8a9b; }
+
+/* Protection */
+:root[data-theme='dark'] .sy-hero { background: linear-gradient(180deg, #202024 0%, #1b1b1e 100%); }
+:root[data-theme='dark'] .sy-hero::before { background: radial-gradient(closest-side, rgba(154, 134, 255, 0.2), rgba(109, 123, 255, 0.06) 60%, rgba(109, 123, 255, 0)); }
+:root[data-theme='dark'] .sy-hero::after { background: radial-gradient(closest-side, rgba(255, 143, 200, 0.12), rgba(255, 143, 200, 0)); }
+:root[data-theme='dark'] .sy-hero.is-bad::before { background: radial-gradient(closest-side, rgba(255, 107, 129, 0.2), rgba(255, 143, 200, 0.06) 60%, rgba(255, 143, 200, 0)); }
+:root[data-theme='dark'] .sy-ring .track { stroke: rgba(255, 255, 255, 0.08); }
+:root[data-theme='dark'] .sy-ring .arc { filter: drop-shadow(0 3px 10px rgba(167, 123, 255, 0.5)); }
+/* brighter brand stops (CSS beats the stopColor attribute) so the arc keeps >= 3:1 on the graphite card */
+:root[data-theme='dark'] .sy-ring stop:nth-of-type(1) { stop-color: #6d7bff; }
+:root[data-theme='dark'] .sy-ring stop:nth-of-type(2) { stop-color: #a77bff; }
+:root[data-theme='dark'] .sy-ring stop:nth-of-type(3) { stop-color: #ff8fc8; }
+:root[data-theme='dark'] .sy-ring-glow { opacity: 0.6; }
+:root[data-theme='dark'] .sy-ring-in { background: radial-gradient(circle at 32% 16%, #3c3c43 0%, #2b2b31 38%, #212125 100%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), inset 0 -10px 22px rgba(109, 123, 255, 0.12), 0 10px 26px rgba(0, 0, 0, 0.45); }
+:root[data-theme='dark'] .sy-ring-in strong { background: linear-gradient(100deg, #f5f5f7 0%, #c3c9ff 40%, #b48cff 70%, #ff9fcf 100%); -webkit-background-clip: text; background-clip: text; }
+:root[data-theme='dark'] .sy-facts li { background: var(--raised); border-color: var(--line); box-shadow: inset 0 1px 0 var(--hair); }
+:root[data-theme='dark'] .sy-facts i { background: #8e8e96; }
+:root[data-theme='dark'] .sy-facts .is-on i { background: #30d158; box-shadow: 0 0 0 3px rgba(48, 209, 88, 0.2); }
+:root[data-theme='dark'] .sy-facts .is-off i { background: #ff6b81; box-shadow: 0 0 0 3px rgba(255, 107, 129, 0.2); }
+:root[data-theme='dark'] .sy-count-warn,
+:root[data-theme='dark'] .eyebrow.sy-warn { color: #ffc56b; }
+:root[data-theme='dark'] .eyebrow.sy-warn .dot { box-shadow: 0 0 0 4px rgba(255, 181, 71, 0.22); }
+:root[data-theme='dark'] .eyebrow.sy-bad { color: #ff8a9b; }
+:root[data-theme='dark'] .eyebrow.sy-bad .dot { background: #ff6b81; box-shadow: 0 0 0 4px rgba(255, 107, 129, 0.2); }
+:root[data-theme='dark'] .tag.sy-on { background: rgba(48, 209, 140, 0.16); color: #7ff0c4; }
+:root[data-theme='dark'] .tag.sy-offt { background: rgba(255, 107, 129, 0.16); color: #ff9aa8; }
+:root[data-theme='dark'] .sy-notes .ic { color: #b48cff; }
+
+/* Assistant (its styles live in this file) */
+:root[data-theme='dark'] .sy-orb,
+:root[data-theme='dark'] .sy-ai-ico { box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.6), 0 10px 28px rgba(109, 123, 255, 0.3); }
+:root[data-theme='dark'] .sy-msg.user .sy-bubble { background: linear-gradient(180deg, #3a3a40 0%, #323238 100%); color: var(--ink); border-color: rgba(255, 255, 255, 0.1); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 1px 2px rgba(0, 0, 0, 0.4), 0 10px 26px rgba(0, 0, 0, 0.3); }
+:root[data-theme='dark'] .sy-bubble { background: var(--surface); border-color: var(--line); box-shadow: inset 0 1px 0 var(--hair), 0 1px 2px rgba(0, 0, 0, 0.4), 0 14px 36px rgba(0, 0, 0, 0.3); }
+:root[data-theme='dark'] .sy-msg.err .sy-bubble { color: #ffb3bd; background: rgba(255, 107, 129, 0.1); border-color: rgba(255, 107, 129, 0.28); }
+:root[data-theme='dark'] .sy-sug { background: var(--surface); border-color: var(--line); box-shadow: inset 0 1px 0 var(--hair); }
+:root[data-theme='dark'] .sy-composer { background: linear-gradient(180deg, rgba(22, 22, 24, 0), rgba(22, 22, 24, 0.92) 40%); }
+:root[data-theme='dark'] .sy-chips button { background: var(--raised); border-color: var(--line); box-shadow: inset 0 1px 0 var(--hair); }
+:root[data-theme='dark'] .sy-chips button:hover:not(:disabled) { background: var(--raised-2); box-shadow: inset 0 1px 0 var(--hair), 0 6px 16px rgba(0, 0, 0, 0.35); }
+:root[data-theme='dark'] .sy-chips .ic { color: #b48cff; }
+/* disabled (no key yet): dimmer label instead of fading the whole chip, ~4:1 on --raised, still reads as disabled */
+:root[data-theme='dark'] .sy-chips button:disabled { color: var(--ink-3); opacity: 0.75; }
+:root[data-theme='dark'] .sy-box { background: var(--surface); border-color: var(--line); box-shadow: inset 0 1px 0 var(--hair), 0 1px 2px rgba(0, 0, 0, 0.4), 0 18px 44px rgba(0, 0, 0, 0.35); }
+:root[data-theme='dark'] .sy-box:focus-within { border-color: rgba(140, 150, 255, 0.6); box-shadow: 0 0 0 4px rgba(109, 123, 255, 0.24), 0 18px 44px rgba(0, 0, 0, 0.35); }
+:root[data-theme='dark'] .sy-ta::placeholder { color: var(--ink-3); }
+:root[data-theme='dark'] .sy-send { box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.6), 0 4px 14px rgba(109, 123, 255, 0.45); }
+:root[data-theme='dark'] .sy-link { color: var(--link); }
+:root[data-theme='dark'] .sy-link:hover { color: #e4e7ff; }
+
+/* Settings */
+:root[data-theme='dark'] .sy-opt { border-top-color: var(--line); }
+:root[data-theme='dark'] .sy-swatch { border-color: var(--line); background-color: #161618; box-shadow: inset 0 1px 0 var(--hair); }
+:root[data-theme='dark'] .sy-swatch span { color: var(--ink-2); background: rgba(32, 32, 36, 0.85); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08); }
+:root[data-theme='dark'] .sy-swatch[aria-pressed='true'] { border-color: transparent; box-shadow: 0 0 0 2px #a77bff, 0 8px 22px rgba(167, 123, 255, 0.3); }
+/* dark previews of each canvas: Mist shows the Backlight Glow */
+:root[data-theme='dark'] .sy-swatch.mist { background: radial-gradient(90% 85% at 40% 0%, rgba(154, 134, 255, 0.28), transparent 62%), radial-gradient(60% 70% at 75% 10%, rgba(255, 143, 200, 0.16), transparent 66%), linear-gradient(90deg, rgba(255, 179, 138, 0.14), rgba(255, 143, 200, 0.13) 30%, rgba(154, 134, 255, 0.13) 62%, rgba(134, 184, 255, 0.14)) bottom / 100% 34% no-repeat, #161618; }
+:root[data-theme='dark'] .sy-swatch.grid { background-color: #161618; background-image: linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px); background-size: 10px 10px; }
+:root[data-theme='dark'] .sy-swatch.dots { background-color: #161618; background-image: radial-gradient(circle, rgba(255, 255, 255, 0.16) 1px, transparent 1.5px); background-size: 9px 9px; }
+:root[data-theme='dark'] .sy-swatch.grain { background: conic-gradient(from 40deg at 60% 40%, rgba(255, 143, 200, 0.18), rgba(134, 160, 255, 0.16), rgba(255, 179, 138, 0.14), rgba(255, 143, 200, 0.18)), #19191c; }
+:root[data-theme='dark'] .sy-swatch.theme-light { background: radial-gradient(90% 80% at 85% 0%, rgba(214, 205, 255, 0.55), transparent 60%), linear-gradient(180deg, #f6f7f9, #eceef2); }
+:root[data-theme='dark'] .sy-swatch.theme-light span { color: #3c4250; background: rgba(255, 255, 255, 0.85); box-shadow: none; }
+:root[data-theme='dark'] .sy-swatch.theme-dark { background: radial-gradient(90% 80% at 40% 0%, rgba(154, 134, 255, 0.22), transparent 62%), radial-gradient(80% 60% at 70% 110%, rgba(255, 143, 200, 0.16), transparent 70%), #161618; }
+:root[data-theme='dark'] .sy-swatch.theme-system { background: linear-gradient(115deg, #eceef2 0 50%, #161618 50% 100%); }
+:root[data-theme='dark'] .sy-love .ic { color: #ff8fc8; }
