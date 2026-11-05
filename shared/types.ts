@@ -33,6 +33,13 @@ export interface ScanProgress {
   current?: string;     // path being looked at
 }
 
+export interface JunkEntry {
+  name: string;
+  path: string;
+  size: number;
+  kind?: 'file' | 'folder';
+}
+
 /** A group of junk the app knows how to clean, e.g. "Browser caches". */
 export interface JunkCategory {
   id: string;
@@ -43,8 +50,8 @@ export interface JunkCategory {
   count: number;          // number of top-level entries that would be trashed
   locations: string[];    // display paths (with ~ for home)
   safe: boolean;          // true = selected by default
+  entries?: JunkEntry[];  // specific cleanable files or folders
 }
-
 export interface CleanResult {
   freed: number;
   removed: number;

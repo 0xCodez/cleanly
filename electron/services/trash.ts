@@ -97,6 +97,9 @@ export function isSafeUserPath(p: unknown, home: string = os.homedir(), drives: 
   const abs = path.resolve(p);
   if (path.parse(abs).root === abs) return false;
   if (isSafeHomePath(abs, home)) return true;
+  for (const k of Object.values(knownFolders())) {
+    if (isInside(k, abs)) return true;
+  }
   return drives.some((m) => !isInside(home, m) && !samePath(home, m) && !isInside(m, home) && isSafeDrivePath(p, abs, m));
 }
 

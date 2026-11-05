@@ -2,7 +2,7 @@ import { execFile } from 'node:child_process';
 import { promises as fsp, type Dirent } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import type { CleanResult, IconName, JunkCategory, ScanProgress } from '../../shared/types';
+import type { CleanResult, IconName, JunkCategory, JunkEntry, ScanProgress } from '../../shared/types';
 import { deleteCacheEntry, isSafeUserPath, trashPaths } from './trash';
 import {
   DAY_MS,
@@ -405,12 +405,14 @@ interface Measured {
   size: number;
   count: number;
   locations: string[];
+  entries: JunkEntry[];
 }
 
 /** Sizes what a clean would remove: every entry inside each root, minus excluded and too-fresh files. */
 async function measureCache(def: Def, roots: Root[], onTick: (current: string) => void): Promise<Measured> {
   const cutoff = def.keepNewerThanMs ? Date.now() - def.keepNewerThanMs : undefined;
-  const out: Measured = { size: 0, count: 0, locations: [] };
+  const out: Measured = { size: 0, count: 0, locations: [], entries: [] };
+  const entryMap = new Map<string, JunkEntry>();
   for (const root of roots) {
     const excluded = new Set((root.exclude ?? []).map(lower));
     const entries = new Set<string>();
@@ -420,14 +422,37 @@ async function measureCache(def: Def, roots: Root[], onTick: (current: string) =
       maxEntries: SCAN_CAP,
       skipDir: (_p, name, depth) => depth === 1 && excluded.has(lower(name)),
       onDir: (p, depth) => {
-        if (depth === 1 && cutoff === undefined) entries.add(top(p));
+        if (depth === 1 && cutoff === undefined) {
+          const t = top(p);
+          entries.add(t);
+          if (!entryMap.has(p)) {
+            entryMap.set(p, { name: path.basename(p), path: p, size: 0, kind: 'folder' });
+          }
+        }
       },
       onFile: (f) => {
         if (f.depth === 1 && excluded.has(lower(f.name))) return;
         // Same freshness rule as deleteCacheEntry, so the size shown matches what a clean removes.
         if (cutoff !== undefined && newest(f) >= cutoff) return;
         bytes += f.size;
-        entries.add(top(f.path));
+        const t = top(f.path);
+        entries.add(t);
+
+        const rel = path.relative(root.path, f.path);
+        const parts = rel.split(path.sep);
+        const topName = parts[0];
+        const topPath = path.join(root.path, topName);
+        const existing = entryMap.get(topPath);
+        if (existing) {
+          existing.size += f.size;
+        } else {
+          entryMap.set(topPath, {
+            name: topName,
+            path: topPath,
+            size: f.size,
+            kind: parts.length > 1 ? 'folder' : 'file',
+          });
+        }
       },
       onTick: (_n, current) => onTick(current),
     });
@@ -437,6 +462,7 @@ async function measureCache(def: Def, roots: Root[], onTick: (current: string) =
       out.locations.push(displayPath(root.path));
     }
   }
+  out.entries = [...entryMap.values()].filter((e) => e.size > 0).sort((a, b) => b.size - a.size).slice(0, 50);
   return out;
 }
 
@@ -445,68 +471,87 @@ const touched = (f: { mtimeMs: number; birthtimeMs: number; atimeMs: number }) =
   Math.max(f.mtimeMs, f.birthtimeMs || 0, f.atimeMs || 0);
 
 /** Top-level entries of Downloads whose content was all last touched 90+ days ago. */
-async function findOldDownloads(): Promise<{ paths: string[]; size: number; folder: string }> {
-  const folder = knownFolder('downloads');
-  const cutoff = Date.now() - OLD_DOWNLOAD_MS;
-  const result = { paths: [] as string[], size: 0, folder };
-  let list: Dirent[];
-  try {
-    list = await fsp.readdir(folder, { withFileTypes: true });
-  } catch {
-    return result;
+async function findOldDownloads(): Promise<{ paths: string[]; size: number; folders: string[]; entries: JunkEntry[] }> {
+  const folders = [knownFolder('downloads')];
+  const homeDl = path.join(os.homedir(), 'Downloads');
+  if (!folders.some((f) => samePath(f, homeDl)) && (await isRealDir(homeDl))) {
+    folders.push(homeDl);
   }
-  const candidates = list.filter((d) => !DOWNLOAD_IGNORE.has(lower(d.name)) && (d.isFile() || d.isDirectory()));
-  await mapLimit(candidates, 8, async (d) => {
-    const p = path.join(folder, d.name);
+  const cutoff = Date.now() - OLD_DOWNLOAD_MS;
+  const result = { paths: [] as string[], size: 0, folders: [] as string[], entries: [] as JunkEntry[] };
+  for (const folder of folders) {
+    let list: Dirent[];
     try {
-      const st = await fsp.lstat(p);
-      if (st.isSymbolicLink()) return;
-      if (st.isFile()) {
-        if (touched(st) < cutoff) {
-          result.paths.push(p);
-          result.size += st.size;
-        }
-        return;
-      }
-      if (!st.isDirectory()) return;
-      let fresh = touched(st) >= cutoff;
-      let size = 0;
-      const ctrl = new AbortController();
-      const stats = await walk(p, {
-        signal: ctrl.signal,
-        maxEntries: 200_000,
-        onFile: (f) => {
-          size += f.size;
-          if (touched(f) >= cutoff) {
-            fresh = true;
-            ctrl.abort();
-          }
-        },
-      });
-      // A folder we could not fully check is treated as in use.
-      if (stats.truncated) fresh = true;
-      if (!fresh) {
-        result.paths.push(p);
-        result.size += size;
-      }
+      list = await fsp.readdir(folder, { withFileTypes: true });
     } catch {
-      // unreadable: leave it alone
+      continue;
     }
-  });
-  result.paths = result.paths.filter((p) => isSafeUserPath(p));
+    const candidates = list.filter((d) => !DOWNLOAD_IGNORE.has(lower(d.name)) && (d.isFile() || d.isDirectory()));
+    let folderHasOld = false;
+    await mapLimit(candidates, 8, async (d) => {
+      const p = path.join(folder, d.name);
+      try {
+        const st = await fsp.lstat(p);
+        if (st.isSymbolicLink()) return;
+        if (st.isFile()) {
+          if (touched(st) < cutoff && isSafeUserPath(p)) {
+            result.paths.push(p);
+            result.entries.push({ name: d.name, path: p, size: st.size, kind: 'file' });
+            folderHasOld = true;
+          }
+          return;
+        }
+        if (!st.isDirectory()) return;
+        let fresh = touched(st) >= cutoff;
+        let size = 0;
+        const ctrl = new AbortController();
+        const stats = await walk(p, {
+          signal: ctrl.signal,
+          maxEntries: 200_000,
+          onFile: (f) => {
+            size += f.size;
+            if (touched(f) >= cutoff) {
+              fresh = true;
+              ctrl.abort();
+            }
+          },
+        });
+        // A folder we could not fully check is treated as in use.
+        if (stats.truncated) fresh = true;
+        if (!fresh && isSafeUserPath(p)) {
+          result.paths.push(p);
+          result.entries.push({ name: d.name, path: p, size, kind: 'folder' });
+          folderHasOld = true;
+        }
+      } catch {
+        // unreadable: leave it alone
+      }
+    });
+    if (folderHasOld) {
+      result.folders.push(displayPath(folder));
+    }
+  }
+  result.entries.sort((a, b) => b.size - a.size);
+  result.size = result.entries.reduce((a, b) => a + b.size, 0);
   return result;
 }
 
 const RECYCLE_MEASURE = [
   "$ErrorActionPreference='SilentlyContinue'",
-  '$n=0; $t=[double]0',
-  'foreach($i in (New-Object -ComObject Shell.Application).NameSpace(10).Items()){',
+  '$items = (New-Object -ComObject Shell.Application).NameSpace(10).Items()',
+  '$n = 0; $t = [double]0',
+  '$lines = @()',
+  'foreach($i in $items){',
   '  $n++',
-  "  $v=$i.ExtendedProperty('System.Size')",
-  '  if($v -and [double]$v -gt 0){ $t+=[double]$v }',
-  '  else { $m=(Get-ChildItem -LiteralPath $i.Path -Recurse -Force -File | Measure-Object -Property Length -Sum).Sum; if($m){ $t+=[double]$m } }',
+  "  $v = $i.ExtendedProperty('System.Size')",
+  '  $sz = 0',
+  '  if($v -and [double]$v -gt 0){ $sz = [double]$v }',
+  '  else { $m = (Get-ChildItem -LiteralPath $i.Path -Recurse -Force -File | Measure-Object -Property Length -Sum).Sum; if($m){ $sz = [double]$m } }',
+  '  $t += $sz',
+  '  if($lines.Count -lt 50){ $lines += "$($i.Name)`t$($i.Path)`t$sz" }',
   '}',
   '"$n $t"',
+  '$lines',
 ].join('\n');
 
 function powershell(script: string, timeout: number): Promise<string> {
@@ -520,25 +565,44 @@ function powershell(script: string, timeout: number): Promise<string> {
   });
 }
 
-async function measureRecycleBin(): Promise<{ count: number; size: number }> {
+async function measureRecycleBin(): Promise<{ count: number; size: number; entries: JunkEntry[] }> {
   try {
-    const out = (await powershell(RECYCLE_MEASURE, 90_000)).trim().split(/\s+/);
-    const count = Number(out[out.length - 2]);
-    const size = Number(out[out.length - 1]);
-    return { count: Number.isFinite(count) ? count : 0, size: Number.isFinite(size) ? size : 0 };
+    const out = (await powershell(RECYCLE_MEASURE, 90_000)).trim().split(/\r?\n/);
+    if (out.length === 0 || !out[0]) return { count: 0, size: 0, entries: [] };
+    const [cntStr, sizeStr] = out[0].trim().split(/\s+/);
+    const count = Number(cntStr);
+    const size = Number(sizeStr);
+    const entries: JunkEntry[] = [];
+    for (let i = 1; i < out.length; i++) {
+      const parts = out[i].split('\t');
+      if (parts.length >= 3) {
+        const itemSize = Number(parts[2]);
+        entries.push({
+          name: parts[0],
+          path: parts[1],
+          size: Number.isFinite(itemSize) ? itemSize : 0,
+          kind: 'file',
+        });
+      }
+    }
+    return {
+      count: Number.isFinite(count) ? count : 0,
+      size: Number.isFinite(size) ? size : 0,
+      entries: entries.sort((a, b) => b.size - a.size),
+    };
   } catch {
-    return { count: 0, size: 0 };
+    return { count: 0, size: 0, entries: [] };
   }
 }
 
 async function measure(def: Def, onTick: (current: string) => void): Promise<Measured> {
   if (def.kind === 'recycle') {
     const r = await measureRecycleBin();
-    return { size: r.size, count: r.count, locations: ['Recycle Bin'] };
+    return { size: r.size, count: r.count, locations: ['Recycle Bin'], entries: r.entries };
   }
   if (def.kind === 'downloads') {
     const r = await findOldDownloads();
-    return { size: r.size, count: r.paths.length, locations: r.paths.length ? [displayPath(r.folder)] : [] };
+    return { size: r.size, count: r.paths.length, locations: r.folders, entries: r.entries };
   }
   const roots = (await def.roots?.()) ?? [];
   return measureCache(def, roots, onTick);
@@ -569,6 +633,7 @@ export async function scanJunk(progress: Progress): Promise<JunkCategory[]> {
         count: m.count,
         locations: m.locations.slice(0, 24),
         safe: def.safe,
+        entries: m.entries,
       });
     } catch {
       // a category that cannot be measured is simply not offered

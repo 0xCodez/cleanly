@@ -47,6 +47,14 @@ function initialJunk(): JunkCategory[] {
       count: 2841,
       locations: [tilde(join(HOME, 'AppData', 'Local', 'Temp'))],
       safe: true,
+      entries: [
+        { name: 'scoped_dir_2819', path: join(HOME, 'AppData', 'Local', 'Temp', 'scoped_dir_2819'), size: 1.4 * GB, kind: 'folder' },
+        { name: 'electron-build-cache', path: join(HOME, 'AppData', 'Local', 'Temp', 'electron-build-cache'), size: 1.1 * GB, kind: 'folder' },
+        { name: 'vscode-update-user-x64', path: join(HOME, 'AppData', 'Local', 'Temp', 'vscode-update-user-x64'), size: 680 * MB, kind: 'folder' },
+        { name: 'pip-unpack-9310', path: join(HOME, 'AppData', 'Local', 'Temp', 'pip-unpack-9310'), size: 420 * MB, kind: 'folder' },
+        { name: 'installer_crash.dmp', path: join(HOME, 'AppData', 'Local', 'Temp', 'installer_crash.dmp'), size: 340 * MB, kind: 'file' },
+        { name: 'chrome_debug.log', path: join(HOME, 'AppData', 'Local', 'Temp', 'chrome_debug.log'), size: 260 * MB, kind: 'file' },
+      ],
     },
     {
       id: 'browser-caches',
@@ -60,6 +68,12 @@ function initialJunk(): JunkCategory[] {
         tilde(join(HOME, 'AppData', 'Local', 'Microsoft', 'Edge', 'User Data', 'Default', 'Cache')),
       ],
       safe: true,
+      entries: [
+        { name: 'Chrome Cache_Data', path: join(HOME, 'AppData', 'Local', 'Google', 'Chrome', 'User Data', 'Default', 'Cache', 'Cache_Data'), size: 1.8 * GB, kind: 'folder' },
+        { name: 'Edge Cache_Data', path: join(HOME, 'AppData', 'Local', 'Microsoft', 'Edge', 'User Data', 'Default', 'Cache', 'Cache_Data'), size: 950 * MB, kind: 'folder' },
+        { name: 'Chrome GPUCache', path: join(HOME, 'AppData', 'Local', 'Google', 'Chrome', 'User Data', 'Default', 'GPUCache'), size: 380 * MB, kind: 'folder' },
+        { name: 'Chrome ScriptCache', path: join(HOME, 'AppData', 'Local', 'Google', 'Chrome', 'User Data', 'Default', 'Service Worker', 'ScriptCache'), size: 270 * MB, kind: 'folder' },
+      ],
     },
     {
       id: 'update-cache',
@@ -70,6 +84,10 @@ function initialJunk(): JunkCategory[] {
       count: 37,
       locations: ['C:/Windows/SoftwareDistribution/Download'],
       safe: true,
+      entries: [
+        { name: 'Windows11-KB5034123-x64.cab', path: 'C:\\Windows\\SoftwareDistribution\\Download\\Windows11-KB5034123-x64.cab', size: 1.4 * GB, kind: 'file' },
+        { name: 'InstallPack_26100.esd', path: 'C:\\Windows\\SoftwareDistribution\\Download\\InstallPack_26100.esd', size: 700 * MB, kind: 'file' },
+      ],
     },
     {
       id: 'crash-reports',
@@ -80,6 +98,10 @@ function initialJunk(): JunkCategory[] {
       count: 112,
       locations: [tilde(join(HOME, 'AppData', 'Local', 'CrashDumps')), 'C:/ProgramData/Microsoft/Windows/WER'],
       safe: true,
+      entries: [
+        { name: 'Discord_Crash_20250104.dmp', path: join(HOME, 'AppData', 'Local', 'CrashDumps', 'Discord_Crash_20250104.dmp'), size: 240 * MB, kind: 'file' },
+        { name: 'Code_Memory_Dump.dmp', path: join(HOME, 'AppData', 'Local', 'CrashDumps', 'Code_Memory_Dump.dmp'), size: 160 * MB, kind: 'file' },
+      ],
     },
     {
       id: 'dev-caches',
@@ -90,6 +112,11 @@ function initialJunk(): JunkCategory[] {
       count: 3,
       locations: [tilde(join(HOME, 'AppData', 'Local', 'npm-cache')), tilde(join(HOME, 'AppData', 'Local', 'pip', 'Cache')), tilde(join(HOME, '.gradle', 'caches'))],
       safe: false,
+      entries: [
+        { name: 'npm _cacache', path: join(HOME, 'AppData', 'Local', 'npm-cache', '_cacache'), size: 920 * MB, kind: 'folder' },
+        { name: 'pip wheel cache', path: join(HOME, 'AppData', 'Local', 'pip', 'Cache', 'wheels'), size: 480 * MB, kind: 'folder' },
+        { name: 'gradle wrapper dist', path: join(HOME, '.gradle', 'caches', 'modules-2'), size: 200 * MB, kind: 'folder' },
+      ],
     },
     {
       id: 'recycle-bin',
@@ -100,6 +127,11 @@ function initialJunk(): JunkCategory[] {
       count: 214,
       locations: ['C:/$Recycle.Bin'],
       safe: false,
+      entries: [
+        { name: 'OldProjectArchive.zip', path: 'C:\\$Recycle.Bin\\OldProjectArchive.zip', size: 680 * MB, kind: 'file' },
+        { name: 'RawFootage_Broll.mov', path: 'C:\\$Recycle.Bin\\RawFootage_Broll.mov', size: 320 * MB, kind: 'file' },
+        { name: 'database-backup-old.sql', path: 'C:\\$Recycle.Bin\\database-backup-old.sql', size: 100 * MB, kind: 'file' },
+      ],
     },
     {
       id: 'old-downloads',
@@ -110,6 +142,13 @@ function initialJunk(): JunkCategory[] {
       count: 146,
       locations: [tilde(join(HOME, 'Downloads'))],
       safe: false,
+      entries: [
+        { name: 'Win11_24H2_English_x64.iso', path: join(HOME, 'Downloads', 'Win11_24H2_English_x64.iso'), size: 5.8 * GB, kind: 'file' },
+        { name: 'ubuntu-24.04-desktop-amd64.iso', path: join(HOME, 'Downloads', 'ubuntu-24.04-desktop-amd64.iso'), size: 5.7 * GB, kind: 'file' },
+        { name: 'vs_community_installer_cache.zip', path: join(HOME, 'Downloads', 'vs_community_installer_cache.zip'), size: 2.9 * GB, kind: 'file' },
+        { name: 'Blender-4.2-windows-x64.msi', path: join(HOME, 'Downloads', 'Blender-4.2-windows-x64.msi'), size: 360 * MB, kind: 'file' },
+        { name: 'Other downloads', path: join(HOME, 'Downloads', 'Other downloads'), size: 3.94 * GB, kind: 'folder' },
+      ],
     },
   ];
 }
