@@ -28,10 +28,11 @@ interface Source {
 let lastSource = HOME_SRC;
 
 export default function SpaceMap() {
-  const { spaceMaps, spacesBusy, spacesFailed, scanSpaces, scanning, progress, system, disks, toast, go } = useStore();
+  const { spaceMaps, spacesBusy, spacesFailed, scanSpaces, scanning, progress, system, disks, toast, go, junk } = useStore();
   const [picked, setPicked] = useState(lastSource);
   const [trail, setTrail] = useState<SpaceNode[]>([]);
   const [focus, setFocus] = useState<string | null>(null);
+  const [showCleanable, setShowCleanable] = useState(false);
 
   const sources = useMemo<Source[]>(
     () => [{ key: HOME_SRC, label: 'Home' }, ...(disks ?? []).map((d) => ({ key: d.mount, label: driveName(d), disk: d }))],
@@ -52,12 +53,64 @@ export default function SpaceMap() {
   useEffect(() => {
     setTrail([]);
     setFocus(null);
+    setShowCleanable(false);
   }, [tree]);
 
   const current = trail.length ? trail[trail.length - 1] : tree;
   const kids = useMemo(() => [...(current?.children ?? [])].filter((c) => c.size > 0).sort(bySize), [current]);
 
-  const fileIcons = useFileIcons(kids.slice(0, 80).map((c) => (c.kind === 'file' ? c.path : null)));
+  const cleanableFiles = useMemo(() => {
+    if (!current) return [];
+    const list: { name: string; path: string; size: number; kind: 'file' | 'folder'; category?: string }[] = [];
+    const seen = new Set<string>();
+
+    for (const c of current.children ?? []) {
+      if (c.reclaimable > 0) {
+        if (c.kind === 'file') {
+          seen.add(c.path.toLowerCase());
+          list.push({ name: c.name, path: c.path, size: c.reclaimable || c.size, kind: 'file', category: 'Old download' });
+        } else if (c.children?.length) {
+          for (const sub of c.children) {
+            if (sub.reclaimable > 0 && !seen.has(sub.path.toLowerCase())) {
+              seen.add(sub.path.toLowerCase());
+              list.push({ name: sub.name, path: sub.path, size: sub.reclaimable || sub.size, kind: sub.kind === 'folder' ? 'folder' : 'file', category: c.name });
+            }
+          }
+        }
+      }
+    }
+
+    if (junk) {
+      const curPathLower = current.path.toLowerCase();
+      for (const cat of junk) {
+        for (const entry of cat.entries ?? []) {
+          const entryPathLower = entry.path.toLowerCase();
+          const matches = current.path === HOME_SRC || current === tree || entryPathLower.startsWith(curPathLower);
+          if (matches && !seen.has(entryPathLower)) {
+            seen.add(entryPathLower);
+            list.push({ name: entry.name, path: entry.path, size: entry.size, kind: entry.kind ?? 'file', category: cat.name });
+          }
+        }
+      }
+    }
+
+    if (list.length === 0) {
+      for (const c of current.children ?? []) {
+        if (c.reclaimable > 0 && !seen.has(c.path.toLowerCase())) {
+          seen.add(c.path.toLowerCase());
+          list.push({ name: c.name, path: c.path, size: c.reclaimable, kind: c.kind === 'folder' ? 'folder' : 'file', category: 'Cleanable' });
+        }
+      }
+    }
+
+    return list.sort((a, b) => b.size - a.size);
+  }, [current, tree, junk]);
+
+  const allPathsToIcon = useMemo(() => [
+    ...kids.slice(0, 80).map((c) => (c.kind === 'file' ? c.path : null)),
+    ...cleanableFiles.slice(0, 80).map((c) => (c.kind === 'file' ? c.path : null)),
+  ], [kids, cleanableFiles]);
+  const fileIcons = useFileIcons(allPathsToIcon);
   // only rebuild the bubbles when an icon actually arrives, not on every render
   const bubbleIcons = kids.slice(0, MAX_BUBBLES).map((c) => (c.kind === 'file' ? fileIcons[c.path] : undefined));
   const iconSig = bubbleIcons.map((s) => (s ? 1 : 0)).join('');
@@ -210,8 +263,18 @@ export default function SpaceMap() {
               <Empty icon="folder" title="Nothing big in here" text="This folder is empty or only holds tiny files." />
             )}
             <div className="fx-stage-foot">
-              <i />
-              <span>Badge: something here can be cleaned</span>
+              <button
+                type="button"
+                className={`fx-badge-foot-btn${showCleanable ? ' on' : ''}`}
+                onClick={() => setShowCleanable((s) => !s)}
+                title="Click to view cleanable files in this folder"
+              >
+                <i />
+                <span>
+                  Badge: something here can be cleaned
+                  <span className="fx-foot-hint"> · {showCleanable ? 'Showing cleanable files' : 'Click to show files'}</span>
+                </span>
+              </button>
               <span className="grow" />
               {busy && (
                 <>
@@ -233,17 +296,105 @@ export default function SpaceMap() {
               </button>
             </div>
             {current.reclaimable >= HINT_MIN && (
-              <div className="fx-hint">
-                <Icon name="spark" />
-                <span className="grow">
-                  About <b>{formatBytes(current.reclaimable)}</b> here looks reclaimable: caches and old downloads.
-                </span>
-                <button type="button" className="btn small" onClick={() => go('cleanup')}>
-                  Review
-                </button>
+              <div className={`fx-hint${showCleanable ? ' active' : ''}`}>
+                <div className="fx-hint-top">
+                  <span className="fx-hint-icon">
+                    <Icon name="spark" />
+                  </span>
+                  <div className="fx-hint-text grow">
+                    <div className="fx-hint-title">
+                      <b>{formatBytes(current.reclaimable)}</b> reclaimable
+                    </div>
+                    <div className="fx-hint-desc">
+                      {cleanableFiles.length > 0
+                        ? `${cleanableFiles.length} cleanable ${cleanableFiles.length === 1 ? 'file' : 'files'} in this folder`
+                        : 'Old downloads and system caches'}
+                    </div>
+                  </div>
+                </div>
+                <div className="fx-hint-actions">
+                  <button
+                    type="button"
+                    className={`fx-hint-pill${showCleanable ? ' on' : ''}`}
+                    onClick={() => setShowCleanable((s) => !s)}
+                  >
+                    <Icon name={showCleanable ? 'close' : 'spark'} />
+                    <span>{showCleanable ? 'Show all files' : 'Show cleanable files'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="fx-hint-link"
+                    onClick={() => go('cleanup')}
+                    title="Open in Cleanup"
+                  >
+                    <span>Clean</span>
+                    <Icon name="arrow" />
+                  </button>
+                </div>
               </div>
             )}
-            {kids.length === 0 ? (
+            {showCleanable ? (
+              cleanableFiles.length === 0 ? (
+                <Empty icon="check" title="No cleanable files here" text="Nothing in this folder needs cleaning." />
+              ) : (
+                <div className="list fx-list">
+                  <div className="fx-panel-head" style={{ padding: '0 8px 6px' }}>
+                    <span className="fx-count">
+                      {cleanableFiles.length} cleanable {cleanableFiles.length === 1 ? 'item' : 'items'}
+                    </span>
+                    <span className="grow" />
+                    <button type="button" className="fx-link" onClick={() => setShowCleanable(false)}>
+                      View all
+                    </button>
+                  </div>
+                  {cleanableFiles.slice(0, 80).map((file, idx) => {
+                    const img = fileIcons[file.path];
+                    const drill = file.kind === 'folder';
+                    const targetNode = kids.find((k) => k.path.toLowerCase() === file.path.toLowerCase());
+                    return (
+                      <div
+                        key={`${file.path}-${idx}`}
+                        className={`row${drill && targetNode ? ' drill' : ''}`}
+                        onClick={() => drill && targetNode && open(targetNode)}
+                      >
+                        {img ? (
+                          <span className="chip-ico real">
+                            <img src={img} alt="" draggable={false} />
+                          </span>
+                        ) : (
+                          <span className="chip-ico warm">
+                            <Icon name={file.kind === 'folder' ? 'folder' : 'file'} />
+                          </span>
+                        )}
+                        <div className="grow">
+                          <div className="title" title={file.name}>{file.name}</div>
+                          <div className="sub mono" title={file.path}>
+                            {file.category ? `${file.category} · ` : ''}{shortPath(file.path, home)}
+                          </div>
+                        </div>
+                        <span className="tag warm" style={{ marginRight: 6 }}>Can clean</span>
+                        <span className="size">{formatBytes(file.size)}</span>
+                        <button
+                          type="button"
+                          className="icon-btn"
+                          title="Show in folder"
+                          aria-label={`Show ${file.name} in folder`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            reveal(file.path);
+                          }}
+                        >
+                          <Icon name="reveal" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                  {cleanableFiles.length > 80 && (
+                    <div className="row sub muted">and {cleanableFiles.length - 80} smaller items</div>
+                  )}
+                </div>
+              )
+            ) : kids.length === 0 ? (
               <Empty icon="folder" title="Empty folder" />
             ) : (
               <div className="list fx-list">

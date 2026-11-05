@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { JunkCategory } from '../../shared/types';
+import { api } from '../api';
 import { Icon } from '../components/Icon';
 import { CleanButton, Empty, Progress, ScreenHead } from '../components/ui';
 import { formatBytes, shortPath, splitBytes, sum } from '../lib/format';
@@ -13,6 +14,16 @@ export default function Cleanup() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [confirming, setConfirming] = useState(false);
   const [done, setDone] = useState(false);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
+  const toggleExpanded = (id: string) => {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   // scan once on arrival; a failed scan leaves the retry button below instead of looping
   const asked = useRef(false);
@@ -135,30 +146,116 @@ export default function Cleanup() {
                 const empty = c.size <= 0;
                 const on = selected.has(c.id) && !empty;
                 const perm = isPermanent(c);
+                const isOpen = expanded.has(c.id);
                 return (
-                  <label key={c.id} className={`row${on ? ' on' : ''}${empty ? ' off' : ''}`}>
-                    <input type="checkbox" className="check" checked={on} disabled={empty || cleaning} onChange={() => toggle(c.id)} aria-label={c.name} />
-                    <span className={`chip-ico${perm ? ' warm' : c.safe ? '' : ' mute'}`}>
-                      <Icon name={c.icon} />
-                    </span>
-                    <div className="grow">
-                      <div className="title">{c.name}</div>
-                      <div className="fx-desc">{c.description}</div>
-                      <div className="sub mono" title={c.locations.join('\n')}>
-                        {c.locations.map((l) => shortPath(l, home)).join('  ·  ')}
+                  <div key={c.id} className="fx-cat-item">
+                    <div className={`row${on ? ' on' : ''}${empty ? ' off' : ''}`} onClick={() => !empty && !cleaning && toggle(c.id)}>
+                      <input
+                        type="checkbox"
+                        className="check"
+                        checked={on}
+                        disabled={empty || cleaning}
+                        onChange={() => toggle(c.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        aria-label={c.name}
+                      />
+                      <span className={`chip-ico${perm ? ' warm' : c.safe ? '' : ' mute'}`}>
+                        <Icon name={c.icon} />
+                      </span>
+                      <div className="grow">
+                        <div className="title">{c.name}</div>
+                        <div className="fx-desc">{c.description}</div>
+                        <div className="sub mono" title={c.locations.join('\n')}>
+                          {c.locations.map((l) => shortPath(l, home)).join('  ·  ')}
+                        </div>
                       </div>
-                    </div>
-                    <div className="tags">
-                      {perm && (
-                        <span className="tag keep">
-                          <Icon name="warning" />
-                          Permanent
-                        </span>
+                      <div className="tags">
+                        {perm && (
+                          <span className="tag keep">
+                            <Icon name="warning" />
+                            Permanent
+                          </span>
+                        )}
+                        {!empty && <span className={`tag ${c.safe ? 'safe' : 'review'}`}>{c.safe ? 'Safe' : 'Review'}</span>}
+                      </div>
+                      {!empty && (
+                        <button
+                          type="button"
+                          className={`fx-expand-btn${isOpen ? ' open' : ''}`}
+                          title={isOpen ? 'Hide files' : 'Show files'}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleExpanded(c.id);
+                          }}
+                        >
+                          <span>{c.entries?.length ? `${c.entries.length} files` : 'Files'}</span>
+                          <Icon name="arrow" style={{ transform: isOpen ? 'rotate(-90deg)' : 'rotate(90deg)' }} />
+                        </button>
                       )}
-                      {!empty && <span className={`tag ${c.safe ? 'safe' : 'review'}`}>{c.safe ? 'Safe' : 'Review'}</span>}
+                      <span className="size">{empty ? 'Clean' : formatBytes(c.size)}</span>
                     </div>
-                    <span className="size">{empty ? 'Clean' : formatBytes(c.size)}</span>
-                  </label>
+                    {isOpen && !empty && (
+                      <div className="fx-cat-files">
+                        <div className="fx-cat-files-head">
+                          <span>{c.entries?.length ? `Files to remove (${c.entries.length})` : 'Locations'}</span>
+                          <span className="fx-count">{formatBytes(c.size)}</span>
+                        </div>
+                        {c.entries && c.entries.length > 0 ? (
+                          <div className="fx-cat-files-list">
+                            {c.entries.map((entry, idx) => (
+                              <div key={`${entry.path}-${idx}`} className="fx-cat-file-row">
+                                <span className="chip-ico small">
+                                  <Icon name={entry.kind === 'folder' ? 'folder' : c.icon === 'globe' ? 'globe' : c.icon === 'down' ? 'down' : 'file'} />
+                                </span>
+                                <div className="fx-cat-file-info grow">
+                                  <span className="fx-cat-file-name" title={entry.name}>{entry.name}</span>
+                                  <span className="fx-cat-file-path mono" title={entry.path}>{shortPath(entry.path, home)}</span>
+                                </div>
+                                <span className="fx-cat-file-size mono">{formatBytes(entry.size)}</span>
+                                <button
+                                  type="button"
+                                  className="icon-btn small"
+                                  title="Show in folder"
+                                  aria-label="Show in folder"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    api.revealPath(entry.path).catch(() => toast('Could not open location', 'err'));
+                                  }}
+                                >
+                                  <Icon name="reveal" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="fx-cat-files-list">
+                            {c.locations.map((loc, idx) => (
+                              <div key={`${loc}-${idx}`} className="fx-cat-file-row">
+                                <span className="chip-ico small">
+                                  <Icon name="folder" />
+                                </span>
+                                <div className="fx-cat-file-info grow">
+                                  <span className="fx-cat-file-path mono">{shortPath(loc, home)}</span>
+                                </div>
+                                <button
+                                  type="button"
+                                  className="icon-btn small"
+                                  title="Show in folder"
+                                  aria-label="Show in folder"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    api.revealPath(loc).catch(() => toast('Could not open location', 'err'));
+                                  }}
+                                >
+                                  <Icon name="reveal" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </div>
