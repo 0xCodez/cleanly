@@ -168,13 +168,18 @@ async function macVolumes(): Promise<Volume[]> {
 }
 
 let inventory: { at: number; vols: Promise<Volume[]> } | null = null;
+/** Last successfully resolved volume list, kept so getDisk() can label the system drive without WMI. */
+let lastVolumes: Volume[] | null = null;
 const INVENTORY_TTL = 30_000;
 
 function volumes(): Promise<Volume[]> {
   const now = Date.now();
   if (inventory && now - inventory.at < INVENTORY_TTL) return inventory.vols;
   const probe = isWin ? windowsVolumes() : isMac ? macVolumes() : Promise.resolve<Volume[]>([{ mount: '/', label: '/', system: true }]);
-  const vols = probe.catch((): Volume[] => {
+  const vols = probe.then((list) => {
+    lastVolumes = list;
+    return list;
+  }).catch((): Volume[] => {
     // do not cache a failure
     if (inventory?.vols === vols) inventory = null;
     const mount = systemMount();
@@ -224,7 +229,11 @@ export async function getDisk(): Promise<DiskInfo> {
   const free = Number(s.bavail) * Number(s.bsize);
   let label = mount;
   if (isWin) {
-    const known = (await volumes().catch((): Volume[] => [])).find((v) => sameMount(v.mount, mount));
+    // Deliberately no WMI/volumes() lookup here: enumerating volumes spawns a PowerShell process
+    // (~1 s on a cold start) and this runs on the first paint. Use the cached inventory only when it
+    // is already in memory; otherwise fall back to the letter-based label, which is identical to the
+    // one WMI reports for unnamed volumes.
+    const known = lastVolumes?.find((v) => sameMount(v.mount, mount)) ?? null;
     label = known?.label ?? `Disk ${mount.charAt(0)}:`;
   } else if (isMac) label = 'Macintosh HD';
   return { mount, label, total, free, used: Math.max(0, total - free), system: true };
