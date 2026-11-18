@@ -78,17 +78,23 @@ function useCardData<K extends 'startup' | 'protection' | 'apps'>(key: K, load: 
 
   useEffect(() => {
     let alive = true;
-    loadRef
-      .current()
-      .then((data) => {
-        memo[key] = data;
-        if (alive) setState({ data, error: false });
-      })
-      .catch(() => {
-        if (alive) setState((s) => ({ data: s.data, error: s.data === null }));
-      });
+    // Defer these preview cards so the startup junk scan (the user's primary action) gets the main
+    // thread and the OS query slots first. They used to fire at the same moment and each spawned its
+    // own PowerShell/registry work, which noticeably slowed the first scan and the first paint.
+    const id = window.setTimeout(() => {
+      loadRef
+        .current()
+        .then((data) => {
+          memo[key] = data;
+          if (alive) setState({ data, error: false });
+        })
+        .catch(() => {
+          if (alive) setState((s) => ({ data: s.data, error: s.data === null }));
+        });
+    }, 900);
     return () => {
       alive = false;
+      window.clearTimeout(id);
     };
   }, [key]);
 

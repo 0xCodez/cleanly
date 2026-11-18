@@ -3,6 +3,7 @@ import { promises as fsp, type Dirent } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import type { CleanResult, IconName, JunkCategory, ScanProgress } from '../../shared/types';
+import { listDisks, systemMount } from './disk';
 import { deleteCacheEntry, isSafeUserPath, trashPaths } from './trash';
 import {
   DAY_MS,
@@ -36,6 +37,12 @@ interface Def {
   roots?: () => Promise<Root[]>;
   /** Keep files modified after this moment (fresh temp files may belong to running apps). */
   keepNewerThanMs?: number;
+  /**
+   * Cap the number of entries measured for this category. Developer caches routinely hold hundreds of
+   * thousands of files, and counting every one of them costs seconds while barely changing the number
+   * shown. When the cap is hit the size is reported as an estimate.
+   */
+  maxEntries?: number;
   /** Shown when nothing could be removed because of permissions. */
   adminNote?: string;
 }
@@ -218,10 +225,11 @@ function winDefs(): Def[] {
     {
       id: 'dev-cache',
       name: 'Developer caches',
-      description: 'npm, pip, Yarn, pnpm and Gradle caches. The next install downloads packages again.',
+      description: 'npm, pip, Yarn, pnpm and Gradle caches. The next install downloads packages again. Huge folders are measured approximately.',
       icon: 'code',
       safe: false,
       kind: 'cache',
+      maxEntries: 60_000,
       roots: () =>
         dirs([
           path.join(L, 'npm-cache'),
@@ -329,10 +337,11 @@ function macDefs(): Def[] {
     {
       id: 'dev-cache',
       name: 'Developer caches',
-      description: 'npm, Yarn, pnpm and pip caches. The next install downloads packages again.',
+      description: 'npm, Yarn, pnpm and pip caches. The next install downloads packages again. Huge folders are measured approximately.',
       icon: 'code',
       safe: false,
       kind: 'cache',
+      maxEntries: 60_000,
       roots: () =>
         dirs([
           path.join(home(), '.npm', '_cacache'),
@@ -417,7 +426,7 @@ async function measureCache(def: Def, roots: Root[], onTick: (current: string) =
     let bytes = 0;
     const top = (p: string) => lower(path.relative(root.path, p).split(path.sep)[0]);
     await walk(root.path, {
-      maxEntries: SCAN_CAP,
+      maxEntries: def.maxEntries ?? SCAN_CAP,
       skipDir: (_p, name, depth) => depth === 1 && excluded.has(lower(name)),
       onDir: (p, depth) => {
         if (depth === 1 && cutoff === undefined) entries.add(top(p));
@@ -469,7 +478,11 @@ async function findOldDownloads(): Promise<{ paths: string[]; size: number; fold
         return;
       }
       if (!st.isDirectory()) return;
-      let fresh = touched(st) >= cutoff;
+      // The folder's own mtime moves whenever an entry inside it is created, renamed or deleted, so a
+      // recent one already proves the folder is in use: the walk below could never mark it as old.
+      // Bailing out here is what keeps a big Downloads folder from being walked on every scan.
+      if (touched(st) >= cutoff) return;
+      let fresh = false;
       let size = 0;
       const ctrl = new AbortController();
       const stats = await walk(p, {
@@ -497,18 +510,6 @@ async function findOldDownloads(): Promise<{ paths: string[]; size: number; fold
   return result;
 }
 
-const RECYCLE_MEASURE = [
-  "$ErrorActionPreference='SilentlyContinue'",
-  '$n=0; $t=[double]0',
-  'foreach($i in (New-Object -ComObject Shell.Application).NameSpace(10).Items()){',
-  '  $n++',
-  "  $v=$i.ExtendedProperty('System.Size')",
-  '  if($v -and [double]$v -gt 0){ $t+=[double]$v }',
-  '  else { $m=(Get-ChildItem -LiteralPath $i.Path -Recurse -Force -File | Measure-Object -Property Length -Sum).Sum; if($m){ $t+=[double]$m } }',
-  '}',
-  '"$n $t"',
-].join('\n');
-
 function powershell(script: string, timeout: number): Promise<string> {
   return new Promise((resolve, reject) => {
     execFile(
@@ -520,15 +521,47 @@ function powershell(script: string, timeout: number): Promise<string> {
   });
 }
 
+/**
+ * Reads the Recycle Bin straight off the file system instead of asking the shell for it.
+ *
+ * The previous version shelled out to PowerShell, created a `Shell.Application` COM object and asked
+ * every item for its `System.Size`, falling back to a recursive `Get-ChildItem` per item. On a bin with
+ * a few thousand entries that took 11.7s and blocked the whole junk scan behind it.
+ *
+ * On disk a bin entry is always a pair inside `<volume>\$Recycle.Bin\<SID>\`: `$R…` holds the payload and
+ * `$I…` holds the original path and delete time. So walking the two directory levels is enough, it needs
+ * no COM, no child process, and it also covers entries on every fixed volume rather than only C:.
+ */
 async function measureRecycleBin(): Promise<{ count: number; size: number }> {
+  let mounts: string[];
   try {
-    const out = (await powershell(RECYCLE_MEASURE, 90_000)).trim().split(/\s+/);
-    const count = Number(out[out.length - 2]);
-    const size = Number(out[out.length - 1]);
-    return { count: Number.isFinite(count) ? count : 0, size: Number.isFinite(size) ? size : 0 };
+    mounts = (await listDisks()).map((d) => d.mount);
   } catch {
-    return { count: 0, size: 0 };
+    mounts = [systemMount()];
   }
+  let count = 0;
+  let size = 0;
+  for (const mount of mounts) {
+    const bin = path.join(mount, '$Recycle.Bin');
+    if (!(await isRealDir(bin))) continue;
+    await walk(bin, {
+      maxEntries: 500_000,
+      onDir: (p, depth) => {
+        // depth 2 is `<volume>\$Recycle.Bin\<SID>\$R…`: one recycled folder
+        if (depth === 2 && path.basename(p).startsWith('$R')) count++;
+      },
+      onFile: (f) => {
+        if (f.depth === 2) {
+          const base = path.basename(f.path);
+          // `$I…` is the metadata record, not something the user deleted
+          if (base.startsWith('$I')) return;
+          if (base.startsWith('$R')) count++;
+        }
+        size += f.size;
+      },
+    });
+  }
+  return { count, size };
 }
 
 async function measure(def: Def, onTick: (current: string) => void): Promise<Measured> {
